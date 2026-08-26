@@ -1,6 +1,6 @@
 {
   "name": "simple-output",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Clear, beginner-friendly skills for visual explanations and simple outputs.",
   "author": {
     "name": "silbaram",
@@ -15,6 +15,6 @@
     "developerName": "silbaram",
     "category": "Productivity",
     "capabilities": ["Write"],
-    "defaultPrompt": "Use $101-teacher to explain OAuth as a beginner-friendly visual HTML page."
+    "defaultPrompt": "Use $e11y-teacher to explain OAuth as a beginner-friendly visual HTML page."
   }
 }
