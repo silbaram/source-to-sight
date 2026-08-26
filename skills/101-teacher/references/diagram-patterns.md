@@ -1,22 +1,22 @@
 # Diagram patterns
 
-Read this guide while deciding which diagrams the explainer needs. These are patterns and decision criteria, not a required checklist. Choose the smallest set that teaches the subject accurately.
+Read this guide while deciding which diagrams the explainer needs. Choose the smallest set of patterns that teaches the subject accurately.
 
 ## Selection rule
 
 A diagram earns its space when length, position, direction, grouping, or repeated geometry makes an important relationship faster to understand than prose or a table.
 
-Supporting elements such as tables, code blocks, lists, cards, icons, and `<details>` remain useful. They do not need to become diagrams when comparison, reference lookup, or exact wording is the actual lesson.
+Use tables, code blocks, lists, cards, icons, and `<details>` directly when comparison, reference lookup, or exact wording is the actual lesson.
 
 ## Proportional strip
 
 Use for packet layouts, budgets, storage, quotas, and time splits when relative size matters.
 
-- Keep segment width proportional to the real quantity. If a minimum width distorts the ratio, state that clearly.
+- Keep segment width proportional to the real quantity and state any visual distortion introduced by a minimum width.
 - Exact SVG rectangles are appropriate when the ratio must remain truthful.
 - Thin fields should normally use a separate ordered legend or field index. An inset or enlarged detail is another good option.
 - If leader lines are justified, keep every line, endpoint, and label visibly separate and inspect the rendered result.
-- On narrow screens, a compact unlabeled proportional strip plus a readable field list is usually better than shrinking every label or stacking segments in a way that destroys the ratio.
+- On narrow screens, pair a compact proportional strip with a readable field list when inline labels would compromise the ratio.
 
 ## Connected flow
 
@@ -26,34 +26,34 @@ Use when order is the lesson.
 - The path may be horizontal, vertical, or divided into lanes. Choose the geometry that fits the number of stages and the narrow-screen layout.
 - Number markers when the sequence is real and the numbers help scanning.
 - Keep the final marker and arrowhead as distinct shapes with a visible connecting segment between them.
-- SVG markers include invisible view-box space. Verify the rendered arrowhead edge rather than trusting the line endpoint.
+- SVG markers include invisible view-box space, so verify the rendered arrowhead edge and line endpoint together.
 
 ### Connector grammar
 
-Treat the connectors in one visual as a system. If relationships differ by sender, payload, direction, trust boundary, state, or outcome, give the reader a consistent way to see the relevant difference—for example through route, line treatment, endpoint, marker, label plate, position, or restrained color. Use only the channels the lesson needs. Identical relationships should remain visually consistent, and different styling should never be decorative noise.
+Treat the connectors in one visual as a system. If relationships differ by sender, payload, direction, trust boundary, state, or outcome, give the reader a consistent way to see the relevant difference—for example through route, line treatment, endpoint, marker, label plate, position, or restrained color. Match every styling difference to a semantic difference, and keep equivalent relationships visually consistent.
 
 ### Motion along a path
 
 Animate a connected flow only when motion makes direction, timing, order, state change, or causality easier to understand.
 
 - Keep the path and its meaning readable before motion begins and when motion is disabled.
-- For a data stream, moving markers should follow the real direction and route. Do not imply continuous traffic, relative speed, volume, or synchronization unless the source supports that claim.
-- Prefer a short, purposeful demonstration. Provide pause and replay or step controls when the motion persists, contains multiple stages, or must be studied rather than merely noticed.
-- Honor `prefers-reduced-motion` with a useful static or stepped state, not by removing the explanation.
+- For a data stream, moving markers should follow the real direction and route. Use motion properties only for traffic, speed, volume, and synchronization claims supported by the source.
+- Prefer a short, purposeful demonstration. Provide pause and replay or step controls when the motion persists, contains multiple stages, or needs focused study.
+- Honor `prefers-reduced-motion` with a useful static or stepped explanation.
 
 ## Value assembly
 
-Use an equation of large mono tokens when a value is constructed from meaningful parts, such as an identifier, code, key, or URL. Color tokens by semantic origin, not decoration.
+Use an equation of large mono tokens when a value is constructed from meaningful parts, such as an identifier, code, key, or URL. Color tokens by semantic origin.
 
 ## Failure map
 
 Reuse the main flow geometry when failures attach naturally to its stages. Branch each failure at the point where it becomes visible to the caller, and end the branch in the actual code or state the caller sees.
 
-Use a different geometry when forcing failures onto the main path would hide concurrency, retries, or cross-cutting behavior.
+Choose a separate geometry when concurrency, retries, or cross-cutting behavior needs its own spatial structure.
 
 ## Anchor number
 
-Use one value at display size with its unit and consequence beneath it when a single number is the lesson. Do not use an anchor number merely to decorate a section.
+Use one value at display size with its unit and consequence beneath it when a single number is the lesson.
 
 ## Annotated object
 
@@ -67,6 +67,6 @@ Use a small simulation when a reader-controlled input or step reveals cause and 
 
 - Teach one relationship at a time and keep the state space small.
 - Make inputs, current state, transition, and result visibly distinct; provide a clear reset when the reader can change state.
-- Keep behavior deterministic unless randomness is the lesson. Label simplifications and avoid invented values or false precision.
+- Keep behavior deterministic. Use randomness when it is the lesson, label simplifications, and use source-supported values and precision.
 - Preserve a concise static explanation so the lesson survives disabled scripts, reduced motion, and assistive reading.
-- Do not add a simulation when a labeled before/after picture or short sequence teaches the same idea more directly.
+- Choose a labeled before/after picture or short sequence when it teaches the same idea more directly.
