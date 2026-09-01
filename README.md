@@ -1,22 +1,22 @@
-# Simple Output
+# Source to Sight
 
 English | [한국어](./README.ko.md)
 
-A Codex plugin that turns complex topics into visual explanations for people seeing them for the first time.
+An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
 
-The included `$e11y-teacher` skill checks source material and authoritative references, then creates a self-contained HTML page that explains the topic with large visuals and few words. The output opens directly in a browser without a build step or separate server.
+The `$visual-primer` skill checks source material and authoritative references, then creates a self-contained HTML page that explains the topic with large visuals and few words. The output opens directly in a browser without a build step or separate server.
 
 ## Example output
 
 The following prompt creates a beginner-friendly visual guide to OAuth:
 
 ```text
-$e11y-teacher Explain OAuth.
+$visual-primer Explain OAuth.
 ```
 
-[![OAuth e11y output preview](./assets/oauth-e11y-example-preview.png)](./assets/oauth-e11y-example.html)
+[![OAuth visual-primer output preview](./assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
 
-[Open the OAuth e11y example HTML](./assets/oauth-e11y-example.html) · If GitHub does not display the interactive page, download the file and open it in a browser.
+[Open the OAuth visual-primer example HTML](./assets/oauth-visual-primer-example.html) · If GitHub does not display the interactive page, download the file and open it in a browser.
 
 This example includes:
 
@@ -28,32 +28,26 @@ This example includes:
 
 ## Installation
 
-First, add this repository as a Codex marketplace:
+Install `visual-primer` with the Agent Skills CLI:
 
 ```bash
-codex plugin marketplace add silbaram/skill-plugin --ref main
+npx skills add silbaram/source-to-sight --skill visual-primer
 ```
 
-Install `simple-output` from the marketplace:
-
-```bash
-codex plugin add simple-output@personal
-```
-
-Start a new conversation after installation. Plugin skills are loaded in new conversations.
+If the skill does not appear in the current session after installation, start a new conversation.
 
 ## Usage
 
 Provide the skill name, the topic to explain, and an output path:
 
 ```text
-$e11y-teacher Explain OAuth. Save the result to docs/oauth-e11y-example.html.
+$visual-primer Explain OAuth. Save the result to docs/oauth-visual-primer-example.html.
 ```
 
 You can change both the topic and the destination:
 
 ```text
-$e11y-teacher Explain Kubernetes Pods. Save the result in the current project root.
+$visual-primer Explain Kubernetes Pods. Save the result in the current project root.
 ```
 
 Generated files follow these principles:
@@ -67,38 +61,32 @@ Generated files follow these principles:
 
 ## Updating
 
-Upgrade the registered Git marketplace and reinstall the plugin:
+Update the installed skill with:
 
 ```bash
-codex plugin marketplace upgrade personal
-codex plugin add simple-output@personal
+npx skills update visual-primer
 ```
 
-After updating, start a new conversation before using `$e11y-teacher` again.
+If the current session still has the previous version loaded, start a new conversation before using `$visual-primer` again.
 
 ## Repository structure
 
 ```text
 .
-├── .agents/plugins/marketplace.json
 ├── README.md
 ├── README.ko.md
-├── plugins/simple-output/
-│   ├── .codex-plugin/plugin.json
-│   └── skills/e11y-teacher/
-│       ├── SKILL.md
-│       └── references/
-│           ├── diagram-patterns.md
-│           ├── qa.md
-│           └── visual-treatment.md
+├── skills/visual-primer/
+│   ├── SKILL.md
+│   └── references/
+│       ├── diagram-patterns.md
+│       ├── qa.md
+│       └── visual-treatment.md
 └── assets/
-    ├── oauth-e11y-example.html
-    └── oauth-e11y-example-preview.png
+    ├── oauth-visual-primer-example.html
+    └── oauth-visual-primer-example-preview.png
 ```
 
-- `.agents/plugins/marketplace.json` declares the installable plugin and its local source path.
-- `.codex-plugin/plugin.json` defines the `simple-output` name, version, display metadata, and skill path.
-- `SKILL.md` contains the core instructions used by `$e11y-teacher` to research and structure an explanation.
+- `SKILL.md` contains the core instructions used by `$visual-primer` to research and structure an explanation.
 - `references/` contains separate guidance for diagrams, visual treatment, and rendering QA.
 
-Codex plugins bundle reusable skills and external-service connections to extend ChatGPT and Codex. See the [official OpenAI Plugins documentation](https://developers.openai.com/plugins) for the concepts and component model.
+The repository uses the open [Agent Skills](https://agentskills.io/) format and can be installed with the [`skills` CLI](https://github.com/vercel-labs/skills).

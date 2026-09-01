@@ -1,22 +1,22 @@
-# Simple Output
+# Source to Sight
 
 [English](./README.md) | 한국어
 
-복잡한 주제를 처음 보는 사람도 이해할 수 있는 시각적 결과물로 바꾸는 Codex 플러그인입니다.
+복잡한 주제를 처음 보는 사람도 이해할 수 있는 시각적 결과물로 바꾸는 에이전트 스킬입니다.
 
-현재 포함된 `$e11y-teacher` 스킬은 실제 자료와 공식 출처를 확인한 뒤, 큰 그림과 적은 글로 설명하는 단일 HTML 페이지를 만듭니다. 결과물은 빌드 과정이나 별도 서버 없이 브라우저에서 바로 열 수 있습니다.
+`$visual-primer` 스킬은 실제 자료와 공식 출처를 확인한 뒤, 큰 그림과 적은 글로 설명하는 단일 HTML 페이지를 만듭니다. 결과물은 빌드 과정이나 별도 서버 없이 브라우저에서 바로 열 수 있습니다.
 
 ## 생성 결과
 
 다음 한 줄로 OAuth 입문용 그림 설명서를 생성한 예시입니다.
 
 ```text
-$e11y-teacher OAuth를 설명해줘
+$visual-primer OAuth를 설명해줘
 ```
 
-[![OAuth e11y 생성 결과 미리보기](./assets/oauth-e11y-example-preview.png)](./assets/oauth-e11y-example.html)
+[![OAuth visual-primer 생성 결과 미리보기](./assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
 
-[OAuth e11y 예제 HTML 보기](./assets/oauth-e11y-example.html) · GitHub에서 실행 화면이 열리지 않으면 파일을 내려받아 브라우저로 여세요.
+[OAuth visual-primer 예제 HTML 보기](./assets/oauth-visual-primer-example.html) · GitHub에서 실행 화면이 열리지 않으면 파일을 내려받아 브라우저로 여세요.
 
 이 예시에는 다음 요소가 포함되어 있습니다.
 
@@ -28,32 +28,26 @@ $e11y-teacher OAuth를 설명해줘
 
 ## 설치
 
-먼저 이 저장소를 Codex 마켓플레이스로 등록합니다.
+Agent Skills CLI로 `visual-primer`를 설치합니다.
 
 ```bash
-codex plugin marketplace add silbaram/skill-plugin --ref main
+npx skills add silbaram/source-to-sight --skill visual-primer
 ```
 
-마켓플레이스에서 `simple-output`을 설치합니다.
-
-```bash
-codex plugin add simple-output@personal
-```
-
-설치가 끝나면 새 대화를 시작하세요. 새 대화부터 플러그인의 스킬이 로드됩니다.
+설치 후 현재 세션에 스킬이 나타나지 않으면 새 대화를 시작하세요.
 
 ## 사용법
 
 스킬 이름과 설명할 주제, 저장할 위치를 함께 적으면 됩니다.
 
 ```text
-$e11y-teacher OAuth를 설명해줘. 결과를 docs/oauth-e11y-example.html에 저장해.
+$visual-primer OAuth를 설명해줘. 결과를 docs/oauth-visual-primer-example.html에 저장해.
 ```
 
 주제와 결과 위치를 자유롭게 바꿀 수 있습니다.
 
 ```text
-$e11y-teacher 쿠버네티스의 Pod를 설명해줘. 결과는 현재 프로젝트 root에 생성해줘.
+$visual-primer 쿠버네티스의 Pod를 설명해줘. 결과는 현재 프로젝트 root에 생성해줘.
 ```
 
 결과 파일은 다음 원칙을 따릅니다.
@@ -67,38 +61,32 @@ $e11y-teacher 쿠버네티스의 Pod를 설명해줘. 결과는 현재 프로젝
 
 ## 업데이트
 
-등록된 Git 마켓플레이스를 최신 상태로 갱신하고 플러그인을 다시 설치합니다.
+설치된 스킬은 다음 명령으로 업데이트합니다.
 
 ```bash
-codex plugin marketplace upgrade personal
-codex plugin add simple-output@personal
+npx skills update visual-primer
 ```
 
-업데이트 후에는 새 대화에서 `$e11y-teacher`를 다시 사용하세요.
+현재 세션에 이전 버전이 남아 있으면 새 대화를 시작한 뒤 `$visual-primer`를 사용하세요.
 
 ## 저장소 구조
 
 ```text
 .
-├── .agents/plugins/marketplace.json
 ├── README.md
 ├── README.ko.md
-├── plugins/simple-output/
-│   ├── .codex-plugin/plugin.json
-│   └── skills/e11y-teacher/
-│       ├── SKILL.md
-│       └── references/
-│           ├── diagram-patterns.md
-│           ├── qa.md
-│           └── visual-treatment.md
+├── skills/visual-primer/
+│   ├── SKILL.md
+│   └── references/
+│       ├── diagram-patterns.md
+│       ├── qa.md
+│       └── visual-treatment.md
 └── assets/
-    ├── oauth-e11y-example.html
-    └── oauth-e11y-example-preview.png
+    ├── oauth-visual-primer-example.html
+    └── oauth-visual-primer-example-preview.png
 ```
 
-- `.agents/plugins/marketplace.json`: 설치 가능한 플러그인과 로컬 경로를 선언합니다.
-- `.codex-plugin/plugin.json`: `simple-output`의 이름, 버전, 표시 정보와 스킬 경로를 정의합니다.
-- `SKILL.md`: `$e11y-teacher`가 설명을 조사하고 구성하는 핵심 규칙입니다.
+- `SKILL.md`: `$visual-primer`가 설명을 조사하고 구성하는 핵심 규칙입니다.
 - `references/`: 다이어그램, 디자인, 렌더링 QA 기준을 분리해 관리합니다.
 
-Codex 플러그인은 재사용 가능한 스킬과 외부 서비스 연결을 묶어 ChatGPT와 Codex를 확장하는 구조입니다. 개념과 구성 요소는 [공식 OpenAI Plugins 문서](https://developers.openai.com/plugins)를 참고하세요.
+이 저장소는 공개 [Agent Skills](https://agentskills.io/) 형식을 사용하며 [`skills` CLI](https://github.com/vercel-labs/skills)로 설치할 수 있습니다.

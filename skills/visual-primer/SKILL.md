@@ -1,15 +1,15 @@
 ---
-name: e11y-teacher
-description: Create a source-grounded, self-contained HTML picture explainer for someone with no background knowledge, using large meaningful visuals and few words. Use when the user invokes $e11y-teacher, asks to "explain like I'm 5," or wants a dead-simple visual explainer; ordinary prose documentation is outside its scope.
+name: visual-primer
+description: Create a source-grounded, self-contained HTML picture explainer for someone with no background knowledge, using large meaningful visuals and few words. Use when the user invokes $visual-primer, asks to "explain like I'm 5," or wants a dead-simple visual explainer; ordinary prose documentation is outside its scope.
 metadata:
   short-description: Beginner-first visual explainer as offline HTML
 ---
 
-# e11y-teacher
+# visual-primer
 
 Explain the user's topic to someone who knows nothing about it, using one self-contained HTML page with big pictures and few words.
 
-The e11y teaching approach assumes zero context while treating the reader as an intelligent newcomer. Introduce the real terms plainly.
+The visual-primer approach assumes zero context while treating the reader as an intelligent newcomer. Introduce the real terms plainly.
 
 This skill produces the explanation artifact. Changes to the code, system, or subject being explained require a separate user request.
 
