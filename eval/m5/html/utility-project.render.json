@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "atlas",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스의 프로젝트 구성과 공개 기능을 읽어 작성한 M5 지도입니다."
+  },
+  "snapshot": {
+    "repository": "chalk/strip-ansi",
+    "branch": null,
+    "commit": "38ff9f2282540422031ed523f0060c7bb575e20f",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T23:17:13Z",
+    "skillVersion": "0.6.0",
+    "model": null
+  },
+  "subject": {
+    "id": "strip-ansi-strip-ansi-0dc67a470978",
+    "kind": "project",
+    "title": "strip-ansi · 문자열을 정리하는 작은 도구",
+    "question": "strip-ansi · 문자열을 정리하는 작은 도구의 주요 구성과 기능을 설명해 줘",
+    "module": "strip-ansi",
+    "targets": [
+      {
+        "label": "strip-ansi"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "배포 진입점, 공개 함수, 타입 선언과 사용 예제"
+      ],
+      "excludes": [
+        "외부 ansi-regex 구현",
+        "별도 CLI와 스트림 저장소"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "complete",
+    "profiles": [
+      "cli-utility"
+    ],
+    "searched": [
+      "index.js",
+      "package.json",
+      "index.d.ts",
+      "readme.md"
+    ],
+    "unresolved": [],
+    "nextAttempts": []
+  },
+  "summary": {
+    "title": "strip-ansi · 문자열을 정리하는 작은 도구",
+    "purpose": "문자열의 터미널 색상·서식 표시를 제거하는 공개 함수를 제공합니다.",
+    "inputs": [],
+    "outputs": [],
+    "limitations": [
+      "외부 ansi-regex 구현",
+      "별도 CLI와 스트림 저장소"
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "strip-ansi-strip-ansi-0dc67a470978",
+    "question": "strip-ansi · 문자열을 정리하는 작은 도구의 주요 구성과 기능을 설명해 줘",
+    "language": "ko",
+    "command": "$codebase-atlas strip-ansi · 문자열을 정리하는 작은 도구의 주요 구성과 기능을 설명해 줘 | subject=strip-ansi-strip-ansi-0dc67a470978 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "strip",
+      "label": "문자열 서식 정리",
+      "codeName": "stripAnsi",
+      "summary": "문자열을 검사하고 ansi-regex 매처를 이용해 서식 표시를 제거합니다. 배포 진입점과 타입 선언이 이 함수를 공개합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-function",
+        "ev-package",
+        "ev-types"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    }
+  ],
+  "edges": [],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [],
+  "subjects": [
+    {
+      "id": "strip-ansi-stripansi-9a2291855487",
+      "kind": "capability",
+      "question": "stripAnsi는 문자열을 어떻게 검사하고 터미널 서식 표시를 제거하나요?",
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "stripAnsi",
+          "file": "index.js",
+          "symbol": "stripAnsi"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "공개 함수의 입력 검사, 빠른 반환, 매처를 이용한 치환"
+        ],
+        "excludes": [
+          "ansi-regex 의존성의 정규식 내부",
+          "별도 CLI와 스트림 패키지"
+        ]
+      },
+      "label": "서식 표시 제거",
+      "summary": "입력 검사부터 문자열 반환까지 살펴봅니다.",
+      "nodeId": "strip",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-function"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "utility-strip.html",
+        "generated": true,
+        "command": "$code-flow stripAnsi는 문자열을 어떻게 검사하고 터미널 서식 표시를 제거하나요? | subject=strip-ansi-stripansi-9a2291855487 | language=ko | targets=[{\"label\":\"stripAnsi\",\"file\":\"index.js\",\"symbol\":\"stripAnsi\"}] | scope={\"includes\":[\"공개 함수의 입력 검사, 빠른 반환, 매처를 이용한 치환\"],\"excludes\":[\"ansi-regex 의존성의 정규식 내부\",\"별도 CLI와 스트림 패키지\"]} | locations=[{\"file\":\"index.js\",\"symbolOrKey\":\"stripAnsi\",\"startLine\":1,\"endLine\":19}] | atlas=utility-project.html"
+      },
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "strip-ansi-stripansi-9ab62d414d17",
+      "kind": "capability",
+      "question": "stripAnsi에 문자열이 아닌 값을 넘기면 어떻게 되나요?",
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "stripAnsi"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "문자열이 아닌 입력의 공개 함수 분기"
+        ],
+        "excludes": [
+          "문자열 치환과 의존성 매처 내부"
+        ]
+      },
+      "label": "잘못된 입력 처리",
+      "summary": "문자열이 아닌 입력의 오류 경계를 살펴봅니다.",
+      "nodeId": "strip",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-function"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "details/utility-invalid-input.html",
+        "generated": false,
+        "command": "$code-flow stripAnsi에 문자열이 아닌 값을 넘기면 어떻게 되나요? | subject=strip-ansi-stripansi-9ab62d414d17 | language=ko | targets=[{\"label\":\"stripAnsi\"}] | scope={\"includes\":[\"문자열이 아닌 입력의 공개 함수 분기\"],\"excludes\":[\"문자열 치환과 의존성 매처 내부\"]} | locations=[{\"file\":\"index.js\",\"symbolOrKey\":\"stripAnsi\",\"startLine\":1,\"endLine\":19}] | atlas=utility-project.html"
+      },
+      "displayStatus": "confirmed"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-function",
+      "kind": "code",
+      "file": "index.js",
+      "symbolOrKey": "stripAnsi",
+      "startLine": 1,
+      "endLine": 19,
+      "contentHash": "9ff7e1abf2727fbf9854a9dfcc1e69d1f9a0b23ccc0649269fc1c4fa8e44bd79",
+      "locationStatus": "passed",
+      "observedContentHash": "9ff7e1abf2727fbf9854a9dfcc1e69d1f9a0b23ccc0649269fc1c4fa8e44bd79",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-package",
+      "kind": "config",
+      "file": "package.json",
+      "symbolOrKey": "exports and types",
+      "startLine": 13,
+      "endLine": 25,
+      "contentHash": "228b214dd06ca80ab3c36e2b890a8696a39cea65585f6d61498c922c615e18a0",
+      "locationStatus": "passed",
+      "observedContentHash": "228b214dd06ca80ab3c36e2b890a8696a39cea65585f6d61498c922c615e18a0",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-types",
+      "kind": "code",
+      "file": "index.d.ts",
+      "symbolOrKey": "stripAnsi type",
+      "startLine": 15,
+      "endLine": 15,
+      "contentHash": "d690ec58f57c5fa69cfe088959335c9f12482db67eb1bc1bbba93e3062f69276",
+      "locationStatus": "passed",
+      "observedContentHash": "d690ec58f57c5fa69cfe088959335c9f12482db67eb1bc1bbba93e3062f69276",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-purpose",
+      "kind": "documentation",
+      "file": "readme.md",
+      "symbolOrKey": "package purpose",
+      "startLine": 1,
+      "endLine": 3,
+      "contentHash": "97c8f78e30d8dd4f03a252669110d775f6308674bcdb0280ecea942d191045b1",
+      "locationStatus": "passed",
+      "observedContentHash": "97c8f78e30d8dd4f03a252669110d775f6308674bcdb0280ecea942d191045b1",
+      "locationNote": ""
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

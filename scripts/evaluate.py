@@ -326,9 +326,9 @@ def review_status(review, candidate, ref, engine_hash):
 
 
 def engine_hash():
-    files = sorted(p for skill in ("code-flow", "visual-primer") for p in (ROOT / "skills" / skill).rglob("*")
+    files = sorted(p for skill in ("code-flow", "visual-primer", "codebase-atlas") for p in (ROOT / "skills" / skill).rglob("*")
                    if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
-    files += [Path(__file__).resolve(), ROOT / "scripts/evaluate_rules.py", ROOT / "eval/rubric.md"]
+    files += [Path(__file__).resolve(), ROOT / "scripts/evaluate_rules.py", ROOT / "scripts/evaluate_atlas.py", ROOT / "eval/rubric.md"]
     return digest({str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
 
 

@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 커밋의 소스를 코딩 에이전트가 읽고 조립한 M1 사례입니다. 독립적인 사람 검토 전입니다."
+  },
+  "snapshot": {
+    "repository": "pallets-eco/blinker",
+    "branch": null,
+    "commit": "c3364059663df1ddce32799d6b1922af89a345f6",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T23:17:04Z",
+    "skillVersion": "0.6.0",
+    "model": null
+  },
+  "subject": {
+    "id": "blinker-signal-connect-signal-send-b79308fa099f",
+    "kind": "capability",
+    "title": "발신자에 맞는 이벤트 수신자에게 알리기",
+    "question": "Blinker에서 수신자를 연결한 뒤 send하면 누가 호출되고 어떤 결과가 돌아오나요?",
+    "module": "blinker",
+    "targets": [
+      {
+        "label": "수신자 등록과 발신",
+        "file": "src/blinker/base.py",
+        "symbol": "Signal.connect / Signal.send"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "Signal의 수신자 등록과 발신자 필터",
+        "동기 수신자 호출과 결과 수집",
+        "약한 참조의 수신자 정리와 음소거 경계"
+      ],
+      "excludes": [
+        "비동기 수신자 어댑터와 send_async",
+        "사용자 수신자 내부",
+        "receiver_connected 보조 신호"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "data-event",
+      "library-sdk",
+      "framework-plugin"
+    ],
+    "searched": [
+      "pyproject.toml",
+      "README.md",
+      "src/blinker/__init__.py",
+      "src/blinker/base.py",
+      "tests/test_signals.py"
+    ],
+    "unresolved": [
+      "등록된 수신자 집합과 수신자 내부의 실제 결과는 애플리케이션에 달려 있습니다."
+    ],
+    "nextAttempts": [
+      "대상 애플리케이션의 connect 호출과 수신자 구현을 읽습니다."
+    ]
+  },
+  "summary": {
+    "title": "발신자에 맞는 이벤트 수신자에게 알리기",
+    "purpose": "신호를 구독한 함수 중 발신자 조건에 맞고 살아 있는 수신자에게 내용을 전달합니다.",
+    "inputs": [
+      "수신자와 발신자 필터의 등록",
+      "발신자와 추가 전달 값"
+    ],
+    "outputs": [
+      "수신자와 반환값의 쌍 목록"
+    ],
+    "limitations": [
+      "기본 수신자 호출 순서는 정해져 있지 않습니다. 그림은 고정된 호출 순서가 아닙니다.",
+      "수신자에서 오류가 나면 호출자에게 전파되므로 모든 수신자가 완료된다고 보장하지 않습니다.",
+      "음소거된 신호는 수신자를 호출하지 않고 빈 결과를 반환합니다.",
+      "등록된 수신자 집합과 수신자 내부의 실제 결과는 애플리케이션에 달려 있습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "blinker-signal-connect-signal-send-b79308fa099f",
+    "question": "Blinker에서 수신자를 연결한 뒤 send하면 누가 호출되고 어떤 결과가 돌아오나요?",
+    "language": "ko",
+    "command": "$code-flow Blinker에서 수신자를 연결한 뒤 send하면 누가 호출되고 어떤 결과가 돌아오나요? | subject=blinker-signal-connect-signal-send-b79308fa099f | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "connect",
+      "kind": "component",
+      "label": "수신자 연결",
+      "roleLabel": "공개 API",
+      "summary": "수신 함수와 발신자 조건을 등록합니다. 기본 약한 참조와 명시적인 강한 참조를 구분합니다.",
+      "codeName": "Signal.connect",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "weak 분기의 저장 방식과 _by_sender/_by_receiver 기록을 확인했습니다. 보조 연결 신호는 제외했습니다.",
+      "evidenceIds": [
+        "ev-connect"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "registry",
+      "kind": "state",
+      "label": "수신자 등록 정보",
+      "roleLabel": "공유 상태",
+      "summary": "수신자 참조와 발신자별 연결 정보를 보관합니다.",
+      "codeName": "receivers / _by_sender",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "등록에서 쓴 인덱스를 receivers_for가 조회하는 관계를 확인했습니다.",
+      "evidenceIds": [
+        "ev-connect",
+        "ev-select"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "send",
+      "kind": "component",
+      "label": "신호 보내기",
+      "roleLabel": "공개 API",
+      "summary": "음소거 여부를 확인하고 발신자에 맞는 동기 수신자를 호출한 뒤 결과를 모읍니다.",
+      "codeName": "Signal.send",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "is_muted의 빈 반환, receivers_for 반복, 동기 receiver 호출, 결과 append와 반환을 읽었습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "select",
+      "kind": "component",
+      "label": "호출할 수신자 찾기",
+      "roleLabel": "선택 규칙",
+      "summary": "모든 발신자용 등록과 현재 발신자용 등록을 합치고, 이미 사라진 약한 참조는 건너뜁니다.",
+      "codeName": "Signal.receivers_for",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "ANY_ID 집합 합치기와 죽은 약한 참조의 disconnect/continue를 확인했습니다.",
+      "evidenceIds": [
+        "ev-select"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "receiver",
+      "kind": "boundary",
+      "label": "애플리케이션 수신자",
+      "roleLabel": "외부 경계",
+      "summary": "발신자와 추가 값을 받아 처리합니다. 실제 수신자와 반환 내용은 등록된 구현에 달려 있습니다.",
+      "codeName": "receiver",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "receiver 호출 위치는 확인했지만 실제 등록 객체와 함수 동작은 고정되지 않았습니다.",
+      "evidenceIds": [
+        "ev-send",
+        "ev-select"
+      ],
+      "displayStatus": "uncertain"
+    }
+  ],
+  "edges": [
+    {
+      "id": "connect-register",
+      "from": "connect",
+      "to": "registry",
+      "label": "발신자 조건과 참조 저장",
+      "type": "writes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "수신자와 발신자별 인덱스에 기록하는 대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-connect"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "send-select",
+      "from": "send",
+      "to": "select",
+      "label": "발신자에 맞는 후보 요청",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "for receiver in self.receivers_for(sender) 호출을 확인했습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "select-registry",
+      "from": "select",
+      "to": "registry",
+      "label": "등록과 참조 조회",
+      "type": "reads",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "발신자 집합과 receivers 참조를 조회하며 죽은 참조는 건너뜁니다.",
+      "evidenceIds": [
+        "ev-select"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "send-receiver",
+      "from": "send",
+      "to": "receiver",
+      "label": "선택된 동기 수신자 호출",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "동기 else 분기의 receiver(sender, **kwargs) 호출을 확인했습니다. 수신자 간 순서는 보장하지 않습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "displayStatus": "confirmed"
+    }
+  ],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [
+    {
+      "id": "muted-signal",
+      "plainText": "음소거된 신호는 수신자를 호출하지 않고 빈 결과를 돌려줍니다.",
+      "condition": "신호가 음소거되어 있음",
+      "outcome": "빈 결과 반환",
+      "numeric": false,
+      "nodeIds": [
+        "send"
+      ],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "수신자 반복 전에 is_muted를 검사하고 빈 목록으로 반환합니다.",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "displayStatus": "confirmed"
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-connect",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.connect",
+      "startLine": 91,
+      "endLine": 138,
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed",
+      "observedContentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-send",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.send",
+      "startLine": 204,
+      "endLine": 253,
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed",
+      "observedContentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-select",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.receivers_for",
+      "startLine": 326,
+      "endLine": 363,
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed",
+      "observedContentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationNote": ""
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

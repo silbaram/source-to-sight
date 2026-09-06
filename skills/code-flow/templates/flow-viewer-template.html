@@ -21,6 +21,7 @@
       <h1 id="title"></h1>
       <p id="purpose" class="purpose"></p>
       <p id="provenance" class="provenance"></p>
+      <div id="atlas-summary" class="atlas-summary" hidden></div>
       <details class="summary-details"><summary id="summary-details-title"></summary><div id="io" class="io"></div></details>
       <nav id="links" class="links" aria-label="Related explanations"></nav>
     </section>
@@ -32,6 +33,7 @@
         <div id="results" class="results" hidden></div>
         <button id="overview" type="button" class="active"></button>
         <details class="component-disclosure"><summary id="list-title"></summary><div id="component-list"></div></details>
+        <section id="atlas-navigation" hidden><h2 id="atlas-regions-title" class="rail-label"></h2><div id="atlas-regions"></div><h2 id="capabilities-title" class="rail-label"></h2><div id="capabilities"></div></section>
         <section id="flow-list" class="rail-section"><h2 id="flows-title" class="rail-label"></h2><div id="flows"></div></section>
         <p id="rail-note" class="rail-note"></p>
       </nav>
@@ -43,7 +45,7 @@
         <div class="map-title"><h2 id="diagram-title"></h2><p id="diagram-hint"></p></div>
         <div class="canvas-wrap">
           <div id="canvas" class="canvas" role="region" tabindex="0">
-            <div id="graph-space"><div id="stage" class="stage"><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div></div>
+            <div id="graph-space"><div id="stage" class="stage"><div id="region-layer"></div><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div></div>
           </div>
           <svg id="mini" class="mini" aria-hidden="true"></svg>
           <aside id="panel" class="panel" aria-labelledby="panel-title" inert>

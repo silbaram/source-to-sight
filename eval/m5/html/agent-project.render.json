@@ -1,0 +1,843 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "atlas",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스의 프로젝트 구성과 공개 기능을 읽어 작성한 M5 지도입니다."
+  },
+  "snapshot": {
+    "repository": "huggingface/smolagents",
+    "branch": null,
+    "commit": "30bb1161095dbae2271e6bc3cc4c219cc3897a57",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T23:17:17Z",
+    "skillVersion": "0.6.0",
+    "model": null
+  },
+  "subject": {
+    "id": "smolagents-smolagents-9c9cc82170d5",
+    "kind": "project",
+    "title": "smolagents · 모델과 도구가 협력하는 에이전트",
+    "question": "smolagents · 모델과 도구가 협력하는 에이전트의 주요 구성과 기능을 설명해 줘",
+    "module": "smolagents",
+    "targets": [
+      {
+        "label": "smolagents"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "주요 에이전트 방식, 모델·도구 인터페이스, 실행기 선택, 메모리와 CLI 연결"
+      ],
+      "excludes": [
+        "모델 응답과 외부 도구의 내부",
+        "Gradio·MCP·웹 브라우저·직렬화의 상세 구현",
+        "원격 실행 환경의 내부와 모든 선택 경로"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "ai-agent"
+    ],
+    "searched": [
+      "pyproject.toml",
+      "src/smolagents/__init__.py",
+      "src/smolagents/agents.py",
+      "src/smolagents/models.py",
+      "src/smolagents/tools.py",
+      "src/smolagents/memory.py",
+      "src/smolagents/monitoring.py",
+      "src/smolagents/cli.py"
+    ],
+    "unresolved": [
+      "선택한 공개 기능과 관계를 읽었으며 모든 구현 경로를 추적하지 않았습니다."
+    ],
+    "nextAttempts": [
+      "관심 기능의 미생성 설명을 선택해 해당 범위를 추가로 읽습니다."
+    ]
+  },
+  "summary": {
+    "title": "smolagents · 모델과 도구가 협력하는 에이전트",
+    "purpose": "요청을 단계별로 해결하면서 모델, 도구와 코드 실행기를 연결하고 진행 기록을 남깁니다.",
+    "inputs": [],
+    "outputs": [],
+    "limitations": [
+      "모델 응답과 외부 도구의 내부",
+      "Gradio·MCP·웹 브라우저·직렬화의 상세 구현",
+      "원격 실행 환경의 내부와 모든 선택 경로"
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "smolagents-smolagents-9c9cc82170d5",
+    "question": "smolagents · 모델과 도구가 협력하는 에이전트의 주요 구성과 기능을 설명해 줘",
+    "language": "ko",
+    "command": "$codebase-atlas smolagents · 모델과 도구가 협력하는 에이전트의 주요 구성과 기능을 설명해 줘 | subject=smolagents-smolagents-9c9cc82170d5 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "runner",
+      "label": "실행 반복과 종료",
+      "codeName": "MultiStepAgent",
+      "summary": "선택한 방식의 한 단계를 실행하고 종료 조건을 확인합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-loop"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "tool-agent",
+      "label": "도구 호출 방식",
+      "codeName": "ToolCallingAgent",
+      "summary": "모델이 요청한 도구를 호출하고 관찰 결과를 기록합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-tool-agent",
+        "ev-tool-call"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "code-agent",
+      "label": "코드 작성 방식",
+      "codeName": "CodeAgent",
+      "summary": "모델이 작성한 코드를 선택한 실행기에 전달합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-code-agent",
+        "ev-execute-code"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "models",
+      "label": "모델 연결",
+      "codeName": "Model",
+      "summary": "메시지·도구 정보와 모델별 생성 구현을 연결하는 공통 인터페이스입니다.",
+      "roleLabel": "확장 지점",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-model"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "tools",
+      "label": "사용 가능한 도구",
+      "codeName": "Tool",
+      "summary": "도구의 입력을 준비하고 구현 함수를 호출해 결과를 돌려줍니다.",
+      "roleLabel": "확장 지점",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-tool"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "executor",
+      "label": "코드 실행 환경",
+      "codeName": "PythonExecutor",
+      "summary": "코드 방식 에이전트가 로컬 또는 원격 실행기를 선택해 사용합니다. 원격 환경 내부는 제외합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "detail",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-executor",
+        "ev-execute-code"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "memory",
+      "label": "요청과 단계 기록",
+      "codeName": "AgentMemory",
+      "summary": "요청·행동·계획 단계를 보관하고 다시 메시지나 기록으로 읽습니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-memory",
+        "ev-run"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "monitor",
+      "label": "단계 관찰",
+      "codeName": "Monitor",
+      "summary": "단계의 시간과 제공된 사용량 정보를 모읍니다. 이 지도는 실제 실행 통계를 담지 않습니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "detail",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-monitor"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "cli",
+      "label": "명령으로 시작",
+      "codeName": "smolagent / run_smolagent",
+      "summary": "명령 옵션에 따라 모델·도구·에이전트 방식을 준비하고 실행을 시작합니다.",
+      "roleLabel": "명령",
+      "kind": "component",
+      "importance": "detail",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cli-entry",
+        "ev-cli"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    }
+  ],
+  "edges": [
+    {
+      "id": "tool-strategy",
+      "from": "runner",
+      "to": "tool-agent",
+      "label": "선택한 도구 방식",
+      "type": "delegates",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-loop",
+        "ev-tool-agent"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "code-strategy",
+      "from": "runner",
+      "to": "code-agent",
+      "label": "선택한 코드 방식",
+      "type": "delegates",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-loop",
+        "ev-code-agent"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "tool-request",
+      "from": "tool-agent",
+      "to": "models",
+      "label": "다음 행동 요청",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-tool-model"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "code-request",
+      "from": "code-agent",
+      "to": "models",
+      "label": "코드 생성 요청",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-code-model"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "invoke-tool",
+      "from": "tool-agent",
+      "to": "tools",
+      "label": "등록 도구 호출",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-tool-call"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "invoke-executor",
+      "from": "code-agent",
+      "to": "executor",
+      "label": "코드 실행 요청",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-execute-code"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "save-steps",
+      "from": "runner",
+      "to": "memory",
+      "label": "요청·단계 저장",
+      "type": "writes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-run",
+        "ev-loop"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "observe-step",
+      "from": "runner",
+      "to": "monitor",
+      "label": "단계 콜백 등록",
+      "type": "registers",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-monitor-register"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "start-agent",
+      "from": "cli",
+      "to": "runner",
+      "label": "준비한 에이전트 실행",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cli"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    }
+  ],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [
+    {
+      "id": "execution",
+      "label": "실행 제어",
+      "summary": "공통 반복과 선택한 에이전트 방식이 실행을 이끕니다.",
+      "nodeIds": [
+        "runner",
+        "tool-agent",
+        "code-agent"
+      ],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-loop",
+        "ev-tool-agent",
+        "ev-code-agent"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "adapters",
+      "label": "행동과 실행 경계",
+      "summary": "모델·도구·코드 실행기의 연결을 맡습니다.",
+      "nodeIds": [
+        "models",
+        "tools",
+        "executor"
+      ],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-model",
+        "ev-tool",
+        "ev-executor"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "recording",
+      "label": "기록과 관찰",
+      "summary": "요청과 단계, 단계 관찰 정보를 다룹니다.",
+      "nodeIds": [
+        "memory",
+        "monitor"
+      ],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-memory",
+        "ev-monitor"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    }
+  ],
+  "subjects": [
+    {
+      "id": "smolagents-toolcallingagent-run-process-tool-calls-tool-call-3bf99674914e",
+      "kind": "capability",
+      "question": "도구를 병렬 처리하는 에이전트의 반복과 실패 경계?",
+      "module": "smolagents",
+      "targets": [
+        {
+          "label": "ToolCallingAgent run + process_tool_calls + Tool.__call__"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "양수 단계 한계, 비스트리밍 ToolCallingAgent와 기본 Tool.__call__을 상속한 도구",
+          "고유 호출 ID, 텍스트 결과, 병렬 제출·수집·기록, 단계 오류와 종료"
+        ],
+        "excludes": [
+          "계획·최종 답 검사·사용자 단계 콜백 실패, managed agent",
+          "이미지·음성 공유 상태, 중복 호출 ID, 실제 모델·도구 내부, 스레드 실행기 내부"
+        ]
+      },
+      "label": "도구 병렬 처리와 실패 경계",
+      "summary": "도구 묶음의 실행·결과 기록과 에이전트 반복을 살펴봅니다.",
+      "nodeId": "tool-agent",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-run",
+        "ev-parallel",
+        "ev-tool-call",
+        "ev-loop"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "agent-parallel-tools.html",
+        "generated": true,
+        "command": "$code-flow 도구를 병렬 처리하는 에이전트의 반복과 실패 경계? | subject=smolagents-toolcallingagent-run-process-tool-calls-tool-call-3bf99674914e | language=ko | targets=[{\"label\":\"ToolCallingAgent run + process_tool_calls + Tool.__call__\"}] | scope={\"includes\":[\"양수 단계 한계, 비스트리밍 ToolCallingAgent와 기본 Tool.__call__을 상속한 도구\",\"고유 호출 ID, 텍스트 결과, 병렬 제출·수집·기록, 단계 오류와 종료\"],\"excludes\":[\"계획·최종 답 검사·사용자 단계 콜백 실패, managed agent\",\"이미지·음성 공유 상태, 중복 호출 ID, 실제 모델·도구 내부, 스레드 실행기 내부\"]} | locations=[{\"file\":\"src/smolagents/agents.py\",\"symbolOrKey\":\"MultiStepAgent.run\",\"startLine\":468,\"endLine\":492},{\"file\":\"src/smolagents/agents.py\",\"symbolOrKey\":\"MultiStepAgent._run_stream\",\"startLine\":540,\"endLine\":607},{\"file\":\"src/smolagents/agents.py\",\"symbolOrKey\":\"ToolCallingAgent.execute_tool_call\",\"startLine\":1464,\"endLine\":1488},{\"file\":\"src/smolagents/agents.py\",\"symbolOrKey\":\"ToolCallingAgent.process_tool_calls\",\"startLine\":1361,\"endLine\":1448}] | atlas=agent-project.html"
+      },
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "smolagents-multistepagent-run-stream-max-steps-fallback-8282c38e313a",
+      "kind": "capability",
+      "question": "에이전트가 단계 한계까지 최종 답을 얻지 못하면 어떻게 마무리하나요?",
+      "module": "smolagents",
+      "targets": [
+        {
+          "label": "MultiStepAgent._run_stream max-steps fallback"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "양수 단계 한계, 최종 답 없이 한계에 도달한 대체 답변 경로"
+        ],
+        "excludes": [
+          "0 이하 단계 설정",
+          "계획, 사용자 콜백 내부와 정상 최종 답 경로"
+        ]
+      },
+      "label": "단계 한계에서 종료",
+      "summary": "최종 답이 나오지 않았을 때의 종료 경계를 살펴봅니다.",
+      "nodeId": "runner",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-loop"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "agent-max-steps.html",
+        "generated": true,
+        "command": "$code-flow 에이전트가 단계 한계까지 최종 답을 얻지 못하면 어떻게 마무리하나요? | subject=smolagents-multistepagent-run-stream-max-steps-fallback-8282c38e313a | language=ko | targets=[{\"label\":\"MultiStepAgent._run_stream max-steps fallback\"}] | scope={\"includes\":[\"양수 단계 한계, 최종 답 없이 한계에 도달한 대체 답변 경로\"],\"excludes\":[\"0 이하 단계 설정\",\"계획, 사용자 콜백 내부와 정상 최종 답 경로\"]} | locations=[{\"file\":\"src/smolagents/agents.py\",\"symbolOrKey\":\"MultiStepAgent._run_stream\",\"startLine\":540,\"endLine\":607}] | atlas=agent-project.html"
+      },
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "smolagents-run-smolagent-caadfec1aef2",
+      "kind": "capability",
+      "question": "명령으로 에이전트 시작을 설명해 줘",
+      "module": "smolagents",
+      "targets": [
+        {
+          "label": "run_smolagent",
+          "file": "src/smolagents/cli.py",
+          "symbol": "run_smolagent"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "명령 옵션에서 모델·도구·에이전트를 준비하고 run을 호출하는 범위"
+        ],
+        "excludes": [
+          "모델·도구의 실제 실행 결과"
+        ]
+      },
+      "label": "명령으로 에이전트 시작",
+      "summary": "명령 옵션에서 모델·도구·에이전트를 준비하고 run을 호출하는 범위",
+      "nodeId": "cli",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cli-entry",
+        "ev-cli"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "smolagents-run-smolagent-caadfec1aef2.html",
+        "generated": false,
+        "command": "$code-flow 명령으로 에이전트 시작을 설명해 줘 | subject=smolagents-run-smolagent-caadfec1aef2 | language=ko | targets=[{\"label\":\"run_smolagent\",\"file\":\"src/smolagents/cli.py\",\"symbol\":\"run_smolagent\"}] | scope={\"includes\":[\"명령 옵션에서 모델·도구·에이전트를 준비하고 run을 호출하는 범위\"],\"excludes\":[\"모델·도구의 실제 실행 결과\"]} | locations=[{\"file\":\"pyproject.toml\",\"symbolOrKey\":\"project scripts\",\"startLine\":139,\"endLine\":141},{\"file\":\"src/smolagents/cli.py\",\"symbolOrKey\":\"run_smolagent\",\"startLine\":219,\"endLine\":259}] | atlas=agent-project.html"
+      },
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "smolagents-codeagent-create-python-executor-51a8180eafc4",
+      "kind": "capability",
+      "question": "코드 실행 환경 선택을 설명해 줘",
+      "module": "smolagents",
+      "targets": [
+        {
+          "label": "CodeAgent.create_python_executor",
+          "file": "src/smolagents/agents.py",
+          "symbol": "CodeAgent.create_python_executor"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "로컬·원격 실행기 선택과 초기화"
+        ],
+        "excludes": [
+          "원격 실행 환경의 내부"
+        ]
+      },
+      "label": "코드 실행 환경 선택",
+      "summary": "로컬·원격 실행기 선택과 초기화",
+      "nodeId": "executor",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-executor"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "smolagents-codeagent-create-python-executor-51a8180eafc4.html",
+        "generated": false,
+        "command": "$code-flow 코드 실행 환경 선택을 설명해 줘 | subject=smolagents-codeagent-create-python-executor-51a8180eafc4 | language=ko | targets=[{\"label\":\"CodeAgent.create_python_executor\",\"file\":\"src/smolagents/agents.py\",\"symbol\":\"CodeAgent.create_python_executor\"}] | scope={\"includes\":[\"로컬·원격 실행기 선택과 초기화\"],\"excludes\":[\"원격 실행 환경의 내부\"]} | locations=[{\"file\":\"src/smolagents/agents.py\",\"symbolOrKey\":\"CodeAgent.create_python_executor\",\"startLine\":1598,\"endLine\":1618}] | atlas=agent-project.html"
+      },
+      "displayStatus": "confirmed"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-package",
+      "kind": "config",
+      "file": "pyproject.toml",
+      "symbolOrKey": "project",
+      "startLine": 5,
+      "endLine": 22,
+      "contentHash": "7d7baa3f6a50d7c98eee38c41f1444b5c0f4f217e6e9626e1ece01f9b222ebde",
+      "locationStatus": "passed",
+      "observedContentHash": "7d7baa3f6a50d7c98eee38c41f1444b5c0f4f217e6e9626e1ece01f9b222ebde",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-cli-entry",
+      "kind": "config",
+      "file": "pyproject.toml",
+      "symbolOrKey": "project scripts",
+      "startLine": 139,
+      "endLine": 141,
+      "contentHash": "7d7baa3f6a50d7c98eee38c41f1444b5c0f4f217e6e9626e1ece01f9b222ebde",
+      "locationStatus": "passed",
+      "observedContentHash": "7d7baa3f6a50d7c98eee38c41f1444b5c0f4f217e6e9626e1ece01f9b222ebde",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-public",
+      "kind": "code",
+      "file": "src/smolagents/__init__.py",
+      "symbolOrKey": "public exports",
+      "startLine": 19,
+      "endLine": 32,
+      "contentHash": "efac0cfd51f49d083a25297eb4cad6c498d28616f615095cf1c154c49b963254",
+      "locationStatus": "passed",
+      "observedContentHash": "efac0cfd51f49d083a25297eb4cad6c498d28616f615095cf1c154c49b963254",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-setup",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "MultiStepAgent.__init__",
+      "startLine": 314,
+      "endLine": 351,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-run",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "MultiStepAgent.run",
+      "startLine": 468,
+      "endLine": 492,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-loop",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "MultiStepAgent._run_stream",
+      "startLine": 540,
+      "endLine": 607,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-tool-agent",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "ToolCallingAgent",
+      "startLine": 1215,
+      "endLine": 1245,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-tool-model",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "ToolCallingAgent._step_stream",
+      "startLine": 1284,
+      "endLine": 1313,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-tool-call",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "ToolCallingAgent.execute_tool_call",
+      "startLine": 1464,
+      "endLine": 1488,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-code-agent",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "CodeAgent",
+      "startLine": 1505,
+      "endLine": 1540,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-parallel",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "ToolCallingAgent.process_tool_calls",
+      "startLine": 1361,
+      "endLine": 1448,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-executor",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "CodeAgent.create_python_executor",
+      "startLine": 1598,
+      "endLine": 1618,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-code-model",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "CodeAgent._step_stream",
+      "startLine": 1677,
+      "endLine": 1683,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-execute-code",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "CodeAgent._step_stream",
+      "startLine": 1718,
+      "endLine": 1734,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-model",
+      "kind": "code",
+      "file": "src/smolagents/models.py",
+      "symbolOrKey": "Model",
+      "startLine": 452,
+      "endLine": 473,
+      "contentHash": "e3510666f0a36d1d09d25d9d9f2e9cb0e0c09edc47ed599b0e52445bddf146e7",
+      "locationStatus": "passed",
+      "observedContentHash": "e3510666f0a36d1d09d25d9d9f2e9cb0e0c09edc47ed599b0e52445bddf146e7",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-tool",
+      "kind": "code",
+      "file": "src/smolagents/tools.py",
+      "symbolOrKey": "Tool.__call__",
+      "startLine": 228,
+      "endLine": 249,
+      "contentHash": "0f7395444c1efa48d0995efacf07bc6b68e5bad75a4312b509604eb447aff5e8",
+      "locationStatus": "passed",
+      "observedContentHash": "0f7395444c1efa48d0995efacf07bc6b68e5bad75a4312b509604eb447aff5e8",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-memory",
+      "kind": "code",
+      "file": "src/smolagents/memory.py",
+      "symbolOrKey": "AgentMemory",
+      "startLine": 214,
+      "endLine": 246,
+      "contentHash": "8089d5162069158bd548673b52fc4c2d15b91146ae29d503903cfde8f913418a",
+      "locationStatus": "passed",
+      "observedContentHash": "8089d5162069158bd548673b52fc4c2d15b91146ae29d503903cfde8f913418a",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-monitor",
+      "kind": "code",
+      "file": "src/smolagents/monitoring.py",
+      "symbolOrKey": "Monitor",
+      "startLine": 81,
+      "endLine": 112,
+      "contentHash": "bce3de91526054e0f6f0b795ecca4e374dac5166aa66514d3b621ac4394659fa",
+      "locationStatus": "passed",
+      "observedContentHash": "bce3de91526054e0f6f0b795ecca4e374dac5166aa66514d3b621ac4394659fa",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-monitor-register",
+      "kind": "code",
+      "file": "src/smolagents/agents.py",
+      "symbolOrKey": "_setup_step_callbacks",
+      "startLine": 421,
+      "endLine": 434,
+      "contentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationStatus": "passed",
+      "observedContentHash": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-cli",
+      "kind": "code",
+      "file": "src/smolagents/cli.py",
+      "symbolOrKey": "run_smolagent",
+      "startLine": 219,
+      "endLine": 259,
+      "contentHash": "c7cd04f6312242fbdb16917c48b9b5a672cb5a0652f9553c718b68dd3e2b5d62",
+      "locationStatus": "passed",
+      "observedContentHash": "c7cd04f6312242fbdb16917c48b9b5a672cb5a0652f9553c718b68dd3e2b5d62",
+      "locationNote": ""
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

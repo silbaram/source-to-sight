@@ -159,7 +159,7 @@ def render_rules(data, layout, s2s, original=None):
         label = {"behavior": t("동작과 협력으로 돌아가기", "Back to how it works"),
                  "atlas": t("프로젝트 지도", "Project map"), "logic": t("규칙과 이유", "Rules and reasons")}[kind]
         if link["generated"]:
-            links.append(f'<a href="{escaped(link["url"])}">{label} ↗</a>')
+            links.append(f'<a data-layer="{kind}" href="{escaped(link["url"])}">{label} ↗</a>')
         else:
             links.append(f'<button type="button" class="copy-command" data-command="{escaped(link["command"])}">{label} · {t("생성 명령 복사", "copy generation command")}</button>')
     notices = ''.join('<li>' + escaped(w["message"]) + '</li>' for w in data["warnings"])

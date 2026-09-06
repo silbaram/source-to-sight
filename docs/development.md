@@ -1,6 +1,6 @@
 # Development
 
-M0 implements the technology-neutral data contracts, evidence/location checks, offline graph renderer, and fixture/browser tests. M1 adds the `code-flow` source-discovery skill, six profiles, draft/evidence/build helpers, and six pinned source readings. M1.5 adds source-role comparisons, regression reports, and digest-bound human review forms. M2 expands the corpus to 24 candidates and adds complex-behavior guidance, path conditions, execution-order labels, and required behavior/path checks. M3 adds source-backed rules discovery and paired `visual-primer` pages, with six more evaluation cases. Independent human gates remain pending. M4 adds playback speeds, direct step selection, keyboard navigation, adjustable mobile sheets and view links; repository-map discovery remains M5 work.
+M0 implements the technology-neutral data contracts, evidence/location checks, offline graph renderer, and fixture/browser tests. M1 adds the `code-flow` source-discovery skill, six profiles, draft/evidence/build helpers, and six pinned source readings. M1.5 adds source-role comparisons, regression reports, and digest-bound human review forms. M2 expands the corpus to 24 candidates and adds complex-behavior guidance, path conditions, execution-order labels, and required behavior/path checks. M3 adds source-backed rules discovery and paired `visual-primer` pages, with six more evaluation cases. Independent human gates remain pending. M4 adds playback speeds, direct step selection, keyboard navigation, adjustable mobile sheets and view links; M5 adds codebase-atlas discovery, responsibility groups, scoped capabilities, lazy page assembly and navigation through all three layers.
 
 See the [development plan](../plans/source-to-sight-evolution-plan.md), [M0 verification record](../eval/reports/m0-verification.md), [renderer contract](../skills/code-flow/references/renderer-contract.md), and [fixture provenance](../fixtures/manifest.md).
 
@@ -16,9 +16,9 @@ python3 scripts/fetch_fixture_sources.py
 npm run fixtures
 npm run m1:sources
 npm run m1:examples
-npm run eval:rules -- --output build/eval/m4
+npm run eval:atlas -- --output build/eval/m5
 npm test
-S2S_EVAL_DIR=build/eval/m4 npm run test:browser
+S2S_EVAL_DIR=build/eval/m5 npm run test:browser
 ~~~
 
 Dependency installation and the pinned source download need internet access. Rendering and browser tests use local files. The generated HTML itself makes no external asset requests.
@@ -27,11 +27,11 @@ Open `build/examples/agent-run.html`, `framework-plugin.html`, or `utility-minim
 
 The six M1 readings are in `build/m1/`; their browser screenshots go to `build/m1/qa/`. `npm run m1:examples` renders the checked-in readings with fresh evidence checks. It is not an automatic analyzer. For a new repository/question, the host follows [code-flow](../skills/code-flow/SKILL.md) and its discovery/assembly protocols. See [M1 verification](../eval/reports/m1-verification.md), [case provenance](../eval/m1/README.md), and the [human review worksheet](../eval/reports/m1-human-review.md).
 
-The command above renders **24 behavior + 6 paired rules pages** to `build/eval/m4/`. Runs require a new output directory to preserve earlier results and reviewer answers. For subsequent runs choose another directory and set `S2S_EVAL_DIR=build/eval/<run-name>` when running the browser suite; all evaluation browser tests then use that run. See the [evaluation guide](evaluation.md), [case catalog](../eval/cases.md), and [rubric](../eval/rubric.md). The original 18-case manifest remains at `eval/cases-m15.json`, and `eval/cases.json` still defines the 24 behavior cases. These are recorded candidate replays, not independent model generation experiments.
+The command above renders **24 behavior + 6 rules + 6 project-map cases** to `build/eval/m5/`. Runs require a new output directory to preserve earlier results and reviewer answers. For subsequent runs choose another directory and set `S2S_EVAL_DIR=build/eval/<run-name>` when running the browser suite; all evaluation browser tests then use that run. See the [evaluation guide](evaluation.md), [case catalog](../eval/cases.md), and [rubric](../eval/rubric.md). The original 18-case manifest remains at `eval/cases-m15.json`, and `eval/cases.json` still defines the 24 behavior cases. These are recorded candidate replays, not independent model generation experiments.
 
-Open `build/eval/m4/agent-parallel-tools.html` for parallel tool dispatch and result recording, or `utility-retry-budget.html` for retry/stop conditions. Choose the walkthrough view and a scenario. Each step shows its path kind, branch, prerequisite and execution-order metadata when present. Confirmed explicit dispatch/call/result-recording connections can animate within parallel groups too; node-only captions do not invent connections or worker order across parallel/unordered boundaries. Registration/dependency and uncertain connections retain static direction styling. Every step shows explanation progress. Steps without a moving transfer pulse the currently explained nodes, and parallel groups have an explicit playback label.
+Open `build/eval/m5/agent-parallel-tools.html` for parallel tool dispatch and result recording, or `utility-retry-budget.html` for retry/stop conditions. Choose the walkthrough view and a scenario. Each step shows its path kind, branch, prerequisite and execution-order metadata when present. Confirmed explicit dispatch/call/result-recording connections can animate within parallel groups too; node-only captions do not invent connections or worker order across parallel/unordered boundaries. Registration/dependency and uncertain connections retain static direction styling. Every step shows explanation progress. Steps without a moving transfer pulse the currently explained nodes, and parallel groups have an explicit playback label.
 
-Open `build/eval/m4/agent-parallel-tools-rules.html` to compare per-run/default step limits and recoverable/fatal errors. `library-resize-callbacks-rules.html` includes calculated input examples; `event-async-lifecycle-rules.html` shows registration and release states. Each links back to its matching behavior page, which now links to the rules page. The pages share the theme preference and evidence conventions. Comparisons have keyboard controls; the full explanation is also present in static HTML.
+Open `build/eval/m5/agent-parallel-tools-rules.html` to compare per-run/default step limits and recoverable/fatal errors. `library-resize-callbacks-rules.html` includes calculated input examples; `event-async-lifecycle-rules.html` shows registration and release states. Each links back to its matching behavior page, which now links to the rules page. The pages share the theme preference and evidence conventions. Comparisons have keyboard controls; the full explanation is also present in static HTML.
 
 For new rules, the host follows the [rule checklist](../skills/code-flow/references/rule-checklist.md), then the actual installed `visual-primer` [source-rules workflow](../skills/visual-primer/references/source-rules.md). `author.py explain` creates an unendorsed draft from the internal behavior IR. After rereading the source, author the reasons, exceptions and presentation layout, then use `rules.py build-pair`. The two pages must keep the same factual graph and subject/scope/language. A saved HTML alone does not restore stripped evidence.
 
@@ -49,13 +49,16 @@ The source caches, generated output, browser reports, and dependencies are ignor
 
 Keep project explanations and development guides in `docs/`. Store retained verification/review records, human review worksheets, and their selected screenshots under `eval/reports/`; UI proposals and prototypes belong in `plans/design/`. The [verification index](../eval/reports/README.md) links the existing records.
 
+Project maps are in `build/eval/m5/agent-project.html`, `framework-project.html`, `utility-project.html`, `library-project.html`, `event-project.html` and `web-project.html`. See [project maps](project-maps.md) for region entry, capability scope, ungenerated requests and return navigation. The evaluation explicitly supplies one behavior/rules pair per map; the utility adds an input-contract rules companion inside its map case. There are 37 unique HTML files, including existing cases. A normal atlas build creates only the map and details explicitly supplied in its pages manifest.
+
 ## Change the contract or renderer
 
 - Edit `scripts/build_schemas.py`, then run `python3 scripts/build_schemas.py` to regenerate both schemas.
 - Edit `viewer.css`, `viewer.js`, or `flow-viewer-template.html` under `skills/code-flow/templates/`, then run `npm run fixtures` and `npm run m1:examples`. Both builders and installed `author.py build` use this same template bundle. The HTML under `plans/design/` is a design reference, not the generation entrypoint.
-- After shared renderer/schema/validator changes, also run `eval:rules` for all 30 cases and the full browser suite against that new output directory.
+- After shared renderer/schema/validator changes, also run `eval:atlas` for all 36 cases and the full browser suite against that new output directory.
 - Source-backed rule pages use `skills/visual-primer/templates/` and a presentation layout that references reviewed rules/transitions. Rebuild both linked pages with `rules.py build-pair` after changing either skill's shared assets. The canvas and primer are different views with the same fact/evidence contract; neither uses the design prototype as its generation template.
 - Rebuild fixtures with `python3 scripts/build_fixtures.py` only after reviewing the underlying sources/claims. This recreates the synthetic evidence model too.
+- M5 uses `skills/codebase-atlas/scripts/atlas.py` with the installed code-flow companion; supply visual-primer only for requested rules pages. `eval/m5/author_cases.py` is a recorded source-reading ledger, and `reference_cases.py` preserves existing role/group/capability criteria. They do not analyze a new repository. Keep the original 30 inputs and references intact.
 - Update vendored Dagre from the locked dependency with `npm run vendor`.
 - The two-pass example build demonstrates lazy links: sibling pages are produced first, then parent link state is refreshed.
 - For M1 cases, edit `eval/m1/author_cases.py` only after rereading the corresponding source and claims, then run it followed by `npm run m1:examples`. This is a case-ledger builder, not the discovery implementation.

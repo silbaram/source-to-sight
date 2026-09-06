@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "caseId": "framework-project",
+  "identity": {
+    "layer": "atlas",
+    "language": "ko",
+    "subject": {
+      "id": "pluggy-pluggy-c12ee97e197d",
+      "kind": "project",
+      "title": "pluggy · 등록된 확장을 호출하는 구조",
+      "question": "pluggy · 등록된 확장을 호출하는 구조의 주요 구성과 기능을 설명해 줘",
+      "module": "pluggy",
+      "targets": [
+        {
+          "label": "pluggy"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "공개 훅 표식, 등록 관리자, 호출기, 결과와 추적 도구"
+        ],
+        "excludes": [
+          "실제 플러그인의 업무 코드",
+          "entry point 배포 검색과 모든 호환성 경로"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "framework-plugin"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "noScenarios": true,
+  "requiredFacts": [
+    "매니저가 표식으로 구현을 찾고 훅 호출기에 등록한다.",
+    "호출기는 매니저의 실행 함수를 통해 기본 multicall로 연결된다.",
+    "외부 플러그인 내부는 지도에서 확정하지 않는다."
+  ],
+  "forbiddenClaims": [
+    "파일 배치 순서를 플러그인 실행 순서로 표현한다."
+  ],
+  "forbiddenEdges": [],
+  "nodes": [
+    {
+      "key": "marking",
+      "file": "src/pluggy/_hooks.py",
+      "line": 156,
+      "codeNames": [
+        "HookspecMarker / HookimplMarker"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "registry",
+      "file": "src/pluggy/_manager.py",
+      "line": 149,
+      "codeNames": [
+        "PluginManager"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "caller",
+      "file": "src/pluggy/_hooks.py",
+      "line": 542,
+      "codeNames": [
+        "HookCaller"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "dispatch",
+      "file": "src/pluggy/_callers.py",
+      "line": 126,
+      "codeNames": [
+        "_multicall"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "result",
+      "file": "src/pluggy/_callers.py",
+      "line": 43,
+      "codeNames": [
+        "Result"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "tracing",
+      "file": "src/pluggy/_manager.py",
+      "line": 477,
+      "codeNames": [
+        "add_hookcall_monitoring"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "registry",
+      "type": "reads",
+      "toRole": "marking",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "registry",
+      "type": "registers",
+      "toRole": "caller",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "caller",
+      "type": "invokes",
+      "toRole": "registry",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "registry",
+      "type": "invokes",
+      "toRole": "dispatch",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "dispatch",
+      "type": "passes-data",
+      "toRole": "result",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "registry",
+      "type": "registers",
+      "toRole": "tracing",
+      "status": "confirmed"
+    }
+  ],
+  "regions": [
+    [
+      "marking",
+      "registry"
+    ],
+    [
+      "caller",
+      "dispatch",
+      "result"
+    ]
+  ],
+  "capabilities": [
+    {
+      "id": "pluggy-hookcaller-call-multicall-wrappers-52769b7aa1e3",
+      "scope": {
+        "includes": [
+          "기본 실행기의 비historic 훅, 새 방식 wrapper의 진입과 역순 복귀",
+          "firstresult와 구현 오류, 래퍼의 결과·예외 변경"
+        ],
+        "excludes": [
+          "old-style hookwrapper, 실행기 재정의",
+          "실제 플러그인 구현과 구체적인 우선순위 구성"
+        ]
+      },
+      "module": "pluggy",
+      "targets": [
+        {
+          "label": "HookCaller.__call__ + _multicall wrappers"
+        }
+      ],
+      "kind": "capability",
+      "ownerRole": "dispatch"
+    },
+    {
+      "id": "pluggy-pluginmanager-register-hookcaller-call-07af1588c6a1",
+      "scope": {
+        "includes": [
+          "정상 등록과 이후 호스트의 일반 훅 호출",
+          "기본 실행기의 구현 호출과 결과 수집"
+        ],
+        "excludes": [
+          "historic 훅과 래퍼의 준비·정리",
+          "추적 실행기 교체",
+          "플러그인의 사용자 정의 동작"
+        ]
+      },
+      "module": "pluggy",
+      "targets": [
+        {
+          "label": "PluginManager.register + HookCaller.__call__",
+          "file": "src/pluggy/_manager.py",
+          "symbol": "PluginManager.register + HookCaller.__call__"
+        }
+      ],
+      "kind": "lifecycle",
+      "ownerRole": "registry"
+    },
+    {
+      "id": "pluggy-pluginmanager-set-blocked-register-618003be16bb",
+      "scope": {
+        "includes": [
+          "기본 관리자에서 이름 차단과 차단된 이름의 등록"
+        ],
+        "excludes": [
+          "서브클래스 재정의와 historic 훅",
+          "차단되지 않은 이름의 등록"
+        ]
+      },
+      "module": "pluggy",
+      "targets": [
+        {
+          "label": "PluginManager.set_blocked + register"
+        }
+      ],
+      "kind": "capability",
+      "ownerRole": "registry"
+    }
+  ]
+}

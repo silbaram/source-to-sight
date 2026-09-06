@@ -3,6 +3,17 @@
   const data=JSON.parse(document.getElementById('s2s-data').textContent);
   const ko=data.language.toLowerCase().startsWith('ko');
   const t=(kr,en)=>ko?kr:en;
+  // The return value contains only map state. The destination remains the
+  // identity-checked relative atlas link from the page's own metadata.
+  const returnAtlas=new URLSearchParams(location.search).get('s2s-atlas');
+  if(returnAtlas?.startsWith('#s2s=1&')&&returnAtlas.length<16000) {
+    for(const link of document.querySelectorAll('a[data-layer]')) {
+      const target=new URL(link.getAttribute('href'),location.href);
+      if(link.dataset.layer==='atlas')target.hash=returnAtlas;
+      else target.searchParams.set('s2s-atlas',returnAtlas);
+      link.href=target.href;
+    }
+  }
   const theme=document.getElementById('theme-toggle');
   function paintTheme(){
     const dark=document.documentElement.dataset.theme==='dark';

@@ -1,6 +1,6 @@
 # M0 renderer contract
 
-This directory contains the M0 renderer and validation foundation, now used by the [code-flow skill](../SKILL.md) through M4. The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. Independent human gates remain pending. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` 0.5.0 helpers; the graph schema remains the unfrozen 0.1.0 draft.
+This directory contains the shared renderer and validation foundation, used by code-flow and the M5 codebase-atlas companion. The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. Independent human gates remain pending. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` 0.6.0 helpers; the graph schema remains the unfrozen 0.1.0 draft.
 
 ## Run
 
@@ -47,7 +47,7 @@ Synthetic examples are prominently identified and are not counted as source-trac
 
 Generated HTML embeds data, scripts, styles, font, and licenses. No server or external asset request is needed. JSON is escaped for an HTML data script; displayed text is created through text nodes.
 
-Evidence paths stay inside the supplied source root, including after symlink resolution. Page links are relative. Existing linked pages are checked for layer, subject, scope, language, and source snapshot. A file with the wrong subject does not activate a link. Different or unknown source snapshots produce a warning.
+Evidence paths stay inside the supplied source root, including after symlink resolution. Page links are relative. Existing linked pages are checked for layer, subject, kind, module, targets, scope, language, and source snapshot. A file with the wrong subject does not activate a link. Legacy minimal catalogs retain their ID-only subject check. Different or unknown source snapshots produce a warning; navigation involving an atlas also requires a snapshot match before enabling the link.
 
 Snapshot comparison rejects failed locations, missing captured hashes, and conflicting observed hashes. When resolving a page link, the renderer rereads every evidence file recorded by either page under the current source root and compares its SHA-256, including files only examined by the linked page. Missing files and symlinks outside the source root cannot establish a match. A shared clean commit allows different evidence selections only after this reread: Git cleanliness alone does not cover ignored settings or installed dependencies. Without access to the source root, or for a dirty or unknown working tree, the entire recorded evidence-file set and its hashes must match; agreement on a shared subset is insufficient. This compares the recorded evidence scope, not files that were never examined. Warnings name the affected page while keeping a valid destination navigable.
 
@@ -91,7 +91,7 @@ The current-view link uses a versioned `#s2s=1` fragment, with the subject ID, v
 
 The mobile sheet can expand for reading and shrink to leave more map visible. Its header keeps link, size and close controls accessible; connection focus stays below the internally scrolling body. Safe-area padding and a viewport-bounded minimum reading height support short/rotated screens. Sheet changes reframe the current inspected node or edge, and do not restart playback. Desktop retains its existing bounded overlay.
 
-The same visual components serve IR layers without changing coverage: behavior output says “Scoped overview”; only atlas output uses a whole-map label. Whole-project source discovery remains M5 work. The design prototype's synthetic samples are never imported by the production renderer.
+The same visual components serve IR layers without changing coverage: behavior output says “Scoped overview”; only atlas output uses a whole-map label. The M5 codebase-atlas companion supplies actual project discovery and reviewed assembly. The design prototype's synthetic samples are never imported by the production renderer.
 
 In structure view, changing Core/Detail preserves a still-visible node or edge selection and its evidence panel. If the selected item is hidden by Core, its selection/panel and any hidden focus anchor are cleared. Walkthrough view retains its existing step-reset behavior on Core/Detail changes.
 
@@ -100,3 +100,13 @@ State panels show the transition trigger separately from the state summary, toge
 An item's inspector omits a verification note when its text matches the visible title or description after collapsing whitespace. Distinct verification notes, including extra conditions or uncertainty, remain visible. This presentation rule does not remove claim metadata, evidence locations, or status badges from the output data.
 
 Changing source evidence, wording, or the schema requires rebuilding outputs. Changing layout or interaction requires relevant browser tests and screenshot inspection.
+
+## Project maps
+
+M5 adds scoped `subjects` entries for representative capabilities. Each has its own summary, resolved subject identity, question, targets, included/excluded scope, owner node and evidence-backed claim status. Rejected entries are omitted and uncertain entries retain their own badge, independently of the owner. New atlas authoring requires code/config evidence for capability entry locations. Existing label-only behavior targets can be preserved with explicit location evidence; the copyable generation request carries both. Old four-field catalogs remain readable.
+
+Atlas regions have disjoint node membership. Compound layout groups actual nodes without inventing aggregate invocation edges. Their labels show the group's own status and open its evidence; entering a region shows all members and their immediate neighbors through actual edges. Region navigation and capability search preserve detail reveal, selection, zoom, mobile inspection and Back. Single-node maps need no region or scenario. A catalog is not a playback scenario.
+
+The atlas builder checks supplied behavior identity against the catalog and checks the parent's catalog on return. Only explicitly supplied details are built; other compatible existing files may be linked but are not rewritten. Missing, stale or incompatible files remain precise generation requests. Requested pages are all validated/rendered before any destination replacement. Replacements are individually atomic; a filesystem failure may require rerunning the build.
+
+Atlas detail links carry a `s2s-atlas` query parameter containing the parent's versioned hash state. Region, selected item, core/detail mode and finite bounded camera coordinates return through behavior and rules pages without browser storage. The destination always comes from the detail's own validated atlas URL. Incoming state cannot supply a destination or request autoplay; invalid IDs or camera values use the default view and a notice. Ordinary current-view copy links capture IDs and region, while camera coordinates are added only for map/detail round trips.

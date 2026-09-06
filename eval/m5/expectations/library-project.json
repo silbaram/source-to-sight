@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "caseId": "library-project",
+  "identity": {
+    "layer": "atlas",
+    "language": "ko",
+    "subject": {
+      "id": "golang-lru-golang-lru-c03e7757a0a8",
+      "kind": "project",
+      "title": "golang-lru · 캐시 정책과 공통 저장 구조",
+      "question": "golang-lru · 캐시 정책과 공통 저장 구조의 주요 구성과 기능을 설명해 줘",
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "golang-lru"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "루트 캐시, simplelru·expirable 패키지와 별도 arc 모듈의 공개 구성"
+        ],
+        "excludes": [
+          "각 정책의 모든 퇴출 경로와 동시 실행 결과",
+          "외부 콜백 내부"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "library-sdk"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "noScenarios": true,
+  "requiredFacts": [
+    "공개 캐시 정책과 기본 저장 구조를 구분한다.",
+    "만료 캐시는 내부 목록을 직접 사용한다.",
+    "arc 디렉터리는 별도 모듈 선언을 가진다."
+  ],
+  "forbiddenClaims": [
+    "expirable이 simplelru 캐시를 호출한다고 표현한다.",
+    "루트 디렉터리에 있다는 이유로 모든 정책이 같은 실행 경로라고 표현한다."
+  ],
+  "forbiddenEdges": [
+    {
+      "fromRole": "expiration",
+      "type": "invokes",
+      "toRole": "base",
+      "status": "confirmed"
+    }
+  ],
+  "nodes": [
+    {
+      "key": "cache",
+      "file": "lru.go",
+      "line": 42,
+      "codeNames": [
+        "Cache"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "frequency",
+      "file": "2q.go",
+      "line": 68,
+      "codeNames": [
+        "TwoQueueCache"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "adaptive",
+      "file": "arc/arc.go",
+      "line": 36,
+      "codeNames": [
+        "ARCCache"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "expiration",
+      "file": "expirable/expirable_lru.go",
+      "line": 79,
+      "codeNames": [
+        "expirable.LRU"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "base",
+      "file": "simplelru/lru.go",
+      "line": 31,
+      "codeNames": [
+        "simplelru.LRU"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "list",
+      "file": "internal/list.go",
+      "line": 44,
+      "codeNames": [
+        "LruList / Entry"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "cache",
+      "type": "invokes",
+      "toRole": "base",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "frequency",
+      "type": "invokes",
+      "toRole": "base",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "adaptive",
+      "type": "invokes",
+      "toRole": "base",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "base",
+      "type": "depends-on",
+      "toRole": "list",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "expiration",
+      "type": "depends-on",
+      "toRole": "list",
+      "status": "confirmed"
+    }
+  ],
+  "regions": [
+    [
+      "cache",
+      "frequency",
+      "adaptive",
+      "expiration"
+    ],
+    [
+      "base",
+      "list"
+    ]
+  ],
+  "capabilities": [
+    {
+      "id": "golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652",
+      "scope": {
+        "includes": [
+          "정상 생성된 캐시의 0 이상 크기 변경, 퇴출 반복과 잠금 해제 후 콜백",
+          "동기 사용자 콜백의 정상 반환 또는 panic"
+        ],
+        "excludes": [
+          "음수 크기, 내부 제거·할당 실패",
+          "콜백 내부와 별도 고루틴의 전체 실행 순서"
+        ]
+      },
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "Cache.Resize + simplelru.LRU.Resize"
+        }
+      ],
+      "kind": "capability",
+      "ownerRole": "cache"
+    },
+    {
+      "id": "golang-lru-cache-add-2a8c32889414",
+      "scope": {
+        "includes": [
+          "일반 Cache에 새 키를 추가해 용량을 초과하는 경로",
+          "퇴출 콜백이 등록된 경우 잠금과 알림의 순서"
+        ],
+        "excludes": [
+          "expirable 및 ARC 캐시",
+          "동시 호출 간 전체 순서",
+          "사용자 콜백 내부"
+        ]
+      },
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "동기화된 캐시의 추가",
+          "file": "lru.go",
+          "symbol": "Cache.Add"
+        }
+      ],
+      "kind": "workflow",
+      "ownerRole": "cache"
+    },
+    {
+      "id": "golang-lru-newlru-4e1109769de9",
+      "scope": {
+        "includes": [
+          "크기·유효 기간과 정리 작업을 준비하는 초기화"
+        ],
+        "excludes": [
+          "백그라운드 실행 시점과 모든 만료 경로"
+        ]
+      },
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "NewLRU",
+          "file": "expirable/expirable_lru.go",
+          "symbol": "NewLRU"
+        }
+      ],
+      "kind": "lifecycle",
+      "ownerRole": "expiration"
+    }
+  ]
+}

@@ -310,31 +310,7 @@
     "subjects": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
-          },
-          "label": {
-            "type": "string",
-            "minLength": 1
-          },
-          "nodeId": {
-            "type": "string",
-            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
-          },
-          "link": {
-            "$ref": "#/$defs/link"
-          }
-        },
-        "required": [
-          "id",
-          "label",
-          "nodeId",
-          "link"
-        ],
-        "additionalProperties": false
+        "$ref": "#/$defs/capability"
       },
       "minItems": 0
     },
@@ -1378,6 +1354,180 @@
         "label"
       ],
       "additionalProperties": false
+    },
+    "capability": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "nodeId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+            },
+            "link": {
+              "$ref": "#/$defs/link"
+            }
+          },
+          "required": [
+            "id",
+            "label",
+            "nodeId",
+            "link"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1
+            },
+            "nodeId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+            },
+            "link": {
+              "$ref": "#/$defs/link"
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "enum": [
+                "capability",
+                "workflow",
+                "lifecycle"
+              ]
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            },
+            "module": {
+              "type": "string",
+              "minLength": 1
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "file": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "symbol": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "label"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "scope": {
+              "type": "object",
+              "properties": {
+                "includes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                },
+                "excludes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 0
+                }
+              },
+              "required": [
+                "includes",
+                "excludes"
+              ],
+              "additionalProperties": false
+            },
+            "confidence": {
+              "enum": [
+                "exact",
+                "resolved",
+                "inferred"
+              ]
+            },
+            "evidenceIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "supportStatus": {
+              "enum": [
+                "supported",
+                "uncertain",
+                "unsupported"
+              ]
+            },
+            "verificationNote": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sourceIds": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "id",
+            "label",
+            "nodeId",
+            "link",
+            "summary",
+            "kind",
+            "question",
+            "module",
+            "targets",
+            "scope",
+            "confidence",
+            "evidenceIds",
+            "supportStatus",
+            "verificationNote"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

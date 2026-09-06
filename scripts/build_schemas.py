@@ -114,6 +114,12 @@ def build(stage):
                 "sourceFingerprint": TEXT}, ["url", "generated"])
     link["allOf"] = [{"if": {"properties": {"generated": {"const": False}}},
                      "then": {"required": ["command"]}}]
+    scope = obj({"includes": array(TEXT, 1), "excludes": array(TEXT)})
+    target = obj({"label": TEXT, "file": TEXT, "symbol": TEXT}, ["label"])
+    legacy_subject = obj({"id": ID, "label": TEXT, "nodeId": ID, "link": ref("link")})
+    capability = claimed({"id": ID, "label": TEXT, "nodeId": ID, "link": ref("link"),
+                          "summary": TEXT, "kind": enum("capability", "workflow", "lifecycle"),
+                          "question": TEXT, "module": TEXT, "targets": array(target, 1), "scope": scope})
     definitions = {
         "action": action, "node": node, "edge": edge, "step": step,
         "evidence": evidence, "warning": warning, "link": link,
@@ -127,7 +133,8 @@ def build(stage):
                          "nodeIds": array(ID), "rationale": TEXT,
                          "exceptions": array(TEXT)}, ("rationale", "exceptions")),
         "region": claimed({"id": ID, "label": TEXT, "summary": TEXT, "nodeIds": array(ID, 1)}),
-        "target": obj({"label": TEXT, "file": TEXT, "symbol": TEXT}, ["label"]),
+        "target": target,
+        "capability": {"oneOf": [legacy_subject, capability]},
     }
     props = {
         "schemaVersion": {"const": "0.1.0"},
@@ -147,7 +154,7 @@ def build(stage):
             "id": ID, "kind": enum("project", "capability", "workflow", "lifecycle"),
             "title": TEXT, "question": TEXT, "module": TEXT,
             "targets": array(ref("target")),
-            "scope": obj({"includes": array(TEXT, 1), "excludes": array(TEXT)}),
+            "scope": scope,
         }),
         "analysis": obj({
             "status": enum("complete", "partial", "insufficient"),
@@ -160,7 +167,7 @@ def build(stage):
         "scenarios": array(ref("scenario")),
         "stateTransitions": array(ref("transition")), "rules": array(ref("rule")),
         "regions": array(ref("region")),
-        "subjects": array(obj({"id": ID, "label": TEXT, "nodeId": ID, "link": ref("link")})),
+        "subjects": array(ref("capability")),
         "evidence": array(ref("evidence")), "warnings": array(ref("warning")),
         "sources": array(obj({"id": ID, "url": TEXT, "title": TEXT,
                               "version": TEXT, "retrievedAt": TEXT})),

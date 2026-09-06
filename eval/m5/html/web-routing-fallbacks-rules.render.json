@@ -1,0 +1,589 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "logic",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 재독해한 M3 규칙 설명 후보입니다. 계산 예시는 실행 기록이 아닙니다."
+  },
+  "snapshot": {
+    "repository": "julienschmidt/httprouter",
+    "branch": null,
+    "commit": "484018016424d215c0b87c42f4c9b57d980fbd00",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T23:17:22Z",
+    "skillVersion": "0.6.0",
+    "model": null
+  },
+  "subject": {
+    "id": "httprouter-router-servehttp-fallback-dispatch-15b818c8fdaf",
+    "kind": "capability",
+    "title": "요청 경로가 맞지 않을 때 리다이렉트와 오류 응답을 고르는 과정",
+    "question": "요청 경로가 맞지 않을 때 리다이렉트와 오류 응답을 고르는 과정?",
+    "module": "httprouter",
+    "targets": [
+      {
+        "label": "Router.ServeHTTP fallback dispatch"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "등록된 메서드별 트리의 요청 처리와 후행 슬래시 보정, OPTIONS·405·404 분기",
+        "RedirectFixedPath는 꺼짐, 커스텀 OPTIONS·405·404·panic 핸들러 없음"
+      ],
+      "excludes": [
+        "등록된 처리 함수 내부, 트리 삽입·탐색 최적화와 Go HTTP 패키지 내부",
+        "고정 경로 보정과 panic 복구, 커스텀 오류 응답, 서버 전체 OPTIONS *"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "web",
+      "framework-plugin"
+    ],
+    "searched": [
+      "router.go",
+      "tree.go"
+    ],
+    "unresolved": [
+      "등록된 처리 함수와 Go HTTP 응답 구현은 미확인입니다. 슬래시 보정을 서버 내부 재실행이나 처리 함수의 자동 재호출로 표현하지 않습니다."
+    ],
+    "nextAttempts": [
+      "호출 애플리케이션의 설정·구현과 해당 경계의 소스를 별도로 확인합니다."
+    ]
+  },
+  "summary": {
+    "title": "경로를 못 찾으면 어떤 응답을 선택할까요?",
+    "purpose": "매칭·경로 보정·허용 메서드 처리가 먼저 기회를 얻고, 반환하지 못한 요청이 마지막 오류 경로로 갑니다.",
+    "inputs": [
+      "메서드와 경로, 등록 트리와 라우터 설정"
+    ],
+    "outputs": [
+      "처리 함수 호출, 리다이렉트, Allow 설정 또는 기본 오류 응답 요청"
+    ],
+    "limitations": [
+      "등록된 처리 함수와 Go HTTP 응답 구현은 미확인입니다. 슬래시 보정을 서버 내부 재실행이나 처리 함수의 자동 재호출로 표현하지 않습니다."
+    ]
+  },
+  "links": {
+    "atlas": {
+      "url": "web-project.html",
+      "generated": true,
+      "command": "$codebase-atlas HttpRouter · 요청을 처리 함수에 연결하는 구조의 주요 구성과 기능을 설명해 줘 | subject=httprouter-httprouter-4e74e76b9d48 | language=ko"
+    },
+    "behavior": {
+      "url": "web-routing-fallbacks.html",
+      "generated": true,
+      "command": "$code-flow 요청 경로가 맞지 않을 때 리다이렉트와 오류 응답을 고르는 과정? | subject=httprouter-router-servehttp-fallback-dispatch-15b818c8fdaf | language=ko | targets=[{\"label\":\"Router.ServeHTTP fallback dispatch\"}] | scope={\"includes\":[\"등록된 메서드별 트리의 요청 처리와 후행 슬래시 보정, OPTIONS·405·404 분기\",\"RedirectFixedPath는 꺼짐, 커스텀 OPTIONS·405·404·panic 핸들러 없음\"],\"excludes\":[\"등록된 처리 함수 내부, 트리 삽입·탐색 최적화와 Go HTTP 패키지 내부\",\"고정 경로 보정과 panic 복구, 커스텀 오류 응답, 서버 전체 OPTIONS *\"]}"
+    }
+  },
+  "regeneration": {
+    "subjectId": "httprouter-router-servehttp-fallback-dispatch-15b818c8fdaf",
+    "question": "요청 경로가 맞지 않을 때 리다이렉트와 오류 응답을 고르는 과정?",
+    "language": "ko",
+    "command": "$code-flow 요청 경로가 맞지 않을 때 리다이렉트와 오류 응답을 고르는 과정? --explain | subject=httprouter-router-servehttp-fallback-dispatch-15b818c8fdaf | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "serve",
+      "kind": "component",
+      "label": "요청별 분기 선택",
+      "roleLabel": "이 범위의 역할",
+      "summary": "메서드의 경로를 먼저 찾고, 일치하면 처리 함수 실행 후 반환합니다. 불일치하면 설정과 조건에 따라 보정·OPTIONS·오류 경로를 고릅니다.",
+      "codeName": "Router.ServeHTTP",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "메서드의 경로를 먼저 찾고, 일치하면 처리 함수 실행 후 반환합니다. 불일치하면 설정과 조건에 따라 보정·OPTIONS·오류 경로를 고릅니다.",
+      "evidenceIds": [
+        "ev-serve"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "tree",
+      "kind": "component",
+      "label": "경로와 보정 후보 조회",
+      "roleLabel": "이 범위의 역할",
+      "summary": "메서드별 트리에서 처리 함수·매개변수·후행 슬래시 보정 후보를 조회합니다. 후보만으로 응답을 보내지는 않습니다.",
+      "codeName": "node.getValue",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "메서드별 트리에서 처리 함수·매개변수·후행 슬래시 보정 후보를 조회합니다. 후보만으로 응답을 보내지는 않습니다.",
+      "evidenceIds": [
+        "ev-tree",
+        "ev-serve"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "handler",
+      "kind": "boundary",
+      "label": "등록된 처리 함수",
+      "roleLabel": "동적 경계",
+      "summary": "일치한 처리 함수를 호출합니다. 그 함수가 만드는 응답과 내부 처리는 애플리케이션에 따라 달라집니다.",
+      "codeName": "Handle",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "일치한 처리 함수를 호출합니다. 그 함수가 만드는 응답과 내부 처리는 애플리케이션에 따라 달라집니다.",
+      "evidenceIds": [
+        "ev-serve"
+      ],
+      "displayStatus": "uncertain"
+    },
+    {
+      "id": "redirect",
+      "kind": "boundary",
+      "label": "보정한 주소로 안내",
+      "roleLabel": "동적 경계",
+      "summary": "로컬 분기가 경로를 수정하고 선택한 상태 코드로 리다이렉트를 요청한 뒤 반환합니다. HTTP 구현 내부는 범위 밖입니다.",
+      "codeName": "http.Redirect",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "로컬 분기가 경로를 수정하고 선택한 상태 코드로 리다이렉트를 요청한 뒤 반환합니다. HTTP 구현 내부는 범위 밖입니다.",
+      "evidenceIds": [
+        "ev-redirect"
+      ],
+      "displayStatus": "uncertain"
+    },
+    {
+      "id": "allowed",
+      "kind": "component",
+      "label": "허용 메서드 확인",
+      "roleLabel": "이 범위의 역할",
+      "summary": "현재 요청과 OPTIONS를 제외한 메서드에서 같은 경로를 찾습니다. 설정에 따라 OPTIONS를 추가하고 정렬한 목록을 반환합니다.",
+      "codeName": "Router.allowed",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "현재 요청과 OPTIONS를 제외한 메서드에서 같은 경로를 찾습니다. 설정에 따라 OPTIONS를 추가하고 정렬한 목록을 반환합니다.",
+      "evidenceIds": [
+        "ev-allowed"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "response",
+      "kind": "boundary",
+      "label": "기본 오류 응답 요청",
+      "roleLabel": "동적 경계",
+      "summary": "405 분기에서는 기본 오류 응답을, 마지막 경로에서는 404 응답을 요청합니다. 구체적인 응답 본문 생성은 HTTP 패키지 경계입니다.",
+      "codeName": "http.Error / http.NotFound",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "405 분기에서는 기본 오류 응답을, 마지막 경로에서는 404 응답을 요청합니다. 구체적인 응답 본문 생성은 HTTP 패키지 경계입니다.",
+      "evidenceIds": [
+        "ev-fallback"
+      ],
+      "displayStatus": "uncertain"
+    }
+  ],
+  "edges": [
+    {
+      "id": "lookup-path",
+      "from": "serve",
+      "to": "tree",
+      "label": "요청 메서드의 경로 조회",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "요청 메서드의 경로 조회에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-serve"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "matched-handler",
+      "from": "serve",
+      "to": "handler",
+      "label": "경로 일치 시 처리 함수 호출",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "경로 일치 시 처리 함수 호출에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-serve"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "redirect-slash",
+      "from": "serve",
+      "to": "redirect",
+      "label": "조건을 만족하면 슬래시 보정 응답",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건을 만족하면 슬래시 보정 응답에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-redirect"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "find-allowed",
+      "from": "serve",
+      "to": "allowed",
+      "label": "다른 허용 메서드 확인",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "다른 허용 메서드 확인에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-fallback"
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "error-response",
+      "from": "serve",
+      "to": "response",
+      "label": "기본 405 또는 404 요청",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "기본 405 또는 404 요청에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-fallback"
+      ],
+      "displayStatus": "confirmed"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "matched-route",
+      "title": "일치한 처리 함수로 전달",
+      "kind": "typical",
+      "steps": [
+        {
+          "id": "matched-route-1",
+          "caption": "요청 메서드에 해당하는 트리에서 경로를 찾습니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "요청 메서드에 해당하는 트리에서 경로를 찾습니다.",
+          "evidenceIds": [
+            "ev-serve"
+          ],
+          "nodeId": "serve",
+          "displayStatus": "confirmed"
+        },
+        {
+          "id": "matched-route-2",
+          "caption": "일치한 처리 함수를 호출하고 정상 반환하면 라우터도 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "일치한 처리 함수를 호출하고 정상 반환하면 라우터도 반환합니다.",
+          "evidenceIds": [
+            "ev-serve"
+          ],
+          "edgeId": "matched-handler",
+          "condition": "처리 함수가 일치하고 정상 반환함",
+          "displayStatus": "confirmed"
+        }
+      ]
+    },
+    {
+      "id": "slash-redirect",
+      "title": "끝 슬래시를 보정한 뒤 종료",
+      "kind": "alternate",
+      "steps": [
+        {
+          "id": "slash-redirect-1",
+          "caption": "경로 불일치 뒤 후행 슬래시 보정 조건을 검사합니다.",
+          "branch": "alternate",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "경로 불일치 뒤 후행 슬래시 보정 조건을 검사합니다.",
+          "evidenceIds": [
+            "ev-redirect"
+          ],
+          "nodeId": "serve",
+          "condition": "해당 메서드 트리 있음, CONNECT·루트 경로 아님, 보정 후보와 설정 참",
+          "displayStatus": "confirmed"
+        },
+        {
+          "id": "slash-redirect-2",
+          "caption": "GET은 301, 다른 메서드는 308로 리다이렉트를 요청하고 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "GET은 301, 다른 메서드는 308로 리다이렉트를 요청하고 반환합니다.",
+          "evidenceIds": [
+            "ev-redirect"
+          ],
+          "edgeId": "redirect-slash",
+          "displayStatus": "confirmed"
+        }
+      ]
+    },
+    {
+      "id": "method-not-allowed",
+      "title": "다른 메서드에 경로가 있는 경우",
+      "kind": "error",
+      "steps": [
+        {
+          "id": "method-not-allowed-1",
+          "caption": "앞선 일치·보정 경로에서 끝나지 않았으면 허용 메서드를 확인합니다.",
+          "branch": "alternate",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "앞선 일치·보정 경로에서 끝나지 않았으면 허용 메서드를 확인합니다.",
+          "evidenceIds": [
+            "ev-fallback"
+          ],
+          "edgeId": "find-allowed",
+          "condition": "자동 OPTIONS 분기가 아니고 405 처리가 켜짐",
+          "displayStatus": "confirmed"
+        },
+        {
+          "id": "method-not-allowed-2",
+          "caption": "허용 목록이 있으면 Allow와 기본 405 응답을 요청합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "허용 목록이 있으면 Allow와 기본 405 응답을 요청합니다.",
+          "evidenceIds": [
+            "ev-fallback"
+          ],
+          "edgeId": "error-response",
+          "condition": "허용 목록이 비어 있지 않음",
+          "returns": "405 응답 요청",
+          "displayStatus": "confirmed"
+        }
+      ]
+    },
+    {
+      "id": "not-found",
+      "title": "앞선 분기로 처리되지 않은 경우",
+      "kind": "error",
+      "steps": [
+        {
+          "id": "not-found-1",
+          "caption": "경로 일치·보정·자동 OPTIONS·405 분기로 반환하지 못했습니다.",
+          "branch": "error",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "경로 일치·보정·자동 OPTIONS·405 분기로 반환하지 못했습니다.",
+          "evidenceIds": [
+            "ev-serve"
+          ],
+          "nodeId": "serve",
+          "displayStatus": "confirmed"
+        },
+        {
+          "id": "not-found-2",
+          "caption": "마지막 기본 404 응답을 요청합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "마지막 기본 404 응답을 요청합니다.",
+          "evidenceIds": [
+            "ev-fallback"
+          ],
+          "edgeId": "error-response",
+          "condition": "앞선 분기에서 반환하지 않음",
+          "returns": "404 응답 요청",
+          "displayStatus": "confirmed"
+        }
+      ]
+    }
+  ],
+  "stateTransitions": [
+    {
+      "id": "slash-updated",
+      "subjectNodeId": "serve",
+      "from": "원래 요청 경로",
+      "to": "끝 슬래시를 추가하거나 제거한 경로",
+      "trigger": "후행 슬래시 리다이렉트 분기가 선택되었을 때",
+      "plainText": "원래 요청 경로에서 끝 슬래시를 추가하거나 제거한 경로로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "후행 슬래시 리다이렉트 분기가 선택되었을 때에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-redirect"
+      ],
+      "displayStatus": "confirmed"
+    }
+  ],
+  "rules": [
+    {
+      "id": "redirect-status",
+      "nodeIds": [
+        "serve"
+      ],
+      "condition": "메서드 트리가 있고 처리 함수 불일치, CONNECT가 아니며 루트 경로가 아니고 슬래시 보정 후보·설정이 참",
+      "outcome": "GET은 301, 다른 메서드는 308 리다이렉트를 요청하고 이후 OPTIONS·오류 분기를 건너뜁니다.",
+      "plainText": "메서드 트리가 있고 처리 함수 불일치, CONNECT가 아니며 루트 경로가 아니고 슬래시 보정 후보·설정이 참이면 GET은 301, 다른 메서드는 308 리다이렉트를 요청하고 이후 OPTIONS·오류 분기를 건너뜁니다.",
+      "numeric": true,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건·결과·이유·예외의 적용 범위를 고정 소스에서 재독해했습니다.",
+      "evidenceIds": [
+        "ev-serve",
+        "ev-redirect"
+      ],
+      "rationale": "매칭 실패 뒤 경로 보정 조건을 확인하고 리다이렉트 요청 직후 반환합니다. 그래서 뒤의 OPTIONS와 오류 분기로 계속 진행하지 않습니다.",
+      "exceptions": [
+        "고정 경로 보정, 사용자 오류 핸들러, 클라이언트의 새 요청은 이 설명 범위 밖입니다."
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "method-error",
+      "nodeIds": [
+        "serve"
+      ],
+      "condition": "자동 OPTIONS 경로가 아니며 HandleMethodNotAllowed가 참이고 허용 목록이 비어 있지 않음",
+      "outcome": "Allow를 설정하고 기본 405 응답을 요청한 뒤 반환합니다.",
+      "plainText": "자동 OPTIONS 경로가 아니며 HandleMethodNotAllowed가 참이고 허용 목록이 비어 있지 않음이면 Allow를 설정하고 기본 405 응답을 요청한 뒤 반환합니다.",
+      "numeric": true,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건·결과·이유·예외의 적용 범위를 고정 소스에서 재독해했습니다.",
+      "evidenceIds": [
+        "ev-fallback"
+      ],
+      "rationale": "자동 OPTIONS와 다른 분기에서 허용 목록을 검사합니다. 목록이 있으면 현재 메서드의 기본 오류 응답을 요청하고 반환합니다.",
+      "exceptions": [
+        "사용자 MethodNotAllowed 핸들러가 없는 기본 응답에 대한 설명입니다."
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "options-or-missing",
+      "nodeIds": [
+        "allowed"
+      ],
+      "condition": "자동 OPTIONS가 켜진 OPTIONS 요청에서 허용 목록이 비어 있지 않음",
+      "outcome": "Allow를 설정하고 반환합니다. 목록이 없으면 이 분기의 뒤인 404 경로로 갑니다.",
+      "plainText": "자동 OPTIONS가 켜진 OPTIONS 요청에서 허용 목록이 비어 있지 않음이면 Allow를 설정하고 반환합니다. 목록이 없으면 이 분기의 뒤인 404 경로로 갑니다.",
+      "numeric": true,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건·결과·이유·예외의 적용 범위를 고정 소스에서 재독해했습니다.",
+      "evidenceIds": [
+        "ev-fallback"
+      ],
+      "rationale": "자동 OPTIONS 분기는 허용 목록이 있어야 반환합니다. 목록이 비어 있으면 뒤의 마지막 경로까지 진행합니다.",
+      "exceptions": [
+        "자동 OPTIONS 분기에 들어간 요청은 같은 조건문의 메서드 오류 분기로 다시 들어가지 않습니다."
+      ],
+      "displayStatus": "confirmed"
+    },
+    {
+      "id": "not-found-default",
+      "nodeIds": [
+        "serve"
+      ],
+      "condition": "앞선 처리에서 반환하지 못했고 사용자 NotFound 핸들러가 없는 경우",
+      "outcome": "기본 404 응답을 요청합니다.",
+      "plainText": "앞선 처리에서 반환하지 못했고 사용자 NotFound 핸들러가 없는 경우이면 기본 404 응답을 요청합니다.",
+      "rationale": "앞선 매칭·보정·허용 메서드 분기 다음에 최종 NotFound 처리가 배치되어 있습니다.",
+      "exceptions": [
+        "사용자 NotFound 핸들러를 지정하면 그 핸들러가 응답을 결정합니다."
+      ],
+      "numeric": true,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "evidenceIds": [
+        "ev-serve",
+        "ev-fallback"
+      ],
+      "verificationNote": "추가 조건과 결과를 호출부·분기·상태 쓰기에서 확인했습니다.",
+      "displayStatus": "confirmed"
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-serve",
+      "kind": "code",
+      "file": "router.go",
+      "symbolOrKey": "Router.ServeHTTP",
+      "startLine": 463,
+      "endLine": 542,
+      "contentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationStatus": "passed",
+      "observedContentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-redirect",
+      "kind": "code",
+      "file": "router.go",
+      "symbolOrKey": "Router.ServeHTTP trailing slash",
+      "startLine": 479,
+      "endLine": 495,
+      "contentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationStatus": "passed",
+      "observedContentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-fallback",
+      "kind": "code",
+      "file": "router.go",
+      "symbolOrKey": "Router.ServeHTTP fallback",
+      "startLine": 512,
+      "endLine": 542,
+      "contentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationStatus": "passed",
+      "observedContentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-allowed",
+      "kind": "code",
+      "file": "router.go",
+      "symbolOrKey": "Router.allowed",
+      "startLine": 409,
+      "endLine": 460,
+      "contentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationStatus": "passed",
+      "observedContentHash": "c4eed137cf21ba11590b0fc8f8d34beaa9bd8c810c34f805067a2cdbf3bae179",
+      "locationNote": ""
+    },
+    {
+      "id": "ev-tree",
+      "kind": "code",
+      "file": "tree.go",
+      "symbolOrKey": "node.getValue",
+      "startLine": 326,
+      "endLine": 431,
+      "contentHash": "de8d3eb17e24faa66d9c01399ed5a8f30257583ebb5446a6ac5c13c0e48d52d6",
+      "locationStatus": "passed",
+      "observedContentHash": "de8d3eb17e24faa66d9c01399ed5a8f30257583ebb5446a6ac5c13c0e48d52d6",
+      "locationNote": ""
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

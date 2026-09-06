@@ -36,12 +36,14 @@ def claims(data):
                 yield from item["actions"]
     for scenario in data["scenarios"]:
         yield from scenario["steps"]
+    yield from (s for s in data["subjects"] if "scope" in s)
 
 
 def all_objects(data):
     yield from claims(data)
-    for key in ("scenarios", "evidence", "warnings", "sources", "subjects"):
+    for key in ("scenarios", "evidence", "warnings", "sources"):
         yield from data[key]
+    yield from (s for s in data["subjects"] if "scope" not in s)
 
 
 def strings(value):
@@ -122,6 +124,10 @@ def validate(data, stage="internal"):
         check([item["subjectNodeId"]], nodes, item["id"])
     for item in data["subjects"]:
         check([item["nodeId"]], nodes, item["id"])
+    if data["layer"] == "atlas":
+        memberships = [n for r in data["regions"] for n in r["nodeIds"]]
+        if len(memberships) != len(set(memberships)):
+            raise InvalidGraph("Atlas regions must have disjoint node membership; use edges for shared dependencies.")
     for warning in data["warnings"]:
         check(warning["relatedIds"], known, warning["id"])
     for item in data["evidence"]:
@@ -284,7 +290,8 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
                                if supported(s) and s["subjectNodeId"] in node_ids]
     data["regions"] = [r for r in data["regions"]
                        if supported(r) and set(r["nodeIds"]) <= node_ids]
-    data["subjects"] = [s for s in data["subjects"] if s["nodeId"] in node_ids]
+    data["subjects"] = [s for s in data["subjects"] if s["nodeId"] in node_ids
+                        and ("scope" not in s or supported(s))]
     rules = []
     for rule in data["rules"]:
         if not supported(rule) or not set(rule["nodeIds"]) <= node_ids:
@@ -307,10 +314,10 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
 
     if output_path:
         directory = Path(output_path).resolve().parent
-        entries = [(kind, link, data["subject"]["id"], data["subject"]["scope"])
+        entries = [(kind, link, data["subject"])
                    for kind, link in data["links"].items()]
-        entries += [("behavior", s["link"], s["id"], None) for s in data["subjects"]]
-        for kind, link, subject_id, scope in entries:
+        entries += [("behavior", s["link"], s) for s in data["subjects"]]
+        for kind, link, expected in entries:
             path = directory / unquote(urlsplit(link["url"]).path)
             link["generated"] = False
             try:
@@ -320,8 +327,10 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
                 if other["layer"] != kind:
                     raise InvalidGraph("Wrong target layer.")
                 if kind != "atlas":
-                    if other["subject"]["id"] != subject_id or (scope is not None and other["subject"]["scope"] != scope):
+                    if not subject_matches(expected, other["subject"]):
                         raise InvalidGraph("Wrong target subject or scope.")
+                elif not any(subject_matches(s, data["subject"]) for s in other["subjects"]):
+                    raise InvalidGraph("The atlas does not contain this explanation's subject and scope.")
                 if other["language"] != data["language"]:
                     raise InvalidGraph("Wrong target language.")
                 link["generated"] = True
@@ -329,11 +338,14 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
                     warn("snapshot-mismatch", (
                          "연결된 설명의 소스 시점이 다르거나 확인되지 않았습니다: " if ko
                          else "The linked explanation has a different or unconfirmed source snapshot: ") + link["url"])
+                    if data["layer"] == "atlas" or kind == "atlas":
+                        raise InvalidGraph("Atlas navigation requires a matching source snapshot.")
             except (OSError, ValueError, KeyError):
+                link["generated"] = False
                 if "command" not in link:
                     skill = "codebase-atlas" if kind == "atlas" else "code-flow"
                     suffix = " --explain" if kind == "logic" else ""
-                    link["command"] = f"$" + skill + " " + data["subject"]["question"] + suffix
+                    link["command"] = f"$" + skill + " " + expected.get("question", expected.get("label", data["subject"]["question"])) + suffix
 
     # Pruning a rejected claim must not leave dangling warning references.
     remaining = {item["id"] for item in all_objects(data)}
@@ -357,6 +369,12 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
     validate(data, "render")
     ensure_no_source_bodies(data, anchors)
     return data
+
+
+def subject_matches(expected, actual):
+    """Legacy catalogs check IDs; scoped catalogs also bind the resolved target."""
+    return expected["id"] == actual["id"] and all(
+        expected[key] == actual.get(key) for key in ("scope", "kind", "module", "targets") if key in expected)
 
 
 def ensure_no_source_bodies(data, anchors=()):

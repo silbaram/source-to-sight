@@ -16,11 +16,14 @@
 | [부드러운 화면 이동](smooth-camera-verification.md) | 노드·연결을 따라 이동, 도착 후 재생, 직접 조작·모션 설정·창 크기 변경 |
 | [M3 규칙과 이유](m3-verification.md) | 동작 사실 재사용, 조건·이유·예외·상태 그림, 양방향 연결과 30개 평가 |
 | [M4 재생·탐색 개선](m4-verification.md) | 배속·단계 선택·키보드·모바일 패널·노드/단계 링크와 회귀 검사 |
+| [M5 프로젝트 지도](m5-verification.md) | 책임 구역·범위가 있는 기능 목록·세 계층 이동·36개 평가 |
 | [공통 캔버스 검증](canvas-viewer-verification.md) | 실제 생성 템플릿의 UI 적용·회귀 검사 |
 | [상세 패널 영역 수정](panel-bounds-verification.md) | 긴 설명·낮은 창에서 패널 이탈과 조작 버튼 가림 수정 |
 | [연결 이동 애니메이션](flow-animation-verification.md) | 자동재생의 이동 표시·도착 강조·방향 이름·모션 설정 검사 |
 | [디자인 시안 검증](design/atlas-prototype-verification.md) | 합성 데이터로 만든 UI 시안의 브라우저 검사 |
 
 `qa/`와 `design/qa/`는 위 기록에서 참조하는 화면 자료입니다. 매번 생성되는 전체 HTML·스크린샷·실행 보고서는 Git에서 제외되는 `build/`, `test-results/`, `playwright-report/`에 둡니다. 선택해 보존하는 기준 기록은 `eval/runs/`에 둡니다. 평가 입력과 소스 출처는 [평가 사례 목록](../cases.md)과 [M1 사례](../m1/README.md)에 있습니다.
+
+사용자의 원격 확인 요청으로 보존한 M5 최종 HTML과 GitHub 화면 미리보기는 [eval/m5](../m5/README.md)에 있습니다.
 
 프로젝트 설명과 사용·개발 안내는 [docs](../../docs/README.md), 개발계획과 UI 설계 제안·시안은 [plans](../../plans/)에서 관리합니다.

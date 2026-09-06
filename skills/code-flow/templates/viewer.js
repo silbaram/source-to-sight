@@ -51,7 +51,14 @@
   const cameraDuration = 360;
   let cameraMotion = null, cameraFrame = null, preparingStep = false;
   let playbackRate = 1, navigationReady = false, restoringLocation = false;
-  const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions].map(item=>[item.id,item]));
+  const isAtlas=data.layer==='atlas';
+  const regionMap=new Map(data.regions.map(r=>[r.id,r]));
+  const subjectMap=new Map(data.subjects.map(s=>[s.id,s.scope?s:{...nodeMap.get(s.nodeId),...s}]));
+  const selectedNodeId=()=>nodeMap.has(selected)?selected:subjectMap.get(selected)?.nodeId;
+  let regionId=null;
+  const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions,...subjectMap.values()].map(item=>[item.id,item]));
+  const incomingAtlas=new URLSearchParams(location.search).get('s2s-atlas');
+  const returnAtlas=incomingAtlas?.startsWith('#s2s=1&')&&incomingAtlas.length<16000?incomingAtlas:null;
 
   async function copy(text) {
     copyReturnFocus=document.activeElement;
@@ -98,6 +105,15 @@
     if (link.generated) {
       const a = element('a', (title || names[kind]) + ' ↗');
       a.href = link.url;
+      const update=()=>{
+        const state=isAtlas&&kind==='behavior'?savedAtlasLocation():returnAtlas;
+        if(!state)return;
+        const url=new URL(link.url,location.href);
+        if(kind==='atlas')url.hash=state;
+        else url.searchParams.set('s2s-atlas',state);
+        a.href=url.href;
+      };
+      update();a.addEventListener('click',update);a.addEventListener('auxclick',update);
       return a;
     }
     const button = element('button', (title || names[kind]) + t(' · 생성 명령 복사', ' · copy generation command'));
@@ -174,6 +190,20 @@
       list(body, t('이 조건이면', 'When'), [item.condition]);
       list(body, t('이렇게 처리합니다', 'Then'), [item.outcome]);
     }
+    if(isAtlas) {
+      if(subjectMap.has(item.id)) {
+        if(item.scope){list(body,t('설명할 범위','Explanation scope'),item.scope.includes);list(body,t('제외하는 범위','Excluded'),item.scope.excludes);}
+        const navigation=element('div',undefined,'capability-action');
+        navigation.append(linkControl('behavior',item.link));body.append(navigation);
+      } else {
+        if(regionMap.has(item.id)) {
+          const enter=element('button',t('이 구역 펼쳐 보기','Explore this region'),'enter-region');
+          enter.type='button';enter.addEventListener('click',()=>enterRegion(item.id));body.append(enter);
+        }
+        const owned=data.subjects.filter(s=>s.nodeId===item.id||item.nodeIds?.includes(s.nodeId));
+        if(owned.length){body.append(element('h3',t('이 부분의 주요 기능','Capabilities in this part')));for(const s of owned)body.append(capabilityButton(s));}
+      }
+    }
     evidenceSection(body, item.evidenceIds || []);
     for (const sourceId of item.sourceIds || []) {
       const source = data.sources.find(s => s.id === sourceId);
@@ -191,6 +221,7 @@
       positionPanel();
       if (nodeMap.has(item.id)) revealNode(item.id,!restoringLocation);
       else if (edgeMap.has(item.id)) revealConnection(item,!restoringLocation);
+      else if(subjectMap.has(item.id))revealNode(item.nodeId,!restoringLocation);
       else moveCamera({...readCamera(),pageTop:mapPageTop()},!restoringLocation);
     }
     updateNavigation();positionPanel();paint();
@@ -244,19 +275,27 @@
     const anchor = () => [...document.querySelectorAll('.node')].find(n => n.dataset.id === anchorId)?.getBoundingClientRect();
     const before = anchorId ? anchor() : null;
     const mobile = canvas.clientWidth < 600;
-    const visible = data.nodes.filter(n => detail || n.importance === 'core');
+    const visible = visibleNodes();
     const visibleIds = new Set(visible.map(n => n.id));
     const edges = data.edges.filter(e => visibleIds.has(e.from) && visibleIds.has(e.to));
     // Graphlib uses object keys internally. Valid IR IDs such as "constructor"
     // must not reach that namespace; keep original IDs for UI and evidence.
     const layoutNodes = new Map(visible.map((n,i) => [n.id,'s2s-node-'+i]));
     const layoutEdges = new Map(edges.map((e,i) => [e.id,'s2s-edge-'+i]));
-    const graph = new dagre.graphlib.Graph({multigraph:true});
-    graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:46, edgesep:24, ranksep:86, marginx:40, marginy:38});
+    const graph = new dagre.graphlib.Graph({multigraph:true,compound:isAtlas});
+    // Compound groups reserve half a separation above their members. Keep
+    // room for a 44px region control in either layout direction.
+    graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:isAtlas?112:46, edgesep:24, ranksep:isAtlas?112:86, marginx:40, marginy:38});
     graph.setDefaultEdgeLabel(() => ({}));
     for (const n of visible) {
       const height = 106 + Math.max(0, wrap(n.label, 12).length - 1) * 18;
       graph.setNode(layoutNodes.get(n.id), {width:220, height});
+    }
+    const groups=isAtlas?data.regions.filter(r=>r.nodeIds.some(id=>visibleIds.has(id))):[];
+    const layoutGroups=new Map(groups.map((r,i)=>[r.id,'s2s-region-'+i]));
+    for(const region of groups) {
+      const id=layoutGroups.get(region.id);graph.setNode(id,{width:260,height:48});
+      for(const child of region.nodeIds.filter(n=>visibleIds.has(n)))graph.setParent(layoutNodes.get(child),id);
     }
     for (const e of edges) {
       graph.setEdge(layoutNodes.get(e.from), layoutNodes.get(e.to), {width:Math.min(140, Math.max(54, Array.from(e.label).length * 7)),
@@ -282,6 +321,17 @@
       defs.append(marker);
     }
     connections.append(defs);
+    $('region-layer').replaceChildren();
+    for(const region of groups) {
+      const box=graph.node(layoutGroups.get(region.id));
+      const block=element('div',undefined,'map-region '+region.displayStatus);
+      block.dataset.id=region.id;
+      block.style.cssText='left:'+(box.x+dx-box.width/2)+'px;top:'+(box.y+dy-box.height/2)+'px;width:'+box.width+'px;height:'+box.height+'px';
+      const label=element('button',region.label,'map-region-label');label.type='button';
+      label.setAttribute('aria-label',region.label+' · '+labels[region.displayStatus]);
+      label.append(element('span',labels[region.displayStatus],'map-region-status'));
+      label.addEventListener('click',()=>showItem(region,true));block.append(label);$('region-layer').append(block);
+    }
     const layer = $('node-layer');
     layer.replaceChildren();
     for (const e of edges) {
@@ -453,13 +503,13 @@
     }
     for (const node of document.querySelectorAll('.node')) {
       node.classList.toggle('dim', !!neighbors && !neighbors.has(node.dataset.id));
-      node.classList.toggle('selected',node.dataset.id === selected);
+      node.classList.toggle('selected',node.dataset.id === (subjectMap.get(selected)?.nodeId||selected));
       node.classList.toggle('active',activeNodes.has(node.dataset.id));
       node.classList.toggle('flow-origin',node.dataset.id === edge?.from);
       node.classList.toggle('flow-destination',node.dataset.id === edge?.to);
       node.classList.toggle('explaining',isPlaying() && !cameraMotion && !preparingStep && activeNodes.has(node.dataset.id) && !canAnimateTransfer(edge) && !reducedMotion.matches);
       node.setAttribute('aria-current',node.dataset.id === (edge?.to || step?.nodeId) ? 'step' : 'false');
-      node.setAttribute('aria-pressed', String(node.dataset.id === selected));
+      node.setAttribute('aria-pressed', String(node.dataset.id === (subjectMap.get(selected)?.nodeId||selected)));
     }
     for (const node of document.querySelectorAll('.edge')) {
       const active = node.dataset.id === activeEdge;
@@ -480,6 +530,9 @@
     }
     syncTransfer(edge);
     syncPlayback();
+    for(const button of document.querySelectorAll('[data-capability-id]'))button.classList.toggle('active',button.dataset.capabilityId===selected);
+    for(const button of $('atlas-regions').children)button.classList.toggle('active',button.dataset.regionId===regionId);
+    for(const block of $('region-layer').children)block.classList.toggle('selected',block.dataset.id===selected);
     syncLocation();
   }
   function setStep(index, preserveFocus = false) {
@@ -600,7 +653,7 @@
     applyZoom();
     canvas.scrollLeft = cx*zoom+stage.offsetLeft-canvas.clientWidth/2;
     canvas.scrollTop = cy*zoom+stage.offsetTop-canvas.clientHeight/2;
-    if ($('panel').classList.contains('open') && nodeMap.has(selected)) revealNode(selected);
+    if ($('panel').classList.contains('open') && selectedNodeId()) revealNode(selectedNodeId());
     updateMini();
   }
   function fit(initial = false) {
@@ -611,7 +664,7 @@
     applyZoom();
     canvas.scrollLeft=$('stage').offsetLeft+(graphWidth*zoom-canvas.clientWidth)/2;
     canvas.scrollTop=$('stage').offsetTop+(graphHeight*zoom-canvas.clientHeight)/2;
-    if ($('panel').classList.contains('open') && nodeMap.has(selected)) revealNode(selected);
+    if ($('panel').classList.contains('open') && selectedNodeId()) revealNode(selectedNodeId());
     updateMini();
   }
   function updateMini() {
@@ -734,10 +787,11 @@
     frameBounds({left:target.offsetLeft,top:target.offsetTop,right:target.offsetLeft+target.offsetWidth,
       bottom:target.offsetTop+target.offsetHeight},smooth,done);
   }
-  function chooseNode(node) {
+  function chooseNode(node, inspection=node) {
     stop();
-    if (!detail && node.importance==='detail') {detail=true;$('mode').value='detail';draw(nodeMap.has(selected)?selected:edgeMap.get(selected)?.to);}
-    showItem(node,true);
+    if(regionId&&!visibleNodes().some(n=>n.id===node.id)){regionId=null;draw();updateNavigation();}
+    if (!detail && node.importance==='detail') {detail=true;$('mode').value='detail';draw(selectedNodeId()||edgeMap.get(selected)?.to);}
+    showItem(inspection,true);
   }
   function changeMode() {
     stop();detail=$('mode').value==='detail';
@@ -745,22 +799,24 @@
       stepIndex=-1;draw();setStep(0);
       return;
     }
-    const visible=id=>detail||nodeMap.get(id)?.importance==='core';
+    const visibleIds=new Set(visibleNodes().map(n=>n.id));
+    const visible=id=>visibleIds.has(id);
     if (focusId && !visible(focusId)) focusId=null;
     const edge=edgeMap.get(selected);
-    if ((nodeMap.has(selected) && !visible(selected)) || (edge && (!visible(edge.from)||!visible(edge.to)))) {
+    if ((selectedNodeId() && !visible(selectedNodeId())) || (edge && (!visible(edge.from)||!visible(edge.to)))) {
       selected=null;closePanel(false);
     }
     draw();updateNavigation();
-    if (nodeMap.has(selected)) revealNode(selected);
+    if (selectedNodeId()) revealNode(selectedNodeId());
   }
   function updateNavigation() {
     $('structure').setAttribute('aria-pressed',String(view==='structure'));
     $('workflow').setAttribute('aria-pressed',String(view==='flow'));
-    $('overview').classList.toggle('active',view==='structure'&&!focusId);
+    $('overview').classList.toggle('active',view==='structure'&&!focusId&&!regionId);
     for(const button of $('flows').children) button.classList.toggle('active',view==='flow'&&Number(button.dataset.index)===scenarioIndex);
     $('crumb').textContent = focusId ? t('연결 강조 중 · ','Connections focused · ')+nodeMap.get(focusId).label : view==='flow' ?
-      data.scenarios[scenarioIndex].title : t('설명 범위 / 구성','Explanation scope / structure');
+      data.scenarios[scenarioIndex].title : regionId?regionMap.get(regionId).label:
+      isAtlas?t('프로젝트 / 전체 구성','Project / overview'):t('설명 범위 / 구성','Explanation scope / structure');
     const focused = !!focusId && focusId === selected;
     $('focus-related').textContent = focused ? t('연결 강조 해제','Clear connection focus') : t('연결된 부분에 집중','Focus on connections');
     $('focus-related').setAttribute('aria-pressed',String(focused));
@@ -769,6 +825,7 @@
   function setView(value) {
     if (value !== view) focusId = null;
     stop();view=value;
+    if(value==='flow'&&regionId){regionId=null;draw();}
     $('player').hidden=view!=='flow'||!data.scenarios.length;
     if(view==='flow'&&stepIndex<0)setStep(0);
     updateNavigation();paint();
@@ -782,6 +839,13 @@
     if(selected&&itemMap.has(selected))params.set(nodeMap.has(selected)?'node':edgeMap.has(selected)?'edge':'item',selected);
     if(selected&&$('panel').classList.contains('open'))params.set('panel','1');
     if(focusId)params.set('focus',focusId);
+    if(regionId)params.set('region',regionId);
+    return '#'+params.toString();
+  }
+  function savedAtlasLocation() {
+    const params=new URLSearchParams(locationHash().slice(1));
+    const camera=readCamera();
+    params.set('camera',JSON.stringify([camera.zoom,...[camera.left,camera.top,camera.pageTop].map(n=>Math.round(n*1000)/1000)]));
     return '#'+params.toString();
   }
   function syncLocation() {
@@ -795,7 +859,7 @@
   }
   function readLocation(hash) {
     const params=new URLSearchParams(hash.slice(1));
-    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus']);
+    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera']);
     if([...params.keys()].some(key=>!allowed.has(key)||params.getAll(key).length!==1)||
       params.get('s2s')!=='1'||params.get('subject')!==data.subject.id||
       !['structure','flow'].includes(params.get('view'))||
@@ -803,7 +867,12 @@
       (params.has('speed')&&!['1','1.5','2'].includes(params.get('speed')))||
       (params.has('panel')&&params.get('panel')!=='1'))throw new Error('Invalid location');
     const result={view:params.get('view'),detail:params.get('detail')==='detail',rate:Number(params.get('speed')||1),scenario:0,step:-1,
-      item:null,panel:params.has('panel'),focus:params.get('focus')};
+      item:null,panel:params.has('panel'),focus:params.get('focus'),region:params.get('region'),camera:null};
+    if(result.region&&(!isAtlas||!regionMap.has(result.region)||result.view!=='structure'))throw new Error('Missing region');
+    if(params.has('camera')) {
+      result.camera=JSON.parse(params.get('camera'));
+      if(!isAtlas||!Array.isArray(result.camera)||result.camera.length!==4||result.camera.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<0||n>1e7)||result.camera[0]<.2||result.camera[0]>2)throw new Error('Invalid camera');
+    }
     if(result.view==='flow') {
       result.scenario=data.scenarios.findIndex(s=>s.id===params.get('scenario'));
       if(result.scenario<0)throw new Error('Missing scenario');
@@ -830,11 +899,12 @@
     restoringLocation=true;
     stop();history.length=0;closePanel(false);
     selected=null;focusId=null;stepIndex=-1;stepElapsed=0;playbackState='idle';
-    view=restored.view;detail=restored.detail;scenarioIndex=restored.scenario;playbackRate=restored.rate;
+    view=restored.view;detail=restored.detail;scenarioIndex=restored.scenario;playbackRate=restored.rate;regionId=restored.region||null;
     if(data.analysis.status==='insufficient') {invalid=!!hash;view='structure';}
     else {
       const inspection=itemMap.get(restored.item),edge=edgeMap.get(restored.item);
-      const inspectedNodes=nodeMap.has(restored.item)?[restored.item]:edge?[edge.from,edge.to]:[];
+      const inspectedNodes=nodeMap.has(restored.item)?[restored.item]:subjectMap.has(restored.item)?[subjectMap.get(restored.item).nodeId]:edge?[edge.from,edge.to]:[];
+      if(regionId&&inspectedNodes.some(id=>!visibleNodes().some(n=>n.id===id)))regionId=null;
       if(inspectedNodes.some(id=>nodeMap.get(id).importance==='detail'))detail=true;
       $('mode').value=detail?'detail':'core';$('scenario').value=String(scenarioIndex);
       $('playback-speed').value=String(playbackRate);
@@ -848,15 +918,53 @@
       focusId=restored.focus;
       if(nodeMap.has(selected))revealNode(selected);
       else if(edgeMap.has(selected))revealConnection(edgeMap.get(selected));
+      else if(subjectMap.has(selected))revealNode(subjectMap.get(selected).nodeId);
       else if(view==='flow')revealStep(false);
       else fit();
       $('player').hidden=view!=='flow'||!data.scenarios.length;
       updateNavigation();paint();
+      if(restored.camera){const [zoom,left,top,pageTop]=restored.camera;applyCamera({zoom,left,top,pageTop});updateMini();}
     }
     restoringLocation=false;
     syncLocation();
     $('navigation-notice').textContent=invalid?t('현재 파일에서 링크의 위치를 찾을 수 없어 기본 화면으로 열었습니다.','This location is unavailable in the current file. The default view is shown.'):'';
     $('navigation-notice').hidden=!invalid;
+  }
+  function visibleNodes() {
+    if(!isAtlas||!regionId)return data.nodes.filter(n=>detail||n.importance==='core');
+    const members=new Set(regionMap.get(regionId).nodeIds),visible=new Set(members);
+    for(const e of data.edges){if(members.has(e.from))visible.add(e.to);if(members.has(e.to))visible.add(e.from);}
+    return data.nodes.filter(n=>visible.has(n.id));
+  }
+  function rememberView() {
+    history.push({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,regionId,left:$('canvas').scrollLeft,top:$('canvas').scrollTop});
+  }
+  function enterRegion(id) {
+    stop();rememberView();closePanel(false);regionId=id;focusId=null;selected=null;view='structure';
+    $('player').hidden=true;
+    draw();fit(true);updateNavigation();paint();
+  }
+  function capabilityButton(subject) {
+    const button=element('button',subject.label,'capability-button');button.type='button';button.dataset.capabilityId=subject.id;
+    button.append(element('small',subject.link.generated?t('동작 설명 준비됨','Explanation available'):t('상세 설명 미생성','Detail not generated')));
+    button.addEventListener('click',()=>{
+      chooseNode(nodeMap.get(subject.nodeId),subjectMap.get(subject.id));
+    });return button;
+  }
+  function initializeAtlas() {
+    if(!isAtlas)return;
+    document.body.classList.add('atlas-page');$('atlas-navigation').hidden=false;$('atlas-summary').hidden=false;
+    const counts=t('책임 구역 ','Responsibility regions ')+data.regions.length+' · '+t('구성 요소 ','Components ')+data.nodes.length+' · '+t('주요 기능 ','Capabilities ')+data.subjects.length;
+    $('atlas-summary').append(element('span',counts));
+    const scope=element('button',t('분석 범위 보기','View analysis scope'));scope.type='button';scope.addEventListener('click',()=>{const section=$('scope-title').parentElement;section.open=true;section.scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth'});});$('atlas-summary').append(scope);
+    $('atlas-regions-title').textContent=t('책임 구역','RESPONSIBILITIES');$('atlas-regions-title').hidden=!data.regions.length;
+    $('capabilities-title').textContent=t('주요 기능','CAPABILITIES');$('capabilities-title').hidden=!data.subjects.length;
+    for(const region of data.regions){const button=element('button',region.label);button.type='button';button.dataset.regionId=region.id;
+      button.append(element('small',region.nodeIds.length+t('개 구성 · 펼쳐 보기',' parts · explore')));button.addEventListener('click',()=>enterRegion(region.id));$('atlas-regions').append(button);}
+    for(const subject of data.subjects)$('capabilities').append(capabilityButton(subject));
+    $('diagram-title').textContent=t('프로젝트를 한눈에','Explore the project');
+    $('diagram-hint').textContent=t('구역을 펼치거나 주요 기능을 선택해 동작 설명으로 이동하세요.','Explore a responsibility region or choose a capability to open its explanation.');
+    if(data.subjects.every(s=>s.scope))$('regions').hidden=true;
   }
   function keyboardNavigation(event) {
     if(event.defaultPrevented||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||data.analysis.status==='insufficient')return;
@@ -911,6 +1019,7 @@
     });
     paintTheme();
     $('summary-details-title').textContent=t('입력과 결과 보기','Inputs and outputs');
+    $('summary-details-title').parentElement.hidden=!data.summary.inputs.length&&!data.summary.outputs.length;
     $('rail').setAttribute('aria-label',t('설명 탐색','Explore explanation'));
     $('rail-label').textContent='EXPLORE';
     $('search').placeholder=t('구성 요소 검색','Search components');
@@ -946,7 +1055,7 @@
     $('playback-speed').addEventListener('change',changeSpeed);
     $('panel-size').addEventListener('click',()=>{
       stop();document.body.classList.toggle('panel-expanded');positionPanel();
-      if(nodeMap.has(selected))revealNode(selected,true);
+      if(selectedNodeId())revealNode(selectedNodeId(),true);
       else if(edgeMap.has(selected))revealConnection(edgeMap.get(selected),true);
     });
     $('back').textContent=t('← 돌아가기','← Back');
@@ -969,7 +1078,11 @@
       if(!query)return;
       const matches=data.nodes.filter(n=>[n.label,n.codeName,n.roleLabel].some(v=>v?.toLocaleLowerCase().includes(query)));
       for(const node of matches){const button=element('button',node.label);button.type='button';button.addEventListener('click',()=>chooseNode(node));$('results').append(button);}
-      if(!matches.length)$('results').append(element('p',t('일치하는 구성 요소가 없습니다.','No matching components.')));
+      if(isAtlas) {
+        for(const subject of data.subjects.filter(s=>[s.label,s.summary,s.question,...(s.targets||[]).map(t=>t.symbol)].some(v=>v?.toLocaleLowerCase().includes(query))))$('results').append(capabilityButton(subject));
+        for(const region of data.regions.filter(r=>[r.label,r.summary].some(v=>v.toLocaleLowerCase().includes(query)))){const button=element('button',region.label+' · '+t('구역','region'));button.type='button';button.addEventListener('click',()=>enterRegion(region.id));$('results').append(button);}
+      }
+      if(!$('results').childElementCount)$('results').append(element('p',t('일치하는 구성 요소가 없습니다.','No matching components.')));
     });
     data.scenarios.forEach((scenario,index)=>{
       const button=element('button',scenario.title);button.type='button';button.dataset.index=index;
@@ -979,21 +1092,21 @@
     });
     $('structure').addEventListener('click',()=>setView('structure'));
     $('workflow').addEventListener('click',()=>setView('flow'));
-    $('overview').addEventListener('click',()=>{history.length=0;focusId=null;selected=null;closePanel();setView('structure');fit();});
+    $('overview').addEventListener('click',()=>{history.length=0;focusId=null;selected=null;closePanel();regionId=null;draw();setView('structure');fit();});
     $('focus-related').addEventListener('click',()=>{
       if(!nodeMap.has(selected))return;
       if(focusId===selected){focusId=null;updateNavigation();paint();return;}
       stop();
-      history.push({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,left:$('canvas').scrollLeft,top:$('canvas').scrollTop});
+      rememberView();
       focusId=selected;closePanel();revealNode(focusId);updateNavigation();paint();
     });
     $('back').addEventListener('click',()=>{
       const saved=history.pop();if(!saved)return;stop();closePanel();
-      ({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex}=saved);
+      ({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,regionId}=saved);
       $('mode').value=detail?'detail':'core';$('scenario').value=String(scenarioIndex);draw();
       if(stepIndex>=0){const selection=selected;setStep(stepIndex,true);selected=selection;}
       setView(view);$('canvas').scrollLeft=saved.left;$('canvas').scrollTop=saved.top;
-      if(nodeMap.has(selected))showItem(nodeMap.get(selected));
+      if(itemMap.has(selected))showItem(itemMap.get(selected));
       updateMini();paint();
     });
     $('zoom-in').addEventListener('click',()=>setZoom(zoom*1.2));
@@ -1029,6 +1142,7 @@
     updateNavigation();
   }
   function initialize() {
+    if(isAtlas)document.body.classList.add('atlas-page');
     document.querySelector('.skip').textContent=t('그림으로 바로 이동','Skip to diagram');
     $('snapshot').textContent=data.snapshot.repository+' · '+(data.snapshot.commit?.slice(0,8)||t('Git 정보 없음','No Git snapshot'))+
       (data.snapshot.workingTreeClean===false ? t(' · 미커밋 변경 있음',' · Uncommitted changes') : '');
@@ -1090,7 +1204,7 @@
       for(const id of region.nodeIds) {const button=element('button',nodeMap.get(id).label);button.type='button';button.addEventListener('click',()=>{detail=true;$('mode').value='detail';draw();showItem(nodeMap.get(id),true);});block.append(button);}
       $('regions').append(block);
     }
-    for(const subject of data.subjects) $('regions').append(linkControl('behavior',subject.link,subject.label));
+    if(!isAtlas)for(const subject of data.subjects) $('regions').append(linkControl('behavior',subject.link,subject.label));
     $('rules-section').hidden=!data.rules.length;$('rules-title').textContent=t('어떤 규칙을 따르나요?','What rules apply?');
     for(const rule of data.rules) {
       const box=element('article',undefined,'rule-card');
@@ -1123,7 +1237,7 @@
         draw();
         positionPanel();
         if(isPlaying())revealStep(false);
-        else if($('panel').classList.contains('open') && nodeMap.has(selected))revealNode(selected);
+        else if($('panel').classList.contains('open') && selectedNodeId())revealNode(selectedNodeId());
         positionPanel();
       }
     },120);});
@@ -1143,6 +1257,7 @@
       else keyboardNavigation(event);
     });
     initializeCanvas();
+    initializeAtlas();
     // Do not serialize intermediate initialization states over a supplied link.
     navigationReady=true;
     if(location.hash.startsWith('#s2s='))restoreLocation(location.hash);

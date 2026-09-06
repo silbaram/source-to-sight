@@ -1,0 +1,511 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "atlas",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스의 프로젝트 구성과 공개 기능을 읽어 작성한 M5 지도입니다."
+  },
+  "snapshot": {
+    "repository": "hashicorp/golang-lru",
+    "branch": null,
+    "commit": "9c13c57de0bedd6b3e21183b34072e417ffa69d1",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T22:56:29Z",
+    "skillVersion": "0.6.0",
+    "model": null
+  },
+  "subject": {
+    "id": "golang-lru-golang-lru-c03e7757a0a8",
+    "kind": "project",
+    "title": "golang-lru · 캐시 정책과 공통 저장 구조",
+    "question": "golang-lru · 캐시 정책과 공통 저장 구조의 주요 구성과 기능을 설명해 줘",
+    "module": "golang-lru",
+    "targets": [
+      {
+        "label": "golang-lru"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "루트 캐시, simplelru·expirable 패키지와 별도 arc 모듈의 공개 구성"
+      ],
+      "excludes": [
+        "각 정책의 모든 퇴출 경로와 동시 실행 결과",
+        "외부 콜백 내부"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "library-sdk"
+    ],
+    "searched": [
+      "go.mod",
+      "arc/go.mod",
+      "lru.go",
+      "simplelru/lru.go",
+      "2q.go",
+      "arc/arc.go",
+      "expirable/expirable_lru.go",
+      "internal/list.go"
+    ],
+    "unresolved": [
+      "선택한 공개 기능과 관계를 읽었으며 모든 구현 경로를 추적하지 않았습니다."
+    ],
+    "nextAttempts": [
+      "관심 기능의 미생성 설명을 선택해 해당 범위를 추가로 읽습니다."
+    ]
+  },
+  "summary": {
+    "title": "golang-lru · 캐시 정책과 공통 저장 구조",
+    "purpose": "최근 사용한 값을 보관하는 캐시와 빈도·만료를 고려하는 변형을 제공합니다.",
+    "inputs": [],
+    "outputs": [],
+    "limitations": [
+      "각 정책의 모든 퇴출 경로와 동시 실행 결과",
+      "외부 콜백 내부"
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "golang-lru-golang-lru-c03e7757a0a8",
+    "question": "golang-lru · 캐시 정책과 공통 저장 구조의 주요 구성과 기능을 설명해 줘",
+    "language": "ko",
+    "command": "$codebase-atlas golang-lru · 캐시 정책과 공통 저장 구조의 주요 구성과 기능을 설명해 줘 | subject=golang-lru-golang-lru-c03e7757a0a8 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "cache",
+      "label": "기본 캐시",
+      "codeName": "Cache",
+      "summary": "공개 캐시가 잠금을 관리하고 기본 LRU 구현을 사용합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cache"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "twoq",
+      "label": "최근·빈도 분리",
+      "codeName": "TwoQueueCache",
+      "summary": "최근 사용과 반복 사용을 구분하는 캐시 정책입니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-twoq"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "arc",
+      "label": "적응형 캐시",
+      "codeName": "ARCCache",
+      "summary": "별도 arc 모듈에서 최근 사용과 사용 빈도에 적응하는 캐시를 제공합니다.",
+      "roleLabel": "별도 모듈",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-arc",
+        "ev-arc-module"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "expirable",
+      "label": "만료되는 캐시",
+      "codeName": "expirable.LRU",
+      "summary": "유효 기간과 정리 작업을 가진 캐시입니다.",
+      "roleLabel": "패키지",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-expirable"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "simple",
+      "label": "기본 퇴출 구조",
+      "codeName": "simplelru.LRU",
+      "summary": "직접 잠금을 제공하지 않는 기본 LRU 구현으로 여러 캐시 정책에서 사용합니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-simple"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "list",
+      "label": "항목의 순서 보관",
+      "codeName": "LruList / Entry",
+      "summary": "항목과 연결 목록을 보관하는 내부 자료 구조입니다.",
+      "roleLabel": "구성 요소",
+      "kind": "component",
+      "importance": "detail",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-list"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    }
+  ],
+  "edges": [
+    {
+      "id": "cache-backend",
+      "from": "cache",
+      "to": "simple",
+      "label": "기본 LRU 생성",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cache"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "twoq-backend",
+      "from": "twoq",
+      "to": "simple",
+      "label": "기본 LRU 생성",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-twoq"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "arc-backend",
+      "from": "arc",
+      "to": "simple",
+      "label": "기본 LRU 생성",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-arc"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "simple-list",
+      "from": "simple",
+      "to": "list",
+      "label": "항목 순서 보관",
+      "type": "depends-on",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-simple"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "expirable-list",
+      "from": "expirable",
+      "to": "list",
+      "label": "만료 항목 보관",
+      "type": "depends-on",
+      "derivation": "direct-code",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-expirable"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    }
+  ],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [
+    {
+      "id": "policies",
+      "label": "공개 캐시 정책",
+      "summary": "사용할 보관·퇴출 정책을 선택합니다.",
+      "nodeIds": [
+        "cache",
+        "twoq",
+        "arc",
+        "expirable"
+      ],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cache",
+        "ev-twoq",
+        "ev-arc",
+        "ev-expirable"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    },
+    {
+      "id": "storage",
+      "label": "저장과 순서 관리",
+      "summary": "기본 LRU와 내부 목록이 항목의 보관 순서를 관리합니다.",
+      "nodeIds": [
+        "simple",
+        "list"
+      ],
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-simple",
+        "ev-list"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다."
+    }
+  ],
+  "subjects": [
+    {
+      "id": "golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652",
+      "kind": "capability",
+      "question": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서?",
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "Cache.Resize + simplelru.LRU.Resize"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "정상 생성된 캐시의 0 이상 크기 변경, 퇴출 반복과 잠금 해제 후 콜백",
+          "동기 사용자 콜백의 정상 반환 또는 panic"
+        ],
+        "excludes": [
+          "음수 크기, 내부 제거·할당 실패",
+          "콜백 내부와 별도 고루틴의 전체 실행 순서"
+        ]
+      },
+      "label": "크기 변경과 퇴출 알림",
+      "summary": "캐시를 줄일 때 제거와 사용자 알림 순서를 살펴봅니다.",
+      "nodeId": "cache",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-resize"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "library-resize-callbacks.html",
+        "generated": false,
+        "command": "$code-flow 캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서? | subject=golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652 | language=ko"
+      }
+    },
+    {
+      "id": "golang-lru-cache-add-2a8c32889414",
+      "kind": "workflow",
+      "question": "Cache.Add는 용량이 찼을 때 무엇을 제거하고 사용자 콜백을 언제 호출하나요?",
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "동기화된 캐시의 추가",
+          "file": "lru.go",
+          "symbol": "Cache.Add"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "일반 Cache에 새 키를 추가해 용량을 초과하는 경로",
+          "퇴출 콜백이 등록된 경우 잠금과 알림의 순서"
+        ],
+        "excludes": [
+          "expirable 및 ARC 캐시",
+          "동시 호출 간 전체 순서",
+          "사용자 콜백 내부"
+        ]
+      },
+      "label": "값 추가와 오래된 값 제거",
+      "summary": "추가로 용량을 넘을 때의 기본 동작을 살펴봅니다.",
+      "nodeId": "cache",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-cache",
+        "ev-simple"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "library-eviction.html",
+        "generated": false,
+        "command": "$code-flow Cache.Add는 용량이 찼을 때 무엇을 제거하고 사용자 콜백을 언제 호출하나요? | subject=golang-lru-cache-add-2a8c32889414 | language=ko"
+      }
+    },
+    {
+      "id": "golang-lru-newlru-4e1109769de9",
+      "kind": "lifecycle",
+      "question": "만료 캐시 초기화을 설명해 줘",
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "NewLRU",
+          "file": "expirable/expirable_lru.go",
+          "symbol": "NewLRU"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "크기·유효 기간과 정리 작업을 준비하는 초기화"
+        ],
+        "excludes": [
+          "백그라운드 실행 시점과 모든 만료 경로"
+        ]
+      },
+      "label": "만료 캐시 초기화",
+      "summary": "크기·유효 기간과 정리 작업을 준비하는 초기화",
+      "nodeId": "expirable",
+      "confidence": "resolved",
+      "evidenceIds": [
+        "ev-expirable"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 역할과 관계를 해당 소스 범위에서 확인했습니다.",
+      "link": {
+        "url": "golang-lru-newlru-4e1109769de9.html",
+        "generated": false,
+        "command": "$code-flow 만료 캐시 초기화을 설명해 줘 | subject=golang-lru-newlru-4e1109769de9 | language=ko | targets=[{\"label\":\"NewLRU\",\"file\":\"expirable/expirable_lru.go\",\"symbol\":\"NewLRU\"}] | scope={\"includes\":[\"크기·유효 기간과 정리 작업을 준비하는 초기화\"],\"excludes\":[\"백그라운드 실행 시점과 모든 만료 경로\"]}"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-module",
+      "kind": "config",
+      "file": "go.mod",
+      "symbolOrKey": "module",
+      "startLine": 1,
+      "endLine": 3,
+      "anchorText": "module github.com/hashicorp/golang-lru/v2",
+      "contentHash": "cdcf99b07e4f440140b8ef19f5a361a71edf79b42fb9027ffb0c8f9eef96282c",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-arc-module",
+      "kind": "config",
+      "file": "arc/go.mod",
+      "symbolOrKey": "arc module",
+      "startLine": 1,
+      "endLine": 5,
+      "anchorText": "module github.com/hashicorp/golang-lru/arc/v2",
+      "contentHash": "380f480e87fd4d75e34fe525430d8412da77467160c9d3e2443574e50c595d12",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-cache",
+      "kind": "code",
+      "file": "lru.go",
+      "symbolOrKey": "Cache / NewWithEvict",
+      "startLine": 17,
+      "endLine": 44,
+      "anchorText": "// Cache is a thread-safe fixed size LRU cache.",
+      "contentHash": "529954c22649f0ecac5de6799af5316a91efde4c60e618582815ab3934238879",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-simple",
+      "kind": "code",
+      "file": "simplelru/lru.go",
+      "symbolOrKey": "simplelru.LRU / NewLRU",
+      "startLine": 15,
+      "endLine": 35,
+      "anchorText": "// LRU implements a non-thread safe fixed size LRU cache",
+      "contentHash": "24745738bd3e7fe49d30be912468cd1feaba5a0536e92ee75b7ce4c87ef82692",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-twoq",
+      "kind": "code",
+      "file": "2q.go",
+      "symbolOrKey": "TwoQueueCache / New2QParams",
+      "startLine": 23,
+      "endLine": 91,
+      "anchorText": "// TwoQueueCache is a thread-safe fixed size 2Q cache.",
+      "contentHash": "e96f5a18839b9c6c644485fa859518825dd7d20bfe00a605f9f20d2196862c94",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-arc",
+      "kind": "code",
+      "file": "arc/arc.go",
+      "symbolOrKey": "ARCCache / NewARC",
+      "startLine": 20,
+      "endLine": 62,
+      "anchorText": "type ARCCache[K comparable, V any] struct {",
+      "contentHash": "1edc16ec78fef1a14ce3a1fa50f14761c9cc8748987c34ccb8f58aa8464757cb",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-expirable",
+      "kind": "code",
+      "file": "expirable/expirable_lru.go",
+      "symbolOrKey": "expirable.LRU / NewLRU",
+      "startLine": 25,
+      "endLine": 94,
+      "anchorText": "// LRU implements a thread-safe LRU with expirable entries.",
+      "contentHash": "d63c512c7a805472af9b8491eb7046bd0e4d6069014c797cbe7e10cdd020a0a5",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-list",
+      "kind": "code",
+      "file": "internal/list.go",
+      "symbolOrKey": "LruList / Entry",
+      "startLine": 9,
+      "endLine": 47,
+      "anchorText": "// Entry is an LRU Entry",
+      "contentHash": "81db950294579bcaeccc75b3167149dce5c170007c5316145d802cedf93f80a9",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-resize",
+      "kind": "code",
+      "file": "lru.go",
+      "symbolOrKey": "Cache.Resize",
+      "startLine": 185,
+      "endLine": 201,
+      "anchorText": "func (c *Cache[K, V]) Resize(size int) (evicted int) {",
+      "contentHash": "529954c22649f0ecac5de6799af5316a91efde4c60e618582815ab3934238879",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

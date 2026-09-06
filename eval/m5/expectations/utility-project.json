@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "caseId": "utility-project",
+  "identity": {
+    "layer": "atlas",
+    "language": "ko",
+    "subject": {
+      "id": "strip-ansi-strip-ansi-0dc67a470978",
+      "kind": "project",
+      "title": "strip-ansi · 문자열을 정리하는 작은 도구",
+      "question": "strip-ansi · 문자열을 정리하는 작은 도구의 주요 구성과 기능을 설명해 줘",
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "strip-ansi"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "배포 진입점, 공개 함수, 타입 선언과 사용 예제"
+        ],
+        "excludes": [
+          "외부 ansi-regex 구현",
+          "별도 CLI와 스트림 저장소"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "cli-utility"
+  ],
+  "statuses": [
+    "complete"
+  ],
+  "noScenarios": true,
+  "requiredFacts": [
+    "배포 진입점과 타입 선언은 문자열 정리 함수를 공개한다.",
+    "별도 CLI와 스트림 도구를 이 저장소의 구성으로 포함하지 않는다."
+  ],
+  "forbiddenClaims": [
+    "문자열 정리 함수 안에 HTTP 서버나 실행 시나리오가 있다고 설명한다."
+  ],
+  "forbiddenEdges": [],
+  "nodes": [
+    {
+      "key": "cleaner",
+      "file": "index.js",
+      "line": 5,
+      "codeNames": [
+        "stripAnsi"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [],
+  "regions": [],
+  "capabilities": [
+    {
+      "id": "strip-ansi-stripansi-9a2291855487",
+      "scope": {
+        "includes": [
+          "공개 함수의 입력 검사, 빠른 반환, 매처를 이용한 치환"
+        ],
+        "excludes": [
+          "ansi-regex 의존성의 정규식 내부",
+          "별도 CLI와 스트림 패키지"
+        ]
+      },
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "stripAnsi",
+          "file": "index.js",
+          "symbol": "stripAnsi"
+        }
+      ],
+      "kind": "capability",
+      "ownerRole": "cleaner"
+    },
+    {
+      "id": "strip-ansi-stripansi-9ab62d414d17",
+      "scope": {
+        "includes": [
+          "문자열이 아닌 입력의 공개 함수 분기"
+        ],
+        "excludes": [
+          "문자열 치환과 의존성 매처 내부"
+        ]
+      },
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "stripAnsi"
+        }
+      ],
+      "kind": "capability",
+      "ownerRole": "cleaner"
+    }
+  ]
+}
