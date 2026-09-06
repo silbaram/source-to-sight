@@ -1,0 +1,15 @@
+{
+  "name": "source-to-sight",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -p 'test_*.py' -v",
+    "fixtures": "python3 scripts/build_examples.py",
+    "test:browser": "playwright test",
+    "vendor": "node scripts/vendor-layout.cjs"
+  },
+  "devDependencies": {
+    "@dagrejs/dagre": "3.1.1",
+    "@playwright/test": "1.63.0"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "synthetic",
+    "description": "공통 화면과 데이터 계약을 시험하는 합성 모델입니다.",
+    "humanReviewed": false
+  },
+  "snapshot": {
+    "repository": "synthetic-model",
+    "branch": null,
+    "commit": null,
+    "workingTreeClean": null,
+    "generatedAt": "2026-09-06T03:40:00Z",
+    "skillVersion": "0.1.0",
+    "model": null
+  },
+  "subject": {
+    "id": "insufficient",
+    "kind": "capability",
+    "title": "등록 경로를 찾지 못한 기능",
+    "question": "등록 경로를 찾지 못한 기능 설명해 줘",
+    "module": "framework-plugin",
+    "targets": [
+      {
+        "label": "등록 경로를 찾지 못한 기능"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "등록 경로를 찾지 못한 기능"
+      ],
+      "excludes": [
+        "외부 시스템과 동적으로 선택되는 구현의 내부"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "insufficient",
+    "profiles": [
+      "framework-plugin"
+    ],
+    "searched": [
+      "설정 파일",
+      "공개 등록 함수"
+    ],
+    "unresolved": [
+      "실제 등록 위치를 찾지 못했습니다."
+    ],
+    "nextAttempts": [
+      "사용하는 플러그인 이름이나 등록 파일을 지정합니다."
+    ]
+  },
+  "summary": {
+    "title": "등록 경로를 찾지 못한 기능",
+    "purpose": "근거가 부족할 때 빈 차트 대신 이유와 다음 시도를 안내합니다.",
+    "inputs": [],
+    "outputs": [],
+    "limitations": []
+  },
+  "nodes": [],
+  "edges": [],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [],
+  "subjects": [],
+  "evidence": [],
+  "warnings": [],
+  "sources": [],
+  "links": {},
+  "regeneration": {
+    "subjectId": "insufficient",
+    "question": "등록 경로를 찾지 못한 기능 설명해 줘",
+    "language": "ko",
+    "command": "$code-flow 등록 경로를 찾지 못한 기능 설명해 줘"
+  }
+}

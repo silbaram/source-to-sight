@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="__S2S_LANGUAGE__">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>__S2S_TITLE__ · Source to Sight</title>
+  <style>__S2S_STYLE__</style>
+</head>
+<body>
+  <!-- s2s:regen — read subject, scope, language and command from s2s-data -->
+  <a class="skip" href="#canvas">Skip to diagram</a>
+  <header class="masthead">
+    <a class="brand" href="#" aria-label="Source to Sight"><span class="brand-mark" aria-hidden="true">◎</span> source to sight<span class="brand-dot">.</span></a>
+    <span id="snapshot" class="snapshot"></span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <div class="eyebrow"><span id="layer-label"></span><span id="status-badge" class="pill"></span></div>
+      <h1 id="title"></h1>
+      <p id="purpose" class="purpose"></p>
+      <p id="provenance" class="provenance"></p>
+      <div id="io" class="io"></div>
+      <nav id="links" class="links" aria-label="Related explanations"></nav>
+    </section>
+    <details id="warnings" class="warnings"><summary id="warnings-title"></summary><div id="warning-list"></div></details>
+    <section id="insufficient" class="empty" hidden></section>
+    <section id="workspace" class="workspace">
+      <div class="diagram-column">
+        <div class="diagram-toolbar"><div><h2 id="diagram-title"></h2><p id="diagram-hint"></p></div><label class="mode-label"><span id="mode-label"></span><select id="mode"></select></label></div>
+        <div id="legend" class="legend"></div>
+        <div id="canvas" class="canvas" role="region" tabindex="0" aria-label="Interactive diagram">
+          <div id="stage" class="stage"><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div>
+        </div>
+        <section id="player" class="player" hidden>
+          <div class="player-controls"><select id="scenario" aria-label="Scenario"></select><div class="transport"><button id="previous" type="button">←</button><button id="play" type="button"></button><button id="next" type="button">→</button></div><span id="step-count"></span></div>
+          <div id="caption" class="caption" aria-live="polite"></div>
+          <div id="returns" class="returns"></div>
+        </section>
+        <div id="regions" class="regions"></div>
+      </div>
+      <aside id="panel" class="panel" aria-labelledby="panel-title">
+        <button id="close-panel" class="close-panel" type="button">×</button>
+        <div id="panel-body"></div>
+      </aside>
+    </section>
+    <section id="rules-section" class="rules-section" hidden><h2 id="rules-title"></h2><div id="rules-list" class="rules-list"></div></section>
+    <section class="scope"><details><summary id="scope-title"></summary><div id="scope-body"></div></details></section>
+    <footer><p id="offline-note"></p><details><summary>Open-source licenses</summary><pre class="license">__S2S_NOTICES__</pre></details></footer>
+  </main>
+  <div id="announcement" class="announcement" role="status"></div>
+  <noscript>This explanation needs JavaScript enabled. No server or network connection is required.</noscript>
+  <script id="s2s-data" type="application/json">__S2S_DATA__</script>
+  <script>__S2S_LAYOUT__</script>
+  <script>__S2S_VIEWER__</script>
+</body>
+</html>

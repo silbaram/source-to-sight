@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "atlas",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "description": "고정 커밋의 실제 코드를 읽고 범위를 정해 추적한 예시입니다.",
+    "humanReviewed": false
+  },
+  "snapshot": {
+    "repository": "chalk/strip-ansi",
+    "branch": null,
+    "commit": "38ff9f2282540422031ed523f0060c7bb575e20f",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T03:40:00Z",
+    "skillVersion": "0.1.0",
+    "model": null
+  },
+  "subject": {
+    "id": "strip-ansi-map",
+    "kind": "project",
+    "title": "문자열의 터미널 색상 표시 지우기",
+    "question": "strip-ansi 프로젝트 구성을 설명해 줘",
+    "module": "strip-ansi",
+    "targets": [
+      {
+        "label": "문자열의 터미널 색상 표시 지우기"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "문자열의 터미널 색상 표시 지우기"
+      ],
+      "excludes": [
+        "외부 시스템과 동적으로 선택되는 구현의 내부"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "complete",
+    "profiles": [
+      "cli-utility"
+    ],
+    "searched": [
+      "index.js"
+    ],
+    "unresolved": [],
+    "nextAttempts": []
+  },
+  "summary": {
+    "title": "작은 유틸리티의 프로젝트 지도",
+    "purpose": "글자 내용은 유지하면서 터미널의 색상·서식 제어 표시를 제거합니다.",
+    "inputs": [
+      "문자열"
+    ],
+    "outputs": [
+      "서식 제어 표시를 제거한 문자열"
+    ],
+    "limitations": []
+  },
+  "nodes": [
+    {
+      "id": "strip",
+      "kind": "component",
+      "label": "서식 표시 제거",
+      "roleLabel": "공개 함수",
+      "summary": "문자열인지 확인한 뒤, 제어 표시가 없으면 그대로 반환하고 있으면 제거합니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-strip"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다.",
+      "codeName": "stripAnsi"
+    }
+  ],
+  "edges": [],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [
+    {
+      "id": "public-api",
+      "label": "공개 기능",
+      "summary": "문자열 정리를 위한 공개 함수입니다.",
+      "nodeIds": [
+        "strip"
+      ],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-strip"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    }
+  ],
+  "subjects": [
+    {
+      "id": "utility-minimum",
+      "label": "서식 표시 제거",
+      "nodeId": "strip",
+      "link": {
+        "url": "utility-minimum.html",
+        "generated": false,
+        "command": "$code-flow stripAnsi"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev-strip",
+      "kind": "code",
+      "file": "index.js",
+      "symbolOrKey": "stripAnsi",
+      "startLine": 5,
+      "endLine": 19,
+      "anchorText": "export default function stripAnsi(string) {",
+      "contentHash": "9ff7e1abf2727fbf9854a9dfcc1e69d1f9a0b23ccc0649269fc1c4fa8e44bd79",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": [],
+  "links": {},
+  "regeneration": {
+    "subjectId": "strip-ansi-map",
+    "question": "strip-ansi 프로젝트 구성을 설명해 줘",
+    "language": "ko",
+    "command": "$codebase-atlas strip-ansi"
+  }
+}

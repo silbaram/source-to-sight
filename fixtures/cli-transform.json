@@ -1,0 +1,290 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "synthetic",
+    "description": "공통 화면과 데이터 계약을 시험하는 합성 모델입니다.",
+    "humanReviewed": false
+  },
+  "snapshot": {
+    "repository": "synthetic-model",
+    "branch": null,
+    "commit": null,
+    "workingTreeClean": null,
+    "generatedAt": "2026-09-06T03:40:00Z",
+    "skillVersion": "0.1.0",
+    "model": null
+  },
+  "subject": {
+    "id": "cli-transform",
+    "kind": "workflow",
+    "title": "입력 파일을 변환해 저장하기",
+    "question": "입력 파일을 변환해 저장하기 설명해 줘",
+    "module": "cli-utility",
+    "targets": [
+      {
+        "label": "입력 파일을 변환해 저장하기"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "입력 파일을 변환해 저장하기"
+      ],
+      "excludes": [
+        "외부 시스템과 동적으로 선택되는 구현의 내부"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "complete",
+    "profiles": [
+      "cli-utility"
+    ],
+    "searched": [
+      "fixtures/sources/synthetic.txt"
+    ],
+    "unresolved": [],
+    "nextAttempts": []
+  },
+  "summary": {
+    "title": "입력 파일을 변환해 저장하기",
+    "purpose": "입력 파일을 변환해 저장하기의 구조와 순서를 보여주는 합성 예시입니다.",
+    "inputs": [
+      "입력 파일"
+    ],
+    "outputs": [
+      "결과 파일"
+    ],
+    "limitations": []
+  },
+  "nodes": [
+    {
+      "id": "input",
+      "kind": "artifact",
+      "label": "입력 파일",
+      "roleLabel": "예시 단계",
+      "summary": "변환할 자료를 담고 있습니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-input"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    },
+    {
+      "id": "convert",
+      "kind": "component",
+      "label": "형식 변환",
+      "roleLabel": "예시 단계",
+      "summary": "읽은 내용을 목표 형식으로 변환합니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [
+        {
+          "id": "convert-content",
+          "plainText": "읽은 내용을 목표 형식으로 정리합니다.",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-convert-action"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+        }
+      ],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-convert"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    },
+    {
+      "id": "output",
+      "kind": "artifact",
+      "label": "결과 파일",
+      "roleLabel": "예시 단계",
+      "summary": "변환된 내용을 저장합니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-output"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-0",
+      "from": "input",
+      "to": "convert",
+      "label": "처리 결과 전달",
+      "type": "passes-data",
+      "derivation": "documentation",
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-edge-0"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    },
+    {
+      "id": "edge-1",
+      "from": "convert",
+      "to": "output",
+      "label": "처리 결과 전달",
+      "type": "passes-data",
+      "derivation": "documentation",
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-edge-1"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "normal",
+      "title": "대표 사용 순서",
+      "kind": "typical",
+      "steps": [
+        {
+          "id": "normal-step-1",
+          "edgeId": "edge-0",
+          "caption": "처리 결과 전달",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-edge-0"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+        },
+        {
+          "id": "normal-step-2",
+          "edgeId": "edge-1",
+          "caption": "처리 결과 전달",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-edge-1"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+        }
+      ]
+    }
+  ],
+  "stateTransitions": [
+    {
+      "id": "output-saved",
+      "subjectNodeId": "output",
+      "from": "저장 대기",
+      "to": "저장 완료",
+      "trigger": "결과 파일 저장에 성공했을 때만",
+      "plainText": "결과 파일의 저장 상태가 바뀝니다.",
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-output-saved"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "표시한 범위에서 이 역할 또는 관계를 확인했습니다."
+    }
+  ],
+  "rules": [],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-input",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-input",
+      "startLine": 7,
+      "endLine": 7,
+      "anchorText": "[cli-transform/ev-input] 변환할 자료를 담고 있습니다.",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-convert",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-convert",
+      "startLine": 8,
+      "endLine": 8,
+      "anchorText": "[cli-transform/ev-convert] 읽은 내용을 목표 형식으로 변환합니다.",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-output",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-output",
+      "startLine": 9,
+      "endLine": 9,
+      "anchorText": "[cli-transform/ev-output] 변환된 내용을 저장합니다.",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-edge-0",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-edge-0",
+      "startLine": 10,
+      "endLine": 10,
+      "anchorText": "[cli-transform/ev-edge-0] input → convert: 처리 결과 전달",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-edge-1",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-edge-1",
+      "startLine": 11,
+      "endLine": 11,
+      "anchorText": "[cli-transform/ev-edge-1] convert → output: 처리 결과 전달",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-convert-action",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-convert-action",
+      "startLine": 49,
+      "endLine": 49,
+      "anchorText": "[cli-transform/ev-convert-action] 변환 단계는 읽은 내용을 목표 형식으로 정리한다.",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-output-saved",
+      "kind": "documentation",
+      "file": "fixtures/sources/synthetic.txt",
+      "symbolOrKey": "ev-output-saved",
+      "startLine": 50,
+      "endLine": 50,
+      "anchorText": "[cli-transform/ev-output-saved] 출력 파일은 저장에 성공한 경우에만 저장 대기 상태에서 저장 완료 상태로 바뀐다.",
+      "contentHash": "56f45411c576a91bb310edbab88d4ae5169f45e40916107c614c236cc19f6faf",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": [],
+  "links": {},
+  "regeneration": {
+    "subjectId": "cli-transform",
+    "question": "입력 파일을 변환해 저장하기 설명해 줘",
+    "language": "ko",
+    "command": "$code-flow 입력 파일을 변환해 저장하기 설명해 줘"
+  }
+}

@@ -1,0 +1,3 @@
+# Preserve upstream license text and the reproducible vendor bundle formatting.
+skills/code-flow/templates/vendor/NotoSansKR.LICENSE -whitespace
+skills/code-flow/templates/vendor/dagre.min.js -whitespace

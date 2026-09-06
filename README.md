@@ -1,5 +1,9 @@
 # Source to Sight
 
+The technology-neutral evolution is in development. **M0 includes common graph contracts, evidence validation, and an offline workflow viewer**, with eleven fixtures including real plugin-framework, AI-agent, and JavaScript-utility sources. The repository-discovery `code-flow` skill is the next milestone.
+
+[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [Fixture provenance](fixtures/manifest.md)
+
 English | [한국어](./README.ko.md)
 
 An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
