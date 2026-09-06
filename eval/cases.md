@@ -1,6 +1,8 @@
-# 동작 설명 평가 사례 목록
+# 동작·규칙 설명 평가 사례 목록
 
 공개 저장소 6개·언어 3개·유형별 4개, 총 24개입니다. M1.5의 기존 18개 입력을 보존하고 M2 복합 사례를 유형별 하나씩 추가했습니다. 모두 코딩 에이전트가 작성한 후보이며 **사람이 확정한 골든셋이나 독립적인 모델 생성 실험이 아닙니다.**
+
+M3는 위 동작 24개를 보존하고 같은 대상의 규칙 설명 6개를 추가합니다. 통합 평가는 30개이며 원래 동작 manifest와 규칙 manifest를 분리해 이전 비교 기준을 유지합니다.
 
 ## 고정 소스
 
@@ -59,4 +61,17 @@ M2의 복합 사례는 아래와 같습니다. 같은 저장소 안에서도 실
 
 작은 사례는 한 노드와 재생 없는 구성이 정상입니다. 차단/등록, muted/send처럼 호출자가 각각 사용하는 진입점에는 존재하지 않는 자동 호출을 추가하지 않습니다. 최대 단계 사례는 양수 단계 한계로 범위를 제한하며 실제 모델 답변은 미해소로 유지합니다.
 
-실행과 검토 반영은 [평가 가이드](../docs/evaluation.md), 채점과 게이트는 [루브릭](rubric.md), 보존한 실행 결과는 [임시 기준 기록](runs/2026-09-06-baseline.md)을 확인합니다. 생성 HTML은 `build/eval/<run>/`에 있으며 [공통 템플릿](../skills/code-flow/templates/flow-viewer-template.html)을 사용합니다.
+## M3 짝 규칙 설명
+
+| 유형 | 규칙 후보 | 그림에서 비교·설명하는 내용 |
+| --- | --- | --- |
+| cli-utility | [utility-retry-budget-rules](m3/graphs/utility-retry-budget-rules.json) | 기본 총 시도와 호출 정책, 재시도 중단, 대기 갱신 |
+| framework-plugin | [plugin-wrapper-unwind-rules](m3/graphs/plugin-wrapper-unwind-rules.json) | 첫 유효 결과와 None, 래퍼의 역순 복귀와 결과 변경 |
+| library-sdk | [library-resize-callbacks-rules](m3/graphs/library-resize-callbacks-rules.json) | 용량 축소/확대의 계산 예시, 기록 시점과 콜백 실패 |
+| ai-agent | [agent-parallel-tools-rules](m3/graphs/agent-parallel-tools-rules.json) | 호출별/기본 한계, 계속 가능한 오류/생성 오류, 완료와 기록 순서 |
+| data-event | [event-async-lifecycle-rules](m3/graphs/event-async-lifecycle-rules.json) | 비동기/동기 수신자, 실패 후 전달, 임시 등록과 해제 |
+| web | [web-routing-fallbacks-rules](m3/graphs/web-routing-fallbacks-rules.json) | 405/자동 OPTIONS, 경로 보정, 기본 404 |
+
+[규칙 manifest](rules-cases.json), [그림 구성](m3/layouts/), [정답 후보](m3/expectations/)와 [소스 읽기 기록](m3/discovery.md)을 함께 관리합니다. 규칙 27개는 기존 동작의 사실·범위·근거를 유지하며 이유와 예외를 보완한 것입니다. 여섯 결과는 동적·외부 구현의 한계를 유지한 `partial`이며, 통합 예상 상태는 complete 12 / partial 18입니다. 유틸리티와 에이전트는 같은 저장소의 서로 다른 책임을 설명합니다.
+
+실행과 검토 반영은 [평가 가이드](../docs/evaluation.md), 채점과 게이트는 [루브릭](rubric.md), 보존한 실행 결과는 [실행 기록](runs/)을 확인합니다. 생성 HTML은 `build/eval/<run>/`에 있습니다. 동작에는 [공통 캔버스 템플릿](../skills/code-flow/templates/flow-viewer-template.html), 소스 기반 규칙에는 [primer 템플릿](../skills/visual-primer/templates/rules-template.html)을 사용합니다.

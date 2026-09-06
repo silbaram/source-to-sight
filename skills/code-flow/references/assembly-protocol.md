@@ -47,7 +47,7 @@ Use the [internal schema](ir-internal-v0.1.0.schema.json) and [renderer contract
 | `edges` | Existing endpoints, semantic type/derivation, evidence of the relationship itself |
 | `scenarios` | Optional; every step has exactly one node or edge reference and independently checked caption. Use `kind`, step `branch`, and optional `condition`/`execution` for the path semantics in [complex behavior](complex-behavior.md) |
 | `stateTransitions` | Owner, before/after, exact trigger condition, explanation and evidence |
-| `rules` | Only verified conditions/results; numerical rules need supported evidence |
+| `rules` | Reviewed conditions/results, optional `rationale` and `exceptions`; numerical content in any of these fields needs confirmed evidence |
 | `warnings` | Structured uncertainty/candidates with valid references; not hidden disclaimers |
 | `links` | Relative URLs for matching subjects/scopes/languages; precise generation request if missing |
 
@@ -71,4 +71,4 @@ The scripts cannot certify arbitrary prose or independently enforce all target-c
 
 Open the HTML, select nodes/edges and any state/region entries, step through scenarios if present, and check a narrow viewport. Confirm labels fit, connections touch the correct nodes, scope/uncertainty are visible, and generated links reach the same subject. A partially verified page is a valid deliverable when honestly labeled.
 
-Create related pages before refreshing their parent links. For `--explain`, locate the actual installed `visual-primer` instructions and preserve subject/scope when creating the logic page. Missing sibling skills do not prevent the behavior page. Generated HTML can only navigate or copy a generation request; it cannot launch a model or create a new page offline.
+Create related pages before refreshing their parent links. For `--explain`, follow the [rule checklist](rule-checklist.md), use `author.py explain` to draft from the internal behavior graph, and locate the actual installed `visual-primer` source-rules instructions. The pair builder preserves the behavior's facts, rereads evidence, validates both destinations, and renders both pages before replacing either file. Its newly prepared pages resolve each other's links without relying on old HTML. Missing sibling skills do not prevent the behavior page. Generated HTML can only navigate or copy a generation request; it cannot launch a model or create a new page offline.

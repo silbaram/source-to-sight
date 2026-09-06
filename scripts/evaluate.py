@@ -326,9 +326,9 @@ def review_status(review, candidate, ref, engine_hash):
 
 
 def engine_hash():
-    files = sorted(p for p in (ROOT / "skills/code-flow").rglob("*") if p.is_file() and
-                   "__pycache__" not in p.parts and p.suffix != ".pyc")
-    files += [Path(__file__), ROOT / "eval/rubric.md"]
+    files = sorted(p for skill in ("code-flow", "visual-primer") for p in (ROOT / "skills" / skill).rglob("*")
+                   if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc")
+    files += [Path(__file__).resolve(), ROOT / "scripts/evaluate_rules.py", ROOT / "eval/rubric.md"]
     return digest({str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files})
 
 
@@ -511,7 +511,7 @@ def compare(before, after, allow_suite_extension=False):
             regressions.append(f"{identifier}:automatic-check-regressed")
         if b["status"] == "passed" and a["status"] != "passed":
             regressions.append(f"{identifier}:accepted-result-lost")
-        for kind in ("Nodes", "Edges", "Behaviors", "Paths"):
+        for kind in ("Nodes", "Edges", "Behaviors", "Paths", "Rules"):
             if a.get("matched"+kind, 0) < b.get("matched"+kind, 0):
                 regressions.append(f"{identifier}:required-{kind.lower()}-lost")
         if set(a["errors"]) - set(b["errors"]):

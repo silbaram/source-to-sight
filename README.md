@@ -6,6 +6,8 @@ The technology-neutral evolution is in development. **`code-flow` now provides t
 
 M2 expands the corpus to [24 evaluation candidates](eval/cases.md), preserving the original 18 and adding one complex case per profile. It adds retry, exception, wrapper, concurrency and resource guidance, visible path conditions/order metadata, and required behavior/path checks in the [rubric](eval/rubric.md) and [comparison/review tools](docs/evaluation.md). The recorded-candidate baseline is provisional: independent human fact and comprehension review remains pending.
 
+M3 connects `$code-flow --explain` to source-backed `visual-primer` pages. They reuse the behavior's facts and compare conditions, outcomes, reasons, exceptions and state changes. Six paired rules cases extend the evaluation to **24 behavior + 6 rules pages**. Open `build/eval/m3/agent-parallel-tools-rules.html` after running `npm run eval:rules -- --output build/eval/m3`. See the [rules workflow](skills/visual-primer/references/source-rules.md) and [M3 verification](eval/reports/m3-verification.md). Whole-project discovery remains M5 work; independent human acceptance is still pending.
+
 English | [한국어](README.ko.md)
 
 An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
@@ -20,6 +22,7 @@ Use `$code-flow` for a bounded capability, public API, lifecycle, or workflow. T
 $code-flow Explain how ToolCallingAgent uses tools and decides to stop.
 $code-flow Explain when Cache.Add evicts an item and invokes its callback.
 $code-flow Explain which Blinker receivers are called by Signal.send.
+$code-flow Explain the agent's step limits and error handling --explain
 ```
 
 | Source reading | What the page explains | Local generated page |
@@ -68,6 +71,8 @@ npx skills add . --skill code-flow
 ```
 
 Alternatively copy the complete `skills/code-flow` directory into your host's skill directory. Keep its scripts, references, templates, font, and licenses together. Its Python helper requires `jsonschema`; use the included `scripts/requirements.txt`. A sibling skill and Node.js are not required for rendering. Local-source and named-skill installation are described in the [Skills CLI documentation](https://github.com/vercel-labs/skills#source-formats).
+
+Source-backed `--explain` pages require both skills from this implementation. Install `visual-primer` from the same checkout with `npx skills add . --skill visual-primer`, or copy its complete directory too. The host rereads the source and authors the rules; the pair builder validates shared facts and generates both linked pages. It does not discover rules by executing the target program.
 
 If the skill does not appear in the current session after installation, start a new conversation.
 
@@ -118,13 +123,17 @@ If the current session still has the previous version loaded, start a new conver
 │   ├── m1/                        # Pinned source readings and case records
 │   ├── m15/                       # 18 candidates and source-based review criteria
 │   ├── m2/                        # Six complex candidates and behavior/path criteria
+│   ├── m3/                        # Six paired rules candidates, layouts and criteria
 │   ├── runs/                      # Retained provisional baseline records
 │   └── reports/                   # Verification, reviews, and retained screenshots
 ├── skills/visual-primer/
 │   ├── SKILL.md
+│   ├── scripts/rules.py           # Source-backed behavior/rules pair builder
+│   ├── templates/                # Rules page shell and interactive comparisons
 │   └── references/
 │       ├── diagram-patterns.md
 │       ├── qa.md
+│       ├── source-rules.md
 │       └── visual-treatment.md
 └── assets/
     ├── oauth-visual-primer-example.html

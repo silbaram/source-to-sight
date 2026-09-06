@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 import s2s
 
 PROFILES = ("cli-utility", "library-sdk", "framework-plugin", "ai-agent", "data-event", "web")
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 
 def now():
@@ -128,7 +128,34 @@ def capture_into(data, source_root, **evidence_args):
     return s2s.validate(result)
 
 
-def build(data, source_root, output, data_output=None):
+def explain_draft(data, source_root):
+    """Keep the behavior's facts; a new rules review is deliberately pending."""
+    s2s.validate(data)
+    if data["layer"] != "behavior":
+        raise ValueError("Rules discovery starts from an internal behavior graph.")
+    if data["snapshot"]["commit"] != snapshot(source_root)["commit"]:
+        raise ValueError("The source commit changed. Rerun behavior discovery first.")
+    result = copy.deepcopy(data)
+    result["layer"] = "logic"
+    result["links"].pop("logic", None)
+    result["provenance"]["humanReviewed"] = False
+    ko = data["language"].lower().startswith("ko")
+    note = ("규칙의 조건·이유·예외를 원본에서 다시 검토해야 합니다." if ko else
+            "Rule conditions, reasons and exceptions need a fresh source review.")
+    result["provenance"]["description"] = note
+    result["analysis"]["unresolved"].append(note)
+    if result["analysis"]["status"] == "complete":
+        result["analysis"]["status"] = "partial"
+    for rule in result["rules"]:
+        rule["supportStatus"] = "uncertain"
+        rule["verificationNote"] = note
+    result["regeneration"]["command"] = ("$code-flow " + data["subject"]["question"] +
+                                           " --explain | subject=" + data["subject"]["id"] +
+                                           " | language=" + data["language"])
+    return s2s.validate(result)
+
+
+def prepare_build(data, source_root, output, data_output=None, linked_pages=None):
     s2s.validate(data)
     result = copy.deepcopy(data)
     current = snapshot(source_root, result["snapshot"]["repository"], result["snapshot"]["model"])
@@ -144,7 +171,12 @@ def build(data, source_root, output, data_output=None):
         if identity(previous) != identity(result):
             raise ValueError("The output belongs to another subject, scope, language, or repository. Choose another path.")
     result["snapshot"] = current
-    prepared = s2s.prepare(result, source_root, destination)
+    return s2s.prepare(result, source_root, destination, linked_pages=linked_pages)
+
+
+def build(data, source_root, output, data_output=None):
+    destination = Path(output).resolve()
+    prepared = prepare_build(data, source_root, destination, data_output)
     page = s2s.render(prepared)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(page, encoding="utf-8")
@@ -163,7 +195,7 @@ def write_json(path, data, exclusive=False):
 def doctor():
     for stage in ("internal", "render"):
         s2s.Draft202012Validator.check_schema(s2s.schema(stage))
-    required = ["SKILL.md", "references/discovery-protocol.md", "references/explainer-guide.md", "references/complex-behavior.md",
+    required = ["SKILL.md", "references/discovery-protocol.md", "references/explainer-guide.md", "references/complex-behavior.md", "references/rule-checklist.md",
                 "references/assembly-protocol.md", "references/renderer-contract.md",
                 "templates/flow-viewer-template.html", "templates/viewer.js", "templates/viewer.css",
                 "templates/vendor/dagre.min.js", "templates/vendor/dagre.LICENSE",
@@ -206,7 +238,10 @@ def main(argv=None):
     assemble.add_argument("input", type=Path)
     assemble.add_argument("--output", type=Path, required=True)
     assemble.add_argument("--data-output", type=Path)
-    for command in (init, capture, assemble):
+    explain = commands.add_parser("explain", help="Draft a rules review from an internal behavior graph")
+    explain.add_argument("input", type=Path)
+    explain.add_argument("--output", type=Path, required=True)
+    for command in (init, capture, assemble, explain):
         command.add_argument("--source-root", type=Path, required=True)
     args = vars(parser.parse_args(argv))
     action = args.pop("action")
@@ -223,6 +258,10 @@ def main(argv=None):
             data = json.loads(path.read_text(encoding="utf-8"))
             write_json(path, capture_into(data, **args))
             print("Captured evidence location and hash; semantic review remains required.")
+        elif action == "explain":
+            data = json.loads(args["input"].read_text(encoding="utf-8"))
+            write_json(args["output"], explain_draft(data, args["source_root"]), exclusive=True)
+            print("Rules draft created; reread source and use visual-primer to build the paired pages.")
         else:
             path = args.pop("input")
             if path.resolve() in {Path(args["output"]).resolve(), Path(args["data_output"]).resolve() if args["data_output"] else None}:

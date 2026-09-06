@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "sections": [
+    {
+      "id": "budget",
+      "title": "이번 실행의 한계는 어디에서 정해질까요?",
+      "kind": "comparison",
+      "ruleIds": [
+        "effective-budget",
+        "configured-budget"
+      ]
+    },
+    {
+      "id": "failure",
+      "title": "어떤 오류에서 계속하거나 중단할까요?",
+      "kind": "comparison",
+      "ruleIds": [
+        "step-error",
+        "generation-fatal"
+      ]
+    },
+    {
+      "id": "observations",
+      "title": "완료 순서와 기록 순서는 왜 다를까요?",
+      "kind": "conditions",
+      "ruleIds": [
+        "batch-order"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "sections": [
+    {
+      "id": "result",
+      "title": "어떤 반환값에서 순회를 멈출까요?",
+      "kind": "comparison",
+      "ruleIds": [
+        "first-result",
+        "none-continues"
+      ]
+    },
+    {
+      "id": "wrapper",
+      "title": "래퍼는 어떻게 나중의 복귀를 준비할까요?",
+      "kind": "states",
+      "ruleIds": [
+        "wrapper-result"
+      ],
+      "transitionIds": [
+        "wrapper-pushed"
+      ]
+    }
+  ]
+}

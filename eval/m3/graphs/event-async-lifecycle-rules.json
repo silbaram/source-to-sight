@@ -1,0 +1,610 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "logic",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 재독해한 M3 규칙 설명 후보입니다. 계산 예시는 실행 기록이 아닙니다."
+  },
+  "snapshot": {
+    "repository": "pallets-eco/blinker",
+    "branch": null,
+    "commit": "c3364059663df1ddce32799d6b1922af89a345f6",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T16:07:29Z",
+    "skillVersion": "0.4.0",
+    "model": null
+  },
+  "subject": {
+    "id": "blinker-signal-connected-to-signal-send-async-49686c06c05c",
+    "kind": "capability",
+    "title": "비동기 신호 전달과 임시 수신자의 해제 경계",
+    "question": "비동기 신호 전달과 임시 수신자의 해제 경계?",
+    "module": "blinker",
+    "targets": [
+      {
+        "label": "Signal.connected_to + Signal.send_async"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "기존 등록이 없는 수신자의 비중첩 connected_to 문맥",
+        "send_async의 선택·개별 await·실패 전파와 문맥 종료"
+      ],
+      "excludes": [
+        "사용자 수신자·동기 변환기의 내부",
+        "중첩 문맥·기존 등록 복원, 사용자 set_class 재정의"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "data-event",
+      "framework-plugin",
+      "library-sdk"
+    ],
+    "searched": [
+      "src/blinker/base.py"
+    ],
+    "unresolved": [
+      "실제 수신자 순서·반환값·변환기 내부는 미확인입니다. 병렬 실행, 전달 보장, 실패 시 재전송이나 이전 등록 상태 복원을 약속하지 않습니다."
+    ],
+    "nextAttempts": [
+      "호출 애플리케이션의 설정·구현과 해당 경계의 소스를 별도로 확인합니다."
+    ]
+  },
+  "summary": {
+    "title": "수신자 실패와 임시 연결 종료는 어떻게 처리될까요?",
+    "purpose": "수신자의 종류에 따라 호출 방법이 달라집니다. 전달 실패와 연결 해제는 각자의 경계에서 처리됩니다.",
+    "inputs": [
+      "임시 수신자, 발신자, 전달 인자와 선택적 동기 변환기"
+    ],
+    "outputs": [
+      "정상 결과 목록 또는 전파된 예외, 문맥 종료 시 수신자 해제"
+    ],
+    "limitations": [
+      "실제 수신자 순서·반환값·변환기 내부는 미확인입니다. 병렬 실행, 전달 보장, 실패 시 재전송이나 이전 등록 상태 복원을 약속하지 않습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "blinker-signal-connected-to-signal-send-async-49686c06c05c",
+    "question": "비동기 신호 전달과 임시 수신자의 해제 경계?",
+    "language": "ko",
+    "command": "$code-flow 비동기 신호 전달과 임시 수신자의 해제 경계? --explain | subject=blinker-signal-connected-to-signal-send-async-49686c06c05c | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "context",
+      "kind": "component",
+      "label": "문맥 동안 연결 유지",
+      "roleLabel": "이 범위의 역할",
+      "summary": "강한 참조로 임시 수신자를 등록하고, 문맥이 끝나면 finally에서 수신자를 해제합니다. send_async는 문맥 안의 호출자가 별도로 요청합니다.",
+      "codeName": "Signal.connected_to",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "강한 참조로 임시 수신자를 등록하고, 문맥이 끝나면 finally에서 수신자를 해제합니다. send_async는 문맥 안의 호출자가 별도로 요청합니다.",
+      "evidenceIds": [
+        "ev-context"
+      ]
+    },
+    {
+      "id": "connect",
+      "kind": "component",
+      "label": "수신자 등록",
+      "roleLabel": "이 범위의 역할",
+      "summary": "수신자와 발신자의 연결을 저장합니다. 등록 그 자체가 수신자 실행을 뜻하지 않습니다.",
+      "codeName": "Signal.connect",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "수신자와 발신자의 연결을 저장합니다. 등록 그 자체가 수신자 실행을 뜻하지 않습니다.",
+      "evidenceIds": [
+        "ev-connect"
+      ]
+    },
+    {
+      "id": "send",
+      "kind": "component",
+      "label": "수신자를 하나씩 기다림",
+      "roleLabel": "이 범위의 역할",
+      "summary": "음소거이면 즉시 빈 목록을 반환합니다. 선택한 수신자를 반복문 안에서 각각 await하며 오류가 나면 전파합니다.",
+      "codeName": "Signal.send_async",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "음소거이면 즉시 빈 목록을 반환합니다. 선택한 수신자를 반복문 안에서 각각 await하며 오류가 나면 전파합니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    },
+    {
+      "id": "select",
+      "kind": "component",
+      "label": "발신자에 맞는 수신자 선택",
+      "roleLabel": "이 범위의 역할",
+      "summary": "발신자와 ANY에 연결된 수신자를 찾고 죽은 약한 참조를 제거합니다. 기본 집합의 수신자 순서는 고정되지 않습니다.",
+      "codeName": "Signal.receivers_for",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "발신자와 ANY에 연결된 수신자를 찾고 죽은 약한 참조를 제거합니다. 기본 집합의 수신자 순서는 고정되지 않습니다.",
+      "evidenceIds": [
+        "ev-select"
+      ]
+    },
+    {
+      "id": "adapter",
+      "kind": "boundary",
+      "label": "동기 수신자 변환 경계",
+      "roleLabel": "동적 경계",
+      "summary": "동기 수신자에는 제공된 변환기를 적용하고 그 결과를 기다립니다. 실제 변환기가 스레드를 쓰는지는 미확인입니다.",
+      "codeName": "_sync_wrapper",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "동기 수신자에는 제공된 변환기를 적용하고 그 결과를 기다립니다. 실제 변환기가 스레드를 쓰는지는 미확인입니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    },
+    {
+      "id": "receiver",
+      "kind": "boundary",
+      "label": "수신자 구현 경계",
+      "roleLabel": "동적 경계",
+      "summary": "비동기 수신자를 호출하고 완료를 기다립니다. 구체적 처리·반환값·실패는 애플리케이션이 정합니다.",
+      "codeName": "receiver",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "비동기 수신자를 호출하고 완료를 기다립니다. 구체적 처리·반환값·실패는 애플리케이션이 정합니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    },
+    {
+      "id": "disconnect",
+      "kind": "component",
+      "label": "문맥 종료 시 등록 해제",
+      "roleLabel": "이 범위의 역할",
+      "summary": "connected_to의 finally는 발신자 인자 없이 disconnect를 호출합니다. 이전 연결 상태를 저장해 복원하는 방식은 아닙니다.",
+      "codeName": "Signal.disconnect",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "connected_to의 finally는 발신자 인자 없이 disconnect를 호출합니다. 이전 연결 상태를 저장해 복원하는 방식은 아닙니다.",
+      "evidenceIds": [
+        "ev-context",
+        "ev-disconnect"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "temporary-connect",
+      "from": "context",
+      "to": "connect",
+      "label": "문맥 진입 시 등록",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "문맥 진입 시 등록에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-context"
+      ]
+    },
+    {
+      "id": "select-receivers",
+      "from": "send",
+      "to": "select",
+      "label": "수신자 반복 대상 조회",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "수신자 반복 대상 조회에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    },
+    {
+      "id": "adapt-sync",
+      "from": "send",
+      "to": "adapter",
+      "label": "동기 수신자 변환 후 await",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "동기 수신자 변환 후 await에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    },
+    {
+      "id": "await-receiver",
+      "from": "send",
+      "to": "receiver",
+      "label": "비동기 수신자를 개별 await",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "비동기 수신자를 개별 await에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    },
+    {
+      "id": "temporary-disconnect",
+      "from": "context",
+      "to": "disconnect",
+      "label": "finally에서 해제",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "finally에서 해제에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-context"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "async-context",
+      "title": "임시 등록과 정상 비동기 전달",
+      "kind": "lifecycle",
+      "steps": [
+        {
+          "id": "async-context-1",
+          "caption": "문맥 진입 시 수신자를 등록합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "문맥 진입 시 수신자를 등록합니다.",
+          "evidenceIds": [
+            "ev-context"
+          ],
+          "edgeId": "temporary-connect"
+        },
+        {
+          "id": "async-context-2",
+          "caption": "문맥 안의 호출자가 비동기 전달을 요청합니다. 등록 함수가 자동 호출하는 것은 아닙니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "문맥 안의 호출자가 비동기 전달을 요청합니다. 등록 함수가 자동 호출하는 것은 아닙니다.",
+          "evidenceIds": [
+            "ev-context",
+            "ev-send"
+          ],
+          "nodeId": "send"
+        },
+        {
+          "id": "async-context-3",
+          "caption": "발신자에 맞는 수신자를 선택합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "발신자에 맞는 수신자를 선택합니다.",
+          "evidenceIds": [
+            "ev-send",
+            "ev-select"
+          ],
+          "nodeId": "select",
+          "execution": "unordered"
+        },
+        {
+          "id": "async-context-4",
+          "caption": "각 비동기 수신자를 하나씩 await합니다. 구체적인 수신자 방문 순서는 고정되지 않습니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "각 비동기 수신자를 하나씩 await합니다. 구체적인 수신자 방문 순서는 고정되지 않습니다.",
+          "evidenceIds": [
+            "ev-send"
+          ],
+          "edgeId": "await-receiver",
+          "condition": "선택한 수신자가 비동기 함수",
+          "execution": "unordered"
+        },
+        {
+          "id": "async-context-5",
+          "caption": "모두 정상 완료하면 수신자와 반환값의 목록을 돌려줍니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "모두 정상 완료하면 수신자와 반환값의 목록을 돌려줍니다.",
+          "evidenceIds": [
+            "ev-send"
+          ],
+          "nodeId": "send",
+          "condition": "모든 개별 await가 정상 완료됨"
+        },
+        {
+          "id": "async-context-6",
+          "caption": "문맥이 끝나면 finally에서 임시 연결을 해제합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "문맥이 끝나면 finally에서 임시 연결을 해제합니다.",
+          "evidenceIds": [
+            "ev-context"
+          ],
+          "edgeId": "temporary-disconnect"
+        }
+      ]
+    },
+    {
+      "id": "async-error-cleanup",
+      "title": "오류가 나도 문맥의 연결 해제",
+      "kind": "error",
+      "steps": [
+        {
+          "id": "async-error-cleanup-1",
+          "caption": "동기 수신자에 변환기가 없으면 즉시 오류를 발생시킵니다. 수신자 예외도 전파합니다.",
+          "branch": "error",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "동기 수신자에 변환기가 없으면 즉시 오류를 발생시킵니다. 수신자 예외도 전파합니다.",
+          "evidenceIds": [
+            "ev-send"
+          ],
+          "nodeId": "send",
+          "condition": "동기 변환기가 없거나 개별 전달 중 예외"
+        },
+        {
+          "id": "async-error-cleanup-2",
+          "caption": "오류가 문맥 밖으로 나가는 경우에도 finally의 해제 요청을 수행합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "오류가 문맥 밖으로 나가는 경우에도 finally의 해제 요청을 수행합니다.",
+          "evidenceIds": [
+            "ev-context"
+          ],
+          "edgeId": "temporary-disconnect"
+        }
+      ]
+    },
+    {
+      "id": "async-muted",
+      "title": "음소거 중에는 전달 생략",
+      "kind": "alternate",
+      "steps": [
+        {
+          "id": "async-muted-1",
+          "caption": "수신자 선택 전에 빈 목록을 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "수신자 선택 전에 빈 목록을 반환합니다.",
+          "evidenceIds": [
+            "ev-send"
+          ],
+          "nodeId": "send",
+          "condition": "is_muted가 참",
+          "returns": "빈 목록"
+        }
+      ]
+    }
+  ],
+  "stateTransitions": [
+    {
+      "id": "temporary-registration",
+      "subjectNodeId": "connect",
+      "from": "이 수신자의 등록 없음",
+      "to": "강한 참조의 수신자 등록 있음",
+      "trigger": "connected_to 문맥 진입에서 connect가 정상 완료됨",
+      "plainText": "이 수신자의 등록 없음에서 강한 참조의 수신자 등록 있음로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "connected_to 문맥 진입에서 connect가 정상 완료됨에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-context",
+        "ev-connect"
+      ]
+    },
+    {
+      "id": "registration-released",
+      "subjectNodeId": "disconnect",
+      "from": "문맥의 수신자 등록 있음",
+      "to": "수신자 연결 해제됨",
+      "trigger": "connected_to 문맥 종료의 finally가 실행됨",
+      "plainText": "문맥의 수신자 등록 있음에서 수신자 연결 해제됨로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "connected_to 문맥 종료의 finally가 실행됨에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-context",
+        "ev-disconnect"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "await-policy",
+      "nodeIds": [
+        "send"
+      ],
+      "condition": "음소거가 아니고 수신자가 선택됨",
+      "outcome": "각 수신자를 하나씩 기다립니다. 수신자 순서 미정과 병렬 실행은 같은 뜻이 아닙니다.",
+      "plainText": "음소거가 아니고 수신자가 선택됨이면 각 수신자를 하나씩 기다립니다. 수신자 순서 미정과 병렬 실행은 같은 뜻이 아닙니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건·결과·이유·예외의 적용 범위를 고정 소스에서 재독해했습니다.",
+      "evidenceIds": [
+        "ev-send",
+        "ev-select"
+      ],
+      "rationale": "수신자를 고르는 순서와 호출을 기다리는 방식은 별개입니다. 전달 반복 안에서 각각의 await가 끝나야 다음 수신자로 갑니다.",
+      "exceptions": [
+        "사용자가 수신자 집합의 순서 정책을 바꿀 수 있으며 실제 수신자 내부 동작은 이 범위 밖입니다."
+      ]
+    },
+    {
+      "id": "missing-adapter",
+      "nodeIds": [
+        "send"
+      ],
+      "condition": "선택한 수신자가 동기 함수이고 _sync_wrapper가 없음",
+      "outcome": "RuntimeError를 발생시키고 이후 수신자는 호출하지 않습니다.",
+      "plainText": "선택한 수신자가 동기 함수이고 _sync_wrapper가 없음이면 RuntimeError를 발생시키고 이후 수신자는 호출하지 않습니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건·결과·이유·예외의 적용 범위를 고정 소스에서 재독해했습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "rationale": "동기 함수를 발견했을 때 변환기를 먼저 검사하고, 없으면 해당 수신자를 호출하기 전에 예외를 발생시킵니다.",
+      "exceptions": [
+        "음소거 상태에서는 수신자 반복에 들어가기 전에 빈 결과를 반환합니다."
+      ]
+    },
+    {
+      "id": "receiver-failure",
+      "nodeIds": [
+        "send"
+      ],
+      "condition": "수신자 또는 변환기의 예외가 전파됨",
+      "outcome": "남은 전달과 정상 결과 반환을 중단합니다. 이미 끝난 수신자의 부작용은 되돌리지 않습니다.",
+      "plainText": "수신자 또는 변환기의 예외가 전파됨이면 남은 전달과 정상 결과 반환을 중단합니다. 이미 끝난 수신자의 부작용은 되돌리지 않습니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "조건·결과·이유·예외의 적용 범위를 고정 소스에서 재독해했습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "rationale": "반복 안에서 예외를 잡아 다음 수신자로 넘어가는 처리가 없으므로 정상 결과 목록 반환에도 도달하지 못합니다.",
+      "exceptions": [
+        "이미 실행된 수신자의 효과를 되돌리는 처리는 여기 없습니다."
+      ]
+    },
+    {
+      "id": "coroutine-receiver",
+      "nodeIds": [
+        "send"
+      ],
+      "condition": "음소거가 아니고 선택한 수신자가 비동기 함수인 경우",
+      "outcome": "수신자를 직접 호출해 완료를 기다리고 반환값을 결과 목록에 추가합니다.",
+      "plainText": "음소거가 아니고 선택한 수신자가 비동기 함수인 경우이면 수신자를 직접 호출해 완료를 기다리고 반환값을 결과 목록에 추가합니다.",
+      "rationale": "비동기 함수 분기는 변환기를 거치지 않고 개별 수신자를 await합니다.",
+      "exceptions": [
+        "수신자가 예외를 발생시키면 이후 수신자 호출과 정상 결과 반환이 중단됩니다."
+      ],
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "evidenceIds": [
+        "ev-send"
+      ],
+      "verificationNote": "추가 조건과 결과를 호출부·분기·상태 쓰기에서 확인했습니다."
+    },
+    {
+      "id": "temporary-release",
+      "nodeIds": [
+        "connect",
+        "disconnect"
+      ],
+      "condition": "connected_to 문맥의 본문이 정상 종료되거나 예외로 끝난 경우",
+      "outcome": "finally에서 해당 수신자를 연결 해제합니다. 문맥 이전 등록을 복원하는 동작은 아닙니다.",
+      "plainText": "connected_to 문맥의 본문이 정상 종료되거나 예외로 끝난 경우이면 finally에서 해당 수신자를 연결 해제합니다. 문맥 이전 등록을 복원하는 동작은 아닙니다.",
+      "rationale": "강한 참조로 연결한 뒤 본문을 실행하고, finally에서 송신자를 따로 지정하지 않은 disconnect를 호출합니다.",
+      "exceptions": [
+        "이미 등록했던 같은 수신자도 영향을 받을 수 있습니다. 정리 함수나 정리 알림 자체의 실패는 별도입니다."
+      ],
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "evidenceIds": [
+        "ev-context",
+        "ev-disconnect"
+      ],
+      "verificationNote": "추가 조건과 결과를 호출부·분기·상태 쓰기에서 확인했습니다."
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-context",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.connected_to",
+      "startLine": 168,
+      "endLine": 189,
+      "anchorText": "    def connected_to(",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-connect",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.connect",
+      "startLine": 91,
+      "endLine": 139,
+      "anchorText": "    def connect(self, receiver: F, sender: t.Any = ANY, weak: bool = True) -> F:",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-send",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.send_async",
+      "startLine": 255,
+      "endLine": 303,
+      "anchorText": "    async def send_async(",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-select",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.receivers_for",
+      "startLine": 326,
+      "endLine": 362,
+      "anchorText": "    def receivers_for(",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-disconnect",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.disconnect / _disconnect",
+      "startLine": 364,
+      "endLine": 403,
+      "anchorText": "    def disconnect(self, receiver: c.Callable[..., t.Any], sender: t.Any = ANY) -> None:",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

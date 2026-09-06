@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sections": [
+    {
+      "id": "receiver",
+      "title": "선택한 수신자의 종류에 따라 무엇이 달라질까요?",
+      "kind": "comparison",
+      "ruleIds": [
+        "coroutine-receiver",
+        "missing-adapter"
+      ]
+    },
+    {
+      "id": "delivery",
+      "title": "전달 순서와 실패는 어디에서 정해질까요?",
+      "kind": "conditions",
+      "ruleIds": [
+        "await-policy",
+        "receiver-failure"
+      ]
+    },
+    {
+      "id": "lifetime",
+      "title": "문맥이 끝나면 연결은 어떻게 될까요?",
+      "kind": "states",
+      "ruleIds": [
+        "temporary-release"
+      ],
+      "transitionIds": [
+        "temporary-registration",
+        "registration-released"
+      ]
+    }
+  ]
+}

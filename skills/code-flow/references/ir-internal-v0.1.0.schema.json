@@ -1223,6 +1223,18 @@
           },
           "minItems": 0
         },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
         "confidence": {
           "enum": [
             "exact",

@@ -10,6 +10,8 @@
 
 M2에서는 기존 18개를 보존하고 유형별 복합 사례를 추가해 [24개 평가 후보](eval/cases.md)로 확대했습니다. 재시도·예외·래퍼·병렬·상태·자원 경계의 탐색 지침과 화면의 분기 조건·실행 방식 표시를 보완했습니다. [평가 기준](eval/rubric.md)과 [비교·검토 도구](docs/evaluation.md)는 필수 행동 주장·경로도 검사합니다. 저장된 후보를 재검증한 임시 기준이며, 독립적인 사람의 사실·이해도 검토는 대기 중입니다.
 
+M3에서는 `$code-flow --explain`으로 같은 대상의 **조건·결과·이유·예외·상태 변화**를 설명하는 `visual-primer` 페이지를 연결했습니다. 동작의 사실과 근거를 재사용하며, 조건을 선택해 결과를 비교하고 워크플로 화면으로 돌아갈 수 있습니다. 기존 동작 24개에 규칙 사례 6개를 추가했습니다. `npm run eval:rules -- --output build/eval/m3` 후 `build/eval/m3/agent-parallel-tools-rules.html`에서 확인합니다. [규칙 설명 생성 방법](skills/visual-primer/references/source-rules.md) · [M3 검증 기록](eval/reports/m3-verification.md). 프로젝트 전체 탐색은 M5이며 사람의 최종 검토는 남아 있습니다.
+
 `$visual-primer` 스킬은 실제 자료와 공식 출처를 확인한 뒤, 큰 그림과 적은 글로 설명하는 단일 HTML 페이지를 만듭니다. 결과물은 빌드 과정이나 별도 서버 없이 브라우저에서 바로 열 수 있습니다.
 
 ## 코드 동작 설명 예시
@@ -20,6 +22,7 @@ M2에서는 기존 18개를 보존하고 유형별 복합 사례를 추가해 [2
 $code-flow ToolCallingAgent가 도구를 사용하고 종료하는 흐름을 설명해 줘.
 $code-flow Cache.Add가 오래된 항목을 제거하고 콜백을 호출하는 시점을 설명해 줘.
 $code-flow Blinker의 Signal.send에서 어떤 수신자가 호출되는지 설명해 줘.
+$code-flow 에이전트의 단계 한계와 오류 처리 규칙을 설명해 줘 --explain
 ```
 
 | 실제 소스 사례 | 설명 내용 | 생성되는 로컬 페이지 |
@@ -40,6 +43,8 @@ npx skills add . --skill code-flow
 ```
 
 또는 `skills/code-flow` 폴더 전체를 사용하는 호스트의 스킬 디렉터리에 복사합니다. 스크립트·참조 문서·템플릿·글꼴·라이선스를 함께 보존하고, 포함된 `scripts/requirements.txt`로 Python 의존성을 준비합니다. 렌더링에는 다른 스킬이나 Node.js가 필요하지 않습니다. 로컬 소스 설치 방식은 [Skills CLI 문서](https://github.com/vercel-labs/skills#source-formats)에 설명되어 있습니다.
+
+소스 기반 `--explain`에는 이번 구현의 두 스킬이 필요합니다. 같은 체크아웃에서 `npx skills add . --skill visual-primer`로 설치하거나 해당 폴더 전체도 복사합니다. 호스트가 소스를 다시 읽어 규칙을 작성하고, 짝 페이지 생성 도구가 사실의 일치를 확인해 두 HTML을 연결합니다. 대상 프로그램을 실행해서 규칙을 찾는 방식은 아닙니다.
 
 ## 개념 설명 생성 결과
 
@@ -118,13 +123,17 @@ npx skills update visual-primer
 │   ├── m1/                        # 고정 소스 분석 사례와 출처
 │   ├── m15/                       # 18개 후보와 소스 기반 정답 검토 기준
 │   ├── m2/                        # 복합 동작 후보 6개와 경로·행동 검토 기준
+│   ├── m3/                        # 짝 규칙 후보 6개, 그림 구성과 검토 기준
 │   ├── runs/                      # 보존한 임시 기준 실행 기록
 │   └── reports/                   # 검증·리뷰 기록과 보존한 스크린샷
 ├── skills/visual-primer/
 │   ├── SKILL.md
+│   ├── scripts/rules.py           # 소스 기반 동작·규칙 짝 페이지 생성
+│   ├── templates/                # 규칙 화면과 조건 비교 UI
 │   └── references/
 │       ├── diagram-patterns.md
 │       ├── qa.md
+│       ├── source-rules.md
 │       └── visual-treatment.md
 └── assets/
     ├── oauth-visual-primer-example.html

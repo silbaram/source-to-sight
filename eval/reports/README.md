@@ -14,6 +14,7 @@
 | [M2 자동재생 표시 수정](m2-playback-verification.md) | 모든 단계의 진행 표시·병렬 노드 강조·가시 영역·정지 후 이어 재생 |
 | [M2 병렬 진입 연결 수정](m2-parallel-handoffs-verification.md) | 3→4단계 진입과 확인된 호출·결과 기록의 이동 복원 |
 | [부드러운 화면 이동](smooth-camera-verification.md) | 노드·연결을 따라 이동, 도착 후 재생, 직접 조작·모션 설정·창 크기 변경 |
+| [M3 규칙과 이유](m3-verification.md) | 동작 사실 재사용, 조건·이유·예외·상태 그림, 양방향 연결과 30개 평가 |
 | [공통 캔버스 검증](canvas-viewer-verification.md) | 실제 생성 템플릿의 UI 적용·회귀 검사 |
 | [상세 패널 영역 수정](panel-bounds-verification.md) | 긴 설명·낮은 창에서 패널 이탈과 조작 버튼 가림 수정 |
 | [연결 이동 애니메이션](flow-animation-verification.md) | 자동재생의 이동 표시·도착 강조·방향 이름·모션 설정 검사 |

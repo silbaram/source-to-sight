@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "behaviorManifest": "cases.json",
+  "cases": [
+    {
+      "id": "utility-retry-budget-rules",
+      "behaviorId": "utility-retry-budget",
+      "source": "smolagents",
+      "profile": "cli-utility",
+      "variant": "rules",
+      "candidate": "m3/graphs/utility-retry-budget-rules.json",
+      "layout": "m3/layouts/utility-retry-budget-rules.json",
+      "expectation": "m3/expectations/utility-retry-budget-rules.json"
+    },
+    {
+      "id": "plugin-wrapper-unwind-rules",
+      "behaviorId": "plugin-wrapper-unwind",
+      "source": "pluggy",
+      "profile": "framework-plugin",
+      "variant": "rules",
+      "candidate": "m3/graphs/plugin-wrapper-unwind-rules.json",
+      "layout": "m3/layouts/plugin-wrapper-unwind-rules.json",
+      "expectation": "m3/expectations/plugin-wrapper-unwind-rules.json"
+    },
+    {
+      "id": "library-resize-callbacks-rules",
+      "behaviorId": "library-resize-callbacks",
+      "source": "golang-lru",
+      "profile": "library-sdk",
+      "variant": "rules",
+      "candidate": "m3/graphs/library-resize-callbacks-rules.json",
+      "layout": "m3/layouts/library-resize-callbacks-rules.json",
+      "expectation": "m3/expectations/library-resize-callbacks-rules.json"
+    },
+    {
+      "id": "agent-parallel-tools-rules",
+      "behaviorId": "agent-parallel-tools",
+      "source": "smolagents",
+      "profile": "ai-agent",
+      "variant": "rules",
+      "candidate": "m3/graphs/agent-parallel-tools-rules.json",
+      "layout": "m3/layouts/agent-parallel-tools-rules.json",
+      "expectation": "m3/expectations/agent-parallel-tools-rules.json"
+    },
+    {
+      "id": "event-async-lifecycle-rules",
+      "behaviorId": "event-async-lifecycle",
+      "source": "blinker",
+      "profile": "data-event",
+      "variant": "rules",
+      "candidate": "m3/graphs/event-async-lifecycle-rules.json",
+      "layout": "m3/layouts/event-async-lifecycle-rules.json",
+      "expectation": "m3/expectations/event-async-lifecycle-rules.json"
+    },
+    {
+      "id": "web-routing-fallbacks-rules",
+      "behaviorId": "web-routing-fallbacks",
+      "source": "httprouter",
+      "profile": "web",
+      "variant": "rules",
+      "candidate": "m3/graphs/web-routing-fallbacks-rules.json",
+      "layout": "m3/layouts/web-routing-fallbacks-rules.json",
+      "expectation": "m3/expectations/web-routing-fallbacks-rules.json"
+    }
+  ]
+}

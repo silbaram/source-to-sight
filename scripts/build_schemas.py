@@ -124,7 +124,8 @@ def build(stage):
                                "to": TEXT, "trigger": TEXT, "plainText": TEXT}),
         "rule": claimed({"id": ID, "plainText": TEXT, "condition": TEXT,
                          "outcome": TEXT, "numeric": {"type": "boolean"},
-                         "nodeIds": array(ID)}),
+                         "nodeIds": array(ID), "rationale": TEXT,
+                         "exceptions": array(TEXT)}, ("rationale", "exceptions")),
         "region": claimed({"id": ID, "label": TEXT, "summary": TEXT, "nodeIds": array(ID, 1)}),
         "target": obj({"label": TEXT, "file": TEXT, "symbol": TEXT}, ["label"]),
     }

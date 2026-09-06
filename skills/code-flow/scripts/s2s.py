@@ -70,6 +70,12 @@ def confirmed(item, evidence):
             and all(evidence[x]["locationStatus"] == "passed" for x in item["evidenceIds"]))
 
 
+def numerical_rule(rule):
+    text = " ".join(strings({key: rule.get(key, "") for key in
+                            ("plainText", "condition", "outcome", "rationale", "exceptions")}))
+    return rule["numeric"] or bool(re.search(r"\d", text))
+
+
 def validate(data, stage="internal"):
     contract = schema(stage)
     Draft202012Validator.check_schema(contract)
@@ -141,8 +147,7 @@ def validate(data, stage="internal"):
         raise InvalidGraph("Complete analysis cannot contain unresolved questions.")
     if stage == "render":
         for rule in data["rules"]:
-            numeric = rule["numeric"] or bool(re.search(r"\d", rule["plainText"] + rule["condition"] + rule["outcome"]))
-            if numeric and not confirmed(rule, evidence):
+            if numerical_rule(rule) and not confirmed(rule, evidence):
                 raise InvalidGraph(f"{rule['id']}: unverified numerical rule reached the output.")
     return data
 
@@ -225,7 +230,7 @@ def source_matches(left, right, source_root=None):
     return bool(hashes_a) and hashes_a == hashes_b
 
 
-def prepare(original, source_root, output_path=None):
+def prepare(original, source_root, output_path=None, linked_pages=None):
     """Location checks are deterministic; supplied semantic reviews stay explicit."""
     validate(original)
     data = verify_locations(copy.deepcopy(original), source_root)
@@ -284,8 +289,7 @@ def prepare(original, source_root, output_path=None):
     for rule in data["rules"]:
         if not supported(rule) or not set(rule["nodeIds"]) <= node_ids:
             continue
-        numeric = rule["numeric"] or bool(re.search(r"\d", rule["plainText"] + rule["condition"] + rule["outcome"]))
-        if numeric and not confirmed(rule, evidence):
+        if numerical_rule(rule) and not confirmed(rule, evidence):
             warn("claim-unsupported", (
                  "수치 규칙의 근거가 부족해 본문에서 제외했습니다." if ko else
                  "A numerical rule lacked verified support and was omitted."))
@@ -310,7 +314,8 @@ def prepare(original, source_root, output_path=None):
             path = directory / unquote(urlsplit(link["url"]).path)
             link["generated"] = False
             try:
-                other = read_embedded(path)
+                other = ((linked_pages or {}).get(path.resolve())
+                         if path.resolve() in (linked_pages or {}) else read_embedded(path))
                 validate(other, "render")
                 if other["layer"] != kind:
                     raise InvalidGraph("Wrong target layer.")
