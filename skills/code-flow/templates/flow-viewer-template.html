@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="__S2S_LANGUAGE__">
+<html lang="__S2S_LANGUAGE__" data-viewer="canvas">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('s2s-atlas-theme')==='dark'?'dark':'light';}catch{document.documentElement.dataset.theme='light';}</script>
   <title>__S2S_TITLE__ · Source to Sight</title>
   <style>__S2S_STYLE__</style>
 </head>
@@ -12,7 +13,7 @@
   <a class="skip" href="#canvas">Skip to diagram</a>
   <header class="masthead">
     <a class="brand" href="#" aria-label="Source to Sight"><span class="brand-mark" aria-hidden="true">◎</span> source to sight<span class="brand-dot">.</span></a>
-    <span id="snapshot" class="snapshot"></span>
+    <div class="header-actions"><span id="snapshot" class="snapshot"></span><button id="theme-toggle" class="theme-toggle" type="button" role="switch" aria-checked="false"><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z"/></svg><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span id="theme-label"></span></button></div>
   </header>
   <main>
     <section class="intro" aria-labelledby="title">
@@ -20,30 +21,51 @@
       <h1 id="title"></h1>
       <p id="purpose" class="purpose"></p>
       <p id="provenance" class="provenance"></p>
-      <div id="io" class="io"></div>
+      <details class="summary-details"><summary id="summary-details-title"></summary><div id="io" class="io"></div></details>
       <nav id="links" class="links" aria-label="Related explanations"></nav>
     </section>
-    <details id="warnings" class="warnings"><summary id="warnings-title"></summary><div id="warning-list"></div></details>
     <section id="insufficient" class="empty" hidden></section>
     <section id="workspace" class="workspace">
+      <nav id="rail" class="rail">
+        <p id="rail-label" class="rail-label"></p>
+        <input id="search" class="search" type="search" autocomplete="off">
+        <div id="results" class="results" hidden></div>
+        <button id="overview" type="button" class="active"></button>
+        <details class="component-disclosure"><summary id="list-title"></summary><div id="component-list"></div></details>
+        <section id="flow-list" class="rail-section"><h2 id="flows-title" class="rail-label"></h2><div id="flows"></div></section>
+        <p id="rail-note" class="rail-note"></p>
+      </nav>
       <div class="diagram-column">
-        <div class="diagram-toolbar"><div><h2 id="diagram-title"></h2><p id="diagram-hint"></p></div><label class="mode-label"><span id="mode-label"></span><select id="mode"></select></label></div>
-        <div id="legend" class="legend"></div>
-        <div id="canvas" class="canvas" role="region" tabindex="0" aria-label="Interactive diagram">
-          <div id="stage" class="stage"><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div>
+        <div class="diagram-toolbar">
+          <div class="crumb"><button id="back" type="button" hidden></button><span id="crumb"></span></div>
+          <div id="view-switch" class="view-switch"><button id="structure" type="button" aria-pressed="true"></button><button id="workflow" type="button" aria-pressed="false"></button></div>
+        </div>
+        <div class="map-title"><h2 id="diagram-title"></h2><p id="diagram-hint"></p></div>
+        <div class="canvas-wrap">
+          <div id="canvas" class="canvas" role="region" tabindex="0">
+            <div id="graph-space"><div id="stage" class="stage"><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div></div>
+          </div>
+          <svg id="mini" class="mini" aria-hidden="true"></svg>
+        </div>
+        <div class="canvas-footer">
+          <div id="legend" class="legend"></div>
+          <div class="canvas-controls"><label class="mode-label"><span id="mode-label"></span><select id="mode"></select></label><div class="zoom"><button id="zoom-out" type="button">−</button><output id="zoom-level">100%</output><button id="zoom-in" type="button">+</button><button id="fit" type="button"></button></div></div>
         </div>
         <section id="player" class="player" hidden>
+          <p id="story-note" class="story-note"></p>
           <div class="player-controls"><select id="scenario" aria-label="Scenario"></select><div class="transport"><button id="previous" type="button">←</button><button id="play" type="button"></button><button id="next" type="button">→</button></div><span id="step-count"></span></div>
           <div id="caption" class="caption" aria-live="polite"></div>
           <div id="returns" class="returns"></div>
         </section>
-        <div id="regions" class="regions"></div>
+        <aside id="panel" class="panel" aria-labelledby="panel-title" inert>
+          <button id="close-panel" class="close-panel" type="button">×</button>
+          <div id="panel-body"></div>
+          <button id="focus-related" class="focus-related" type="button" hidden></button>
+        </aside>
       </div>
-      <aside id="panel" class="panel" aria-labelledby="panel-title">
-        <button id="close-panel" class="close-panel" type="button">×</button>
-        <div id="panel-body"></div>
-      </aside>
     </section>
+    <div id="regions" class="regions"></div>
+    <details id="warnings" class="warnings"><summary id="warnings-title"></summary><div id="warning-list"></div></details>
     <section id="rules-section" class="rules-section" hidden><h2 id="rules-title"></h2><div id="rules-list" class="rules-list"></div></section>
     <section class="scope"><details><summary id="scope-title"></summary><div id="scope-body"></div></details></section>
     <footer><p id="offline-note"></p><details><summary>Open-source licenses</summary><pre class="license">__S2S_NOTICES__</pre></details></footer>

@@ -25,12 +25,63 @@ function renderVariant(info,change,fixtureName='cli-transform') {
   return pathToFileURL(output).href;
 }
 
+test('prototype-like IDs keep graph geometry, evidence, and controls working',async({page},info)=>{
+  const ids=['constructor','toString','valueOf','hasOwnProperty','isPrototypeOf','propertyIsEnumerable','s2s-node-0','normal'];
+  const target=renderVariant(info,data=>{
+    const rename=new Map(data.nodes.map((node,index)=>[node.id,ids[index]]));
+    for(const node of data.nodes)node.id=rename.get(node.id);
+    for(const edge of data.edges){edge.from=rename.get(edge.from);edge.to=rename.get(edge.to);}
+    for(const scenario of data.scenarios)for(const step of scenario.steps)if(step.nodeId)step.nodeId=rename.get(step.nodeId);
+    for(const state of data.stateTransitions)state.subjectNodeId=rename.get(state.subjectNodeId);
+    for(const item of [...data.regions,...data.rules])item.nodeIds=item.nodeIds.map(id=>rename.get(id));
+    for(const subject of data.subjects)subject.nodeId=rename.get(subject.nodeId);
+    for(const warning of data.warnings)warning.relatedIds=warning.relatedIds.map(id=>rename.get(id)||id);
+  },'agent-run');
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(target);
+  await expect(page.locator('html')).toHaveAttribute('data-ready','true');
+  await page.locator('#mode').selectOption('detail');
+  await expect(page.locator('.node')).toHaveCount(ids.length);
+  const disconnected=await page.evaluate(()=>{
+    const data=JSON.parse(document.getElementById('s2s-data').textContent),bad=[];
+    for(const group of document.querySelectorAll('.edge')){
+      const edge=data.edges.find(e=>e.id===group.dataset.id),route=group.querySelector('.edge-path');
+      for(const [id,distance] of [[edge.from,0],[edge.to,route.getTotalLength()]]){
+        const p=route.getPointAtLength(distance).matrixTransform(route.getScreenCTM());
+        const r=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id).getBoundingClientRect();
+        if(!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<r.left-3||p.x>r.right+3||p.y<r.top-3||p.y>r.bottom+3||
+          Math.min(Math.abs(p.x-r.left),Math.abs(p.x-r.right),Math.abs(p.y-r.top),Math.abs(p.y-r.bottom))>3)bad.push(edge.id);
+      }
+    }
+    return bad;
+  });
+  expect(disconnected).toEqual([]);
+  const data=JSON.parse(await page.locator('#s2s-data').textContent());
+  for(const id of ['constructor','toString','s2s-node-0']){
+    const node=data.nodes.find(n=>n.id===id);
+    await page.locator('#search').fill(node.label);
+    await page.locator('#results button').click();
+    await expect(page.locator('.node.selected')).toHaveAttribute('data-id',id);
+    await expect(page.locator('#panel-title')).toHaveText(node.label);
+    await expect(page.locator('#panel .evidence-item').first()).toBeVisible();
+    await page.locator('#focus-related').click();
+    await expect(page.locator('#crumb')).toContainText(node.label);
+    await page.locator('#back').click();
+  }
+  await page.locator('#theme-toggle').click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+  await page.locator('#workflow').click();await page.locator('#next').click();
+  await expect(page.locator('#step-count')).toHaveText('02 / 06');
+  expect(errors).toEqual([]);
+});
+
 for(const file of cases) test(file+' renders offline with sound geometry',async({page},info)=>{
   const errors=[],requests=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
   await page.goto(pathToFileURL(path.join(examples,file)).href);
   await expect(page.locator('html')).toHaveAttribute('data-ready','true');
+  await expect(page.locator('html')).toHaveAttribute('data-viewer','canvas');
   await page.evaluate(()=>document.fonts.ready);
   expect(errors).toEqual([]);expect(requests).toEqual([]);
   const geometry=await page.evaluate(()=>{
@@ -43,13 +94,12 @@ for(const file of cases) test(file+' renders offline with sound geometry',async(
     }
     const data=JSON.parse(document.getElementById('s2s-data').textContent);
     const crossings=[],disconnected=[];
-    const origin=document.getElementById('connections').getBoundingClientRect();
     for(const group of document.querySelectorAll('.edge')){
       const edge=data.edges.find(e=>e.id===group.dataset.id);
       const route=group.querySelector('.edge-path'),length=route.getTotalLength();
       for(const [id,distance] of [[edge.from,0],[edge.to,length]]){
-        const r=rects.find(n=>n.id===id).r,p=route.getPointAtLength(distance);
-        const x=p.x+origin.left,y=p.y+origin.top;
+        const r=rects.find(n=>n.id===id).r,p=route.getPointAtLength(distance).matrixTransform(route.getScreenCTM());
+        const x=p.x,y=p.y;
         const inside=x>=r.left-3&&x<=r.right+3&&y>=r.top-3&&y<=r.bottom+3;
         const boundary=Math.min(Math.abs(x-r.left),Math.abs(x-r.right),Math.abs(y-r.top),Math.abs(y-r.bottom))<=3;
         if(!inside||!boundary)disconnected.push([edge.id,id]);
@@ -57,7 +107,7 @@ for(const file of cases) test(file+' renders offline with sound geometry',async(
       for(const node of rects){
         if([edge.from,edge.to].includes(node.id))continue;
         for(let distance=0;distance<length;distance+=3){
-          const p=route.getPointAtLength(distance),x=p.x+origin.left,y=p.y+origin.top,r=node.r;
+          const p=route.getPointAtLength(distance).matrixTransform(route.getScreenCTM()),x=p.x,y=p.y,r=node.r;
           if(x>r.left+2&&x<r.right-2&&y>r.top+2&&y<r.bottom-2){crossings.push([edge.id,node.id]);break;}
         }
       }
@@ -88,6 +138,7 @@ test('a one-node utility is successful and has no playback controls',async({page
 test('playback reveals a detail node and scenario switching resets the step',async({page})=>{
   await page.goto(url('agent-run'));
   await expect(page.locator('.node[data-id=memory]')).toHaveCount(0);
+  await page.locator('#workflow').click();
   for(let i=0;i<5;i++)await page.locator('#next').click();
   await expect(page.locator('#step-count')).toHaveText('06 / 06');
   await expect(page.locator('#mode')).toHaveValue('detail');
@@ -102,6 +153,7 @@ test('playback reveals a detail node and scenario switching resets the step',asy
 test('automatic playback advances and pauses at the final step',async({page})=>{
   await page.clock.install();
   await page.goto(url('cli-transform'));
+  await page.locator('#workflow').click();
   await page.locator('#play').click();
   await page.clock.fastForward(1700);
   await expect(page.locator('#step-count')).toHaveText('02 / 02');
@@ -154,6 +206,7 @@ test('HTML-shaped text and quotes stay inert in a real browser',async({page},inf
   page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
   await page.goto(target);
   await expect(page.locator('html')).toHaveAttribute('data-ready','true');
+  await expect(page.locator('html')).toHaveAttribute('data-viewer','canvas');
   await expect(page.locator('#purpose')).toHaveText(payload);
   await expect(page.locator('#title')).toHaveText(title);
   await expect(page).toHaveTitle(title+' · Source to Sight');
@@ -167,6 +220,7 @@ test('English pages use English controls and evidence labels',async({page},info)
   await page.goto(target);
   await expect(page.locator('html')).toHaveAttribute('lang','en');
   await expect(page.locator('#diagram-title')).toHaveText('Follow the picture');
+  await page.getByRole('button',{name:'Walkthrough',exact:true}).click();
   await expect(page.getByRole('button',{name:'Next step'})).toBeVisible();
   await page.locator('.node').first().click();
   await expect(page.locator('#panel')).toContainText('Location matches');
@@ -178,7 +232,7 @@ test('actions and state conditions remain visible with their own evidence',async
   await page.locator('.node[data-id=convert]').click();
   await expect(page.locator('#panel')).toContainText('읽은 내용을 목표 형식으로 정리합니다.');
   await expect(page.locator('#panel li .evidence-item')).toHaveCount(1);
-  if(info.project.name==='narrow')await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
   await page.locator('.node[data-id=output]').click();
   const transition=page.locator('#panel .transition');
   await expect(transition).toContainText('저장 대기 → 저장 완료');

@@ -5,6 +5,8 @@
   "scripts": {
     "test": "python3 -m unittest discover -s tests -p 'test_*.py' -v",
     "fixtures": "python3 scripts/build_examples.py",
+    "m1:sources": "python3 scripts/fetch_m1_sources.py",
+    "m1:examples": "python3 scripts/build_m1_examples.py",
     "test:browser": "playwright test",
     "vendor": "node scripts/vendor-layout.cjs"
   },

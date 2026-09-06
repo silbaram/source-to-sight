@@ -182,7 +182,7 @@ def read_embedded(path):
     return json.loads(match.group(1))
 
 
-def source_matches(left, right):
+def source_matches(left, right, source_root=None):
     a, b = left["snapshot"], right["snapshot"]
     if a["repository"] != b["repository"] or a["commit"] != b["commit"]:
         return False
@@ -203,10 +203,25 @@ def source_matches(left, right):
         return False
     if any(hashes_a[k] != hashes_b[k] for k in common):
         return False
-    if a["commit"] and a["workingTreeClean"] is True and b["workingTreeClean"] is True:
+    if source_root is not None:
+        # Git cleanliness says nothing about ignored files (generated settings,
+        # installed dependencies, etc.). Reread both pages' complete evidence
+        # scope, including files that only the linked page examined.
+        root = Path(source_root).resolve()
+        for file, hashes in (hashes_a | hashes_b).items():
+            try:
+                path = (root / file).resolve()
+                if not path.is_relative_to(root):
+                    return False
+                if {hashlib.sha256(path.read_bytes()).hexdigest()} != hashes:
+                    return False
+            except (OSError, ValueError, RuntimeError):
+                return False
+    if (source_root is not None and a["commit"]
+            and a["workingTreeClean"] is True and b["workingTreeClean"] is True):
         return True
-    # Without a shared clean commit, compare the entire recorded evidence-file
-    # set. One unchanged common file cannot establish the rest of the scope.
+    # Without a reread and shared clean commit, compare the entire recorded
+    # evidence-file set. A shared subset cannot establish the rest of the scope.
     return bool(hashes_a) and hashes_a == hashes_b
 
 
@@ -305,7 +320,7 @@ def prepare(original, source_root, output_path=None):
                 if other["language"] != data["language"]:
                     raise InvalidGraph("Wrong target language.")
                 link["generated"] = True
-                if not source_matches(data, other):
+                if not source_matches(data, other, source_root):
                     warn("snapshot-mismatch", (
                          "연결된 설명의 소스 시점이 다르거나 확인되지 않았습니다: " if ko
                          else "The linked explanation has a different or unconfirmed source snapshot: ") + link["url"])

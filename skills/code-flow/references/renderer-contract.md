@@ -1,6 +1,6 @@
 # M0 renderer contract
 
-This directory contains the M0 renderer and validation foundation. The repository-discovery skill is the next milestone; no automatic analyzer or complete `code-flow` skill is claimed here.
+This directory contains the M0 renderer and validation foundation, now used by the M1 [code-flow skill](../SKILL.md). The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. M1's independent human gate remains pending. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` helpers; the graph schema remains 0.1.0.
 
 ## Run
 
@@ -49,15 +49,25 @@ Generated HTML embeds data, scripts, styles, font, and licenses. No server or ex
 
 Evidence paths stay inside the supplied source root, including after symlink resolution. Page links are relative. Existing linked pages are checked for layer, subject, scope, language, and source snapshot. A file with the wrong subject does not activate a link. Different or unknown source snapshots produce a warning.
 
-Snapshot comparison rejects failed locations, missing captured hashes, and conflicting observed hashes. A shared clean commit can establish a match across different evidence selections. For a dirty or unknown working tree, the entire recorded evidence-file set and its hashes must match; agreement on a shared subset is insufficient. This compares the recorded evidence scope, not files that were never examined. Warnings name the affected page while keeping a valid destination navigable.
+Snapshot comparison rejects failed locations, missing captured hashes, and conflicting observed hashes. When resolving a page link, the renderer rereads every evidence file recorded by either page under the current source root and compares its SHA-256, including files only examined by the linked page. Missing files and symlinks outside the source root cannot establish a match. A shared clean commit allows different evidence selections only after this reread: Git cleanliness alone does not cover ignored settings or installed dependencies. Without access to the source root, or for a dirty or unknown working tree, the entire recorded evidence-file set and its hashes must match; agreement on a shared subset is insufficient. This compares the recorded evidence scope, not files that were never examined. Warnings name the affected page while keeping a valid destination navigable.
 
 Create a child page, then regenerate the parent to bake in its new link state. The renderer cannot generate another explanation by clicking in an offline page. Generation commands are copied for the user to run in the host.
 
 ## Layout and interaction
 
-The vendored Dagre engine computes geometry; the template draws native SVG connections and accessible HTML node buttons. Self-edge endpoints use a small documented correction for Dagre 3.1.1. Browser tests check every displayed connection's endpoints and intersections with unrelated nodes.
+The vendored Dagre engine computes geometry; the template draws native SVG connections and accessible HTML node buttons. Layout uses private node and edge IDs so valid IR identifiers such as `constructor` or `toString` cannot collide with Graphlib's object keys. Selection, evidence, search, and walkthroughs retain the original IR identifiers. Self-edge endpoints use a small documented correction for Dagre 3.1.1. Browser tests check every displayed connection's endpoints and intersections with unrelated nodes.
 
-Long graphs use a vertical layout and bounded scrolling. Scenario navigation brings the current target into view, reveals detail nodes when necessary, and leaves mobile drawers closed unless explicitly opened. Static one-node explanations have no playback controls.
+The production template uses the approved canvas UI. Its left rail searches actual node labels, roles, and identifiers; the component list also reaches detail nodes. Structure is the initial view. Walkthrough controls appear only after choosing a scenario or the walkthrough view, and only when the IR supplies ordered scenarios. Unordered and single-node explanations do not acquire invented playback.
+
+Dagre uses horizontal layout on wide canvases and vertical layout on narrow canvases. A scaled scroll surface supports native touch scrolling, pointer dragging, keyboard panning, zoom/fit, and a minimap. Initial zoom keeps labels readable; larger graphs can extend beyond the viewport. The scroll surface has stable room around the graph so edge nodes can move clear of a panel. Fit frames the graph bounds rather than this extra scroll space. Arrow checks account for the SVG screen transform.
+
+Evidence panels open on selection on both desktop and mobile. Node selection and zoom keep the selected node in the visible map area beside the desktop panel or above the mobile sheet. The mobile page reserves scroll room while its sheet is open. Walkthrough navigation reveals detail nodes and brings its target into view without opening a panel. Neighbor focus dims unrelated items and names its anchor in the breadcrumb. Selecting a different node or evidence item clears that focus; canvas, search, list, and keyboard selection share this rule. Reopening the same anchor offers “Clear connection focus,” which keeps the current selection and camera. Changing views or advancing a walkthrough also clears the filter. Back independently restores the prior focus, selected item, view, scenario step, detail level, and camera within this page. Autoplay starts only on request, stops on manual navigation or the final step, and respects reduced-motion settings for animated edges.
+
+The header's dark-mode switch updates the entire semantic palette, including graph edges and arrowheads. Its preference is saved under `s2s-atlas-theme` when local storage is available; denied storage does not block rendering or switching. The default is light. Generated files embed these assets; existing HTML must be regenerated to receive template changes. The `data-viewer="canvas"` marker and browser tests guard against accidentally using the old shell.
+
+The same visual components serve IR layers without changing coverage: behavior output says “Scoped overview”; only atlas output uses a whole-map label. Whole-project source discovery remains M5 work. The design prototype's synthetic samples are never imported by the production renderer.
+
+In structure view, changing Core/Detail preserves a still-visible node or edge selection and its evidence panel. If the selected item is hidden by Core, its selection/panel and any hidden focus anchor are cleared. Walkthrough view retains its existing step-reset behavior on Core/Detail changes.
 
 State panels show the transition trigger separately from the state summary, together with the verification note and evidence. Map regions display their own verification badges and open their own evidence panels; a region's uncertainty is separate from its member nodes' status.
 

@@ -222,12 +222,23 @@ class GraphContractTests(unittest.TestCase):
                 self.assertFalse(s2s.source_matches(left,right))
                 self.assertFalse(s2s.source_matches(right,left))
 
-    def test_clean_shared_commit_can_compare_different_evidence_files(self):
+    def test_clean_shared_commit_needs_a_reread_for_different_evidence_files(self):
         left=s2s.prepare(fixture(),ROOT)
         left["snapshot"].update(commit="a"*40,workingTreeClean=True)
         right=copy.deepcopy(left)
         for e in right["evidence"]:e["file"]="another-file.txt"
-        self.assertTrue(s2s.source_matches(left,right))
+        self.assertFalse(s2s.source_matches(left,right))
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            original=ROOT/left["evidence"][0]["file"]
+            source=root/left["evidence"][0]["file"];source.parent.mkdir(parents=True)
+            source.write_bytes(original.read_bytes())
+            (root/"another-file.txt").write_bytes(original.read_bytes())
+            self.assertTrue(s2s.source_matches(left,right,root))
+            self.assertTrue(s2s.source_matches(right,left,root))
+            (root/"another-file.txt").write_text("Changed since the linked page was built.\n")
+            self.assertFalse(s2s.source_matches(left,right,root))
+            self.assertFalse(s2s.source_matches(right,left,root))
         right["evidence"][0]["locationStatus"]="failed"
         self.assertFalse(s2s.source_matches(left,right))
 

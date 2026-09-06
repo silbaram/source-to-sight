@@ -1,0 +1,73 @@
+[
+  {
+    "id": "utility-strip",
+    "source": "strip-ansi",
+    "profiles": [
+      "cli-utility",
+      "library-sdk"
+    ],
+    "language": "JavaScript",
+    "question": "stripAnsi는 문자열을 어떻게 검사하고 터미널 서식 표시를 제거하나요?",
+    "graph": "graphs/utility-strip.json",
+    "output": "utility-strip.html"
+  },
+  {
+    "id": "plugin-hooks",
+    "source": "pluggy",
+    "profiles": [
+      "framework-plugin"
+    ],
+    "language": "Python",
+    "question": "pluggy에서 플러그인 등록과 이후 일반 훅 호출은 어떻게 연결되나요?",
+    "graph": "graphs/plugin-hooks.json",
+    "output": "plugin-hooks.html"
+  },
+  {
+    "id": "agent-tool-loop",
+    "source": "smolagents",
+    "profiles": [
+      "ai-agent"
+    ],
+    "language": "Python",
+    "question": "ToolCallingAgent가 요청을 받아 도구를 사용하고 실행을 종료하는 흐름을 설명해 줘.",
+    "graph": "graphs/agent-tool-loop.json",
+    "output": "agent-tool-loop.html"
+  },
+  {
+    "id": "library-eviction",
+    "source": "golang-lru",
+    "profiles": [
+      "library-sdk",
+      "framework-plugin"
+    ],
+    "language": "Go",
+    "question": "Cache.Add는 용량이 찼을 때 무엇을 제거하고 사용자 콜백을 언제 호출하나요?",
+    "graph": "graphs/library-eviction.json",
+    "output": "library-eviction.html"
+  },
+  {
+    "id": "web-dispatch",
+    "source": "httprouter",
+    "profiles": [
+      "web",
+      "library-sdk"
+    ],
+    "language": "Go",
+    "question": "httprouter에 등록한 경로가 일치할 때 요청은 어떤 핸들러로 전달되나요?",
+    "graph": "graphs/web-dispatch.json",
+    "output": "web-dispatch.html"
+  },
+  {
+    "id": "event-receivers",
+    "source": "blinker",
+    "profiles": [
+      "data-event",
+      "library-sdk",
+      "framework-plugin"
+    ],
+    "language": "Python",
+    "question": "Blinker에서 수신자를 연결한 뒤 send하면 누가 호출되고 어떤 결과가 돌아오나요?",
+    "graph": "graphs/event-receivers.json",
+    "output": "event-receivers.html"
+  }
+]

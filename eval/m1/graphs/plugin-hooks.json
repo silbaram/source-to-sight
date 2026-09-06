@@ -1,0 +1,347 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 커밋의 소스를 코딩 에이전트가 읽고 조립한 M1 사례입니다. 독립적인 사람 검토 전입니다."
+  },
+  "snapshot": {
+    "repository": "pytest-dev/pluggy",
+    "branch": null,
+    "commit": "4821148db2f4c6daa62ad8bdcae2918ecf27a731",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T07:51:52Z",
+    "skillVersion": "0.2.0",
+    "model": null
+  },
+  "subject": {
+    "id": "pluggy-pluginmanager-register-hookcaller-call-07af1588c6a1",
+    "kind": "lifecycle",
+    "title": "플러그인 등록과 훅 호출의 차이",
+    "question": "pluggy에서 플러그인 등록과 이후 일반 훅 호출은 어떻게 연결되나요?",
+    "module": "pluggy",
+    "targets": [
+      {
+        "label": "PluginManager.register + HookCaller.__call__",
+        "file": "src/pluggy/_manager.py",
+        "symbol": "PluginManager.register + HookCaller.__call__"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "정상 등록과 이후 호스트의 일반 훅 호출",
+        "기본 실행기의 구현 호출과 결과 수집"
+      ],
+      "excludes": [
+        "historic 훅과 래퍼의 준비·정리",
+        "추적 실행기 교체",
+        "플러그인의 사용자 정의 동작"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "framework-plugin"
+    ],
+    "searched": [
+      "pyproject.toml",
+      "README.rst",
+      "src/pluggy/_manager.py",
+      "src/pluggy/_hooks.py",
+      "src/pluggy/_callers.py",
+      "testing/test_pluginmanager.py"
+    ],
+    "unresolved": [
+      "구체적 플러그인과 그 반환값은 실제 등록 구성에 따라 결정됩니다."
+    ],
+    "nextAttempts": [
+      "대상 애플리케이션의 플러그인 등록과 구현을 읽습니다."
+    ]
+  },
+  "summary": {
+    "title": "플러그인 등록과 훅 호출의 차이",
+    "purpose": "플러그인의 기능을 이름별로 등록하고, 사용자가 그 기능을 요청하면 연결된 구현을 호출합니다.",
+    "inputs": [
+      "플러그인과 훅 호출"
+    ],
+    "outputs": [
+      "등록된 구현의 반환 결과"
+    ],
+    "limitations": [
+      "일반 훅의 기본 실행 경로입니다. 과거 호출 재생과 추적 래퍼는 제외합니다.",
+      "구체적 플러그인과 그 반환값은 실제 등록 구성에 따라 결정됩니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "pluggy-pluginmanager-register-hookcaller-call-07af1588c6a1",
+    "question": "pluggy에서 플러그인 등록과 이후 일반 훅 호출은 어떻게 연결되나요?",
+    "language": "ko",
+    "command": "$code-flow pluggy에서 플러그인 등록과 이후 일반 훅 호출은 어떻게 연결되나요? | subject=pluggy-pluginmanager-register-hookcaller-call-07af1588c6a1 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "register",
+      "kind": "component",
+      "label": "플러그인 등록",
+      "roleLabel": "등록",
+      "summary": "사용 가능한 구현을 찾아 해당 훅에 추가합니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-register"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "구현 표시가 있는 속성을 HookImpl로 만들고 해당 HookCaller의 구현 목록에 추가합니다. historic 경로는 제외했습니다.",
+      "codeName": "PluginManager.register"
+    },
+    {
+      "id": "caller",
+      "kind": "component",
+      "label": "기능 호출 접수",
+      "roleLabel": "공개 호출",
+      "summary": "요청에 필요한 인자를 확인하고 등록된 구현 목록을 실행기로 보냅니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-caller"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "일반 훅의 __call__은 필수 인자를 점검한 뒤 구현 목록의 사본을 _hookexec로 전달합니다.",
+      "codeName": "HookCaller"
+    },
+    {
+      "id": "dispatch",
+      "kind": "component",
+      "label": "실행기로 전달",
+      "roleLabel": "중계",
+      "summary": "설정된 훅 실행기에 이름·구현 목록·인자를 전달합니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-dispatch"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "기본 _inner_hookexec가 _multicall에 연결되고 _hookexec가 이 실행기에 인자를 전달함을 확인했습니다.",
+      "codeName": "PluginManager._hookexec"
+    },
+    {
+      "id": "multicall",
+      "kind": "component",
+      "label": "구현들 실행",
+      "roleLabel": "실행 제어",
+      "summary": "일반 훅 구현을 호출하고 None이 아닌 결과를 모읍니다. 첫 결과만 요구하는 훅은 중간에 멈출 수 있습니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-multi"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "일반 구현 분기에서 실제 함수를 호출하고 None이 아닌 결과를 수집합니다. firstresult는 추가 호출을 중단할 수 있습니다.",
+      "codeName": "_multicall"
+    },
+    {
+      "id": "plugin",
+      "kind": "boundary",
+      "label": "등록된 플러그인",
+      "roleLabel": "동적 구현",
+      "summary": "어떤 구현이 선택되는지는 실제 등록된 플러그인에 따라 달라집니다.",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "evidenceIds": [
+        "ev-multi"
+      ],
+      "supportStatus": "uncertain",
+      "verificationNote": "등록 객체가 실행 시 제공되므로 구체적 플러그인 구현과 반환 내용은 이 저장소 범위에서 확정하지 않았습니다."
+    }
+  ],
+  "edges": [
+    {
+      "id": "register-hook",
+      "from": "register",
+      "to": "caller",
+      "label": "훅에 구현 등록",
+      "type": "registers",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-register"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "register의 마지막 _add_hookimpl은 등록 관계입니다. 일반 훅 구현을 여기서 실행하는 것으로 해석하지 않았습니다."
+    },
+    {
+      "id": "call-dispatch",
+      "from": "caller",
+      "to": "dispatch",
+      "label": "호출 전달",
+      "type": "invokes",
+      "derivation": "registration-rule",
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-caller",
+        "ev-register"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "HookCaller.__call__의 반환식에서 _hookexec 호출을 확인했습니다."
+    },
+    {
+      "id": "dispatch-multi",
+      "from": "dispatch",
+      "to": "multicall",
+      "label": "기본 실행기 호출",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "evidenceIds": [
+        "ev-dispatch"
+      ],
+      "supportStatus": "supported",
+      "verificationNote": "PluginManager 초기화에서 기본 실행기를 지정하고 _hookexec에서 실제로 호출합니다."
+    },
+    {
+      "id": "multi-plugin",
+      "from": "multicall",
+      "to": "plugin",
+      "label": "등록된 구현 실행",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "inferred",
+      "evidenceIds": [
+        "ev-multi"
+      ],
+      "supportStatus": "uncertain",
+      "verificationNote": "_multicall의 일반 구현 분기는 hook_impl.function을 호출합니다. 대상과 결과는 등록 목록에 따라 달라집니다."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "plugin-lifecycle",
+      "title": "등록 후 일반 훅 호출",
+      "kind": "lifecycle",
+      "steps": [
+        {
+          "id": "plugin-lifecycle-step-1",
+          "edgeId": "register-hook",
+          "caption": "사용 가능한 구현을 훅에 등록합니다.",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-register"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "캡션을 해당 범위에서 다시 확인했습니다. register의 마지막 _add_hookimpl은 등록 관계입니다. 일반 훅 구현을 여기서 실행하는 것으로 해석하지 않았습니다."
+        },
+        {
+          "id": "plugin-lifecycle-step-2",
+          "nodeId": "caller",
+          "caption": "이후 사용자가 그 훅을 호출하면 입력을 확인합니다.",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-caller"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "캡션을 해당 범위에서 다시 확인했습니다. 일반 훅의 __call__은 필수 인자를 점검한 뒤 구현 목록의 사본을 _hookexec로 전달합니다."
+        },
+        {
+          "id": "plugin-lifecycle-step-3",
+          "edgeId": "call-dispatch",
+          "caption": "호출 정보와 구현 목록을 중계합니다.",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-caller",
+            "ev-register"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "캡션을 해당 범위에서 다시 확인했습니다. HookCaller.__call__의 반환식에서 _hookexec 호출을 확인했습니다."
+        },
+        {
+          "id": "plugin-lifecycle-step-4",
+          "edgeId": "dispatch-multi",
+          "caption": "기본 실행기로 전달합니다.",
+          "confidence": "exact",
+          "evidenceIds": [
+            "ev-dispatch"
+          ],
+          "supportStatus": "supported",
+          "verificationNote": "캡션을 해당 범위에서 다시 확인했습니다. PluginManager 초기화에서 기본 실행기를 지정하고 _hookexec에서 실제로 호출합니다."
+        },
+        {
+          "id": "plugin-lifecycle-step-5",
+          "edgeId": "multi-plugin",
+          "caption": "등록된 구현을 실행합니다. 구체적인 구현은 실행 환경에 달려 있습니다.",
+          "confidence": "inferred",
+          "evidenceIds": [
+            "ev-multi"
+          ],
+          "supportStatus": "uncertain",
+          "verificationNote": "캡션을 해당 범위에서 다시 확인했습니다. _multicall의 일반 구현 분기는 hook_impl.function을 호출합니다. 대상과 결과는 등록 목록에 따라 달라집니다."
+        }
+      ]
+    }
+  ],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-register",
+      "kind": "code",
+      "file": "src/pluggy/_manager.py",
+      "symbolOrKey": "PluginManager.register",
+      "startLine": 110,
+      "endLine": 159,
+      "anchorText": "    def register(self, plugin: _Plugin, name: str | None = None) -> str | None:",
+      "contentHash": "f8c36f016ee4a55102c3083b154cd8d3a2dc5310051992e15f4a36609b8a16ed",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-caller",
+      "kind": "code",
+      "file": "src/pluggy/_hooks.py",
+      "symbolOrKey": "HookCaller.__call__",
+      "startLine": 527,
+      "endLine": 542,
+      "anchorText": "    def __call__(self, **kwargs: object) -> Any:",
+      "contentHash": "a5c93af80ca482f10660a2c4c8368b73fb7a4a4307d1f9176f3e63b903d7188a",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-dispatch",
+      "kind": "code",
+      "file": "src/pluggy/_manager.py",
+      "symbolOrKey": "PluginManager._hookexec",
+      "startLine": 97,
+      "endLine": 108,
+      "anchorText": "        self._inner_hookexec = _multicall",
+      "contentHash": "f8c36f016ee4a55102c3083b154cd8d3a2dc5310051992e15f4a36609b8a16ed",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-multi",
+      "kind": "code",
+      "file": "src/pluggy/_callers.py",
+      "symbolOrKey": "_multicall",
+      "startLine": 82,
+      "endLine": 143,
+      "anchorText": "def _multicall(",
+      "contentHash": "bcc9618b647069ed52a04b318bbaa93e4daef96e1fad746beb122e7fd95b3846",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

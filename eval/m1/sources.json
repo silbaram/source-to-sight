@@ -1,0 +1,8 @@
+[
+  {"id":"strip-ansi","repository":"chalk/strip-ansi","commit":"38ff9f2282540422031ed523f0060c7bb575e20f","language":"JavaScript"},
+  {"id":"pluggy","repository":"pytest-dev/pluggy","commit":"4821148db2f4c6daa62ad8bdcae2918ecf27a731","language":"Python"},
+  {"id":"smolagents","repository":"huggingface/smolagents","commit":"30bb1161095dbae2271e6bc3cc4c219cc3897a57","language":"Python"},
+  {"id":"golang-lru","repository":"hashicorp/golang-lru","commit":"9c13c57de0bedd6b3e21183b34072e417ffa69d1","language":"Go"},
+  {"id":"httprouter","repository":"julienschmidt/httprouter","commit":"484018016424d215c0b87c42f4c9b57d980fbd00","language":"Go"},
+  {"id":"blinker","repository":"pallets-eco/blinker","commit":"c3364059663df1ddce32799d6b1922af89a345f6","language":"Python"}
+]

@@ -26,6 +26,9 @@
   const evidenceMap = new Map(data.evidence.map(e => [e.id, e]));
   let detail = false, scenarioIndex = 0, stepIndex = -1, timer = null, selected = null;
   let returnFocus = null, announcementTimer = null;
+  let view = 'structure', focusId = null, zoom = 1, graphWidth = 0, graphHeight = 0;
+  let laidOut = false;
+  const history = [];
 
   async function copy(text) {
     try {
@@ -97,6 +100,9 @@
     }
   }
   function showItem(item, focus = false) {
+    // A deliberate selection starts a new inspection, ending the previous
+    // connection filter. Keep Back's camera/view history independently.
+    if (focus && item.id !== focusId) focusId = null;
     selected = item.id;
     const body = $('panel-body');
     body.replaceChildren(statusBadge(item));
@@ -140,16 +146,23 @@
       a.href = source.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
       body.append(a);
     }
-    if (focus || !matchMedia('(max-width:900px)').matches) $('panel').classList.add('open');
-    if (focus && matchMedia('(max-width:900px)').matches) {
+    $('focus-related').hidden = !nodeMap.has(item.id);
+    if (focus) {
       returnFocus = document.activeElement;
-      $('close-panel').focus();
+      $('panel').classList.add('open');
+      $('panel').inert = false;
+      document.body.classList.add('panel-open');
+      if (matchMedia('(max-width:900px)').matches) $('close-panel').focus({preventScroll:true});
+      else $('panel').scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+      if (nodeMap.has(item.id)) revealNode(item.id);
     }
-    paint();
+    updateNavigation();paint();
   }
-  function closePanel() {
+  function closePanel(restoreFocus = true) {
     $('panel').classList.remove('open');
-    if (returnFocus?.isConnected) returnFocus.focus();
+    $('panel').inert = true;
+    document.body.classList.remove('panel-open');
+    if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
   }
   function wrap(text, length = 13) {
     const characters = Array.from(text);
@@ -163,27 +176,25 @@
     const visible = data.nodes.filter(n => detail || n.importance === 'core');
     const visibleIds = new Set(visible.map(n => n.id));
     const edges = data.edges.filter(e => visibleIds.has(e.from) && visibleIds.has(e.to));
+    // Graphlib uses object keys internally. Valid IR IDs such as "constructor"
+    // must not reach that namespace; keep original IDs for UI and evidence.
+    const layoutNodes = new Map(visible.map((n,i) => [n.id,'s2s-node-'+i]));
+    const layoutEdges = new Map(edges.map((e,i) => [e.id,'s2s-edge-'+i]));
     const graph = new dagre.graphlib.Graph({multigraph:true});
     graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:46, edgesep:24, ranksep:86, marginx:40, marginy:38});
     graph.setDefaultEdgeLabel(() => ({}));
     for (const n of visible) {
       const height = 106 + Math.max(0, wrap(n.label, 12).length - 1) * 18;
-      graph.setNode(n.id, {width:220, height});
+      graph.setNode(layoutNodes.get(n.id), {width:220, height});
     }
     for (const e of edges) {
-      graph.setEdge(e.from, e.to, {width:Math.min(140, Math.max(54, Array.from(e.label).length * 7)),
-        height:wrap(e.label, 16).length * 14 + 10, labelpos:'c'}, e.id);
+      graph.setEdge(layoutNodes.get(e.from), layoutNodes.get(e.to), {width:Math.min(140, Math.max(54, Array.from(e.label).length * 7)),
+        height:wrap(e.label, 16).length * 14 + 10, labelpos:'c'}, layoutEdges.get(e.id));
     }
     dagre.layout(graph);
-    // Keep text legible. A deep graph uses a vertical reading direction instead
-    // of shrinking the entire picture into unreadably small labels.
-    if (!mobile && graph.graph().width > canvas.clientWidth * 1.15) {
-      graph.setGraph({...graph.graph(),rankdir:'TB'});
-      dagre.layout(graph);
-    }
     const layout = graph.graph();
-    const width = Math.max(canvas.clientWidth, layout.width || 0);
-    const height = Math.max(330, layout.height || 0);
+    const width = Math.max(320, layout.width || 0);
+    const height = Math.max(260, layout.height || 0);
     const dx = (width - (layout.width || width)) / 2;
     const dy = (height - (layout.height || height)) / 2;
     $('stage').style.width = width + 'px';
@@ -193,7 +204,7 @@
     connections.setAttribute('width', width);
     connections.setAttribute('height', height);
     const defs = svg('defs');
-    for (const [name,color] of [['normal','#426da9'],['uncertain','#916000'],['structural','#7656a6'],['data','#087c6b'],['active','#00896b']]) {
+    for (const [name,color] of [['normal','var(--blue)'],['uncertain','var(--amber)'],['structural','var(--violet)'],['data','var(--teal)'],['active','var(--teal)']]) {
       const marker = svg('marker', {id:'arrow-'+name, markerWidth:10, markerHeight:8, refX:9, refY:4,
         orient:'auto', markerUnits:'userSpaceOnUse', viewBox:'0 0 10 8'});
       marker.append(svg('path', {d:'M 0 0 L 10 4 L 0 8 Z', fill:color}));
@@ -203,7 +214,7 @@
     const layer = $('node-layer');
     layer.replaceChildren();
     for (const e of edges) {
-      const result = graph.edge({v:e.from, w:e.to, name:e.id});
+      const result = graph.edge({v:layoutNodes.get(e.from), w:layoutNodes.get(e.to), name:layoutEdges.get(e.id)});
       const relation = ['registers','depends-on'].includes(e.type) ? 'structural' :
         ['passes-data','reads','writes','emits','consumes'].includes(e.type) ? 'data' : 'normal';
       const color = e.displayStatus !== 'confirmed' ? 'uncertain' : relation;
@@ -213,7 +224,7 @@
       // Dagre 3.1.1 reserves space for self-edges, but its returned self-edge
       // points do not meet the node boundary. Route within that reserved space.
       if (e.from === e.to) {
-        const box = graph.node(e.from);
+        const box = graph.node(layoutNodes.get(e.from));
         if (graph.graph().rankdir === 'TB') {
           const right=box.x+box.width/2, outer=Math.max(right+24,result.x-result.width/2-12);
           routed=[{x:right,y:box.y-box.height/4},{x:outer-10,y:box.y-box.height/4},
@@ -244,7 +255,7 @@
       connections.append(group);
     }
     for (const n of visible) {
-      const position = graph.node(n.id);
+      const position = graph.node(layoutNodes.get(n.id));
       const button = element('button', undefined, 'node '+n.displayStatus);
       button.type = 'button'; button.dataset.id = n.id; button.dataset.kind = n.kind;
       button.style.cssText = 'left:'+(position.x+dx-position.width/2)+'px;top:'+
@@ -256,31 +267,45 @@
       button.addEventListener('click', () => {stop();showItem(n,true);});
       layer.append(button);
     }
+    graphWidth = width; graphHeight = height;
+    if (!laidOut) { fit(true); laidOut = true; }
+    else applyZoom();
+    updateMini();
     paint();
   }
   function currentStep() {
     return stepIndex >= 0 ? data.scenarios[scenarioIndex]?.steps[stepIndex] : null;
   }
   function paint() {
-    const step = currentStep();
+    const step = view === 'flow' ? currentStep() : null;
     const activeEdge = step?.edgeId;
     const edge = edgeMap.get(activeEdge);
     const activeNodes = new Set(edge ? [edge.from,edge.to] : step ? [step.nodeId] : []);
+    const neighbors = focusId ? new Set([focusId]) : null;
+    if (neighbors) for (const e of data.edges) {
+      if (e.from === focusId) neighbors.add(e.to);
+      if (e.to === focusId) neighbors.add(e.from);
+    }
     for (const node of document.querySelectorAll('.node')) {
+      node.classList.toggle('dim', !!neighbors && !neighbors.has(node.dataset.id));
       node.classList.toggle('selected',node.dataset.id === selected);
       node.classList.toggle('active',activeNodes.has(node.dataset.id));
       node.setAttribute('aria-pressed', String(node.dataset.id === selected));
     }
     for (const node of document.querySelectorAll('.edge')) {
       const active = node.dataset.id === activeEdge;
+      const relation = edgeMap.get(node.dataset.id);
+      node.classList.toggle('dim', !!neighbors && relation.from !== focusId && relation.to !== focusId);
+      node.classList.toggle('animating', active && !!timer);
       node.classList.toggle('active',active || node.dataset.id === selected);
       const path = node.querySelector('.edge-path');
-      path.setAttribute('marker-end','url(#arrow-'+(active ? 'active' : path.dataset.marker)+')');
+      path.setAttribute('marker-end','url(#arrow-'+(active || node.dataset.id === selected ? 'active' : path.dataset.marker)+')');
     }
   }
-  function setStep(index) {
+  function setStep(index, preserveFocus = false) {
     const scenario = data.scenarios[scenarioIndex];
     if (!scenario) return;
+    if (!preserveFocus) focusId = null;
     stepIndex = Math.max(0,Math.min(index,scenario.steps.length-1));
     const step = scenario.steps[stepIndex];
     const edge = edgeMap.get(step.edgeId);
@@ -294,14 +319,7 @@
     $('previous').disabled = stepIndex === 0;
     $('next').disabled = stepIndex === scenario.steps.length-1;
     showItem(edge || nodeMap.get(step.nodeId));
-    const target=document.querySelector('.node[data-id="'+ids[ids.length-1]+'"]');
-    if(target){
-      const canvas=$('canvas'),box=target.getBoundingClientRect(),frame=canvas.getBoundingClientRect();
-      if(box.top<frame.top||box.bottom>frame.bottom||box.left<frame.left||box.right>frame.right){
-        canvas.scrollTo({top:Math.max(0,target.offsetTop-(canvas.clientHeight-target.offsetHeight)/2),
-          left:Math.max(0,target.offsetLeft-(canvas.clientWidth-target.offsetWidth)/2),behavior:'instant'});
-      }
-    }
+    if (view === 'flow') revealNode(ids[ids.length-1]);
     if (stepIndex === scenario.steps.length-1) stop();
     paint();
   }
@@ -309,6 +327,7 @@
     clearInterval(timer);timer=null;
     $('play').textContent=t('▶ 자동 재생','▶ Play');
     $('play').setAttribute('aria-pressed','false');
+    paint();
   }
   function togglePlayback() {
     if (timer) {stop();return;}
@@ -318,6 +337,231 @@
     $('play').textContent=t('Ⅱ 일시 정지','Ⅱ Pause');
     $('play').setAttribute('aria-pressed','true');
     timer=setInterval(() => setStep(stepIndex+1),1500);
+    paint();
+  }
+  function applyZoom() {
+    const canvas = $('canvas');
+    $('stage').style.transform = 'scale('+zoom+')';
+    // Space around every graph edge lets even the last node move clear of a
+    // drawer. Keep this space stable when opening/closing panels for Back.
+    $('graph-space').style.width = graphWidth*zoom+2*canvas.clientWidth+'px';
+    $('graph-space').style.height = graphHeight*zoom+2*canvas.clientHeight+'px';
+    $('stage').style.left = canvas.clientWidth+'px';
+    $('stage').style.top = canvas.clientHeight+'px';
+    $('zoom-level').textContent = Math.round(zoom*100)+'%';
+    $('zoom-out').disabled = zoom <= .2;
+    $('zoom-in').disabled = zoom >= 2;
+    updateMini();
+  }
+  function setZoom(value) {
+    if (!graphWidth) return;
+    const canvas = $('canvas'), stage = $('stage');
+    const cx = (canvas.scrollLeft+canvas.clientWidth/2-stage.offsetLeft)/zoom;
+    const cy = (canvas.scrollTop+canvas.clientHeight/2-stage.offsetTop)/zoom;
+    zoom = Math.max(.2,Math.min(2,value));
+    applyZoom();
+    canvas.scrollLeft = cx*zoom+stage.offsetLeft-canvas.clientWidth/2;
+    canvas.scrollTop = cy*zoom+stage.offsetTop-canvas.clientHeight/2;
+    if ($('panel').classList.contains('open') && nodeMap.has(selected)) revealNode(selected);
+    updateMini();
+  }
+  function fit(initial = false) {
+    const canvas = $('canvas');
+    const ratio = Math.min(1,(canvas.clientWidth-32)/graphWidth,(canvas.clientHeight-32)/graphHeight);
+    zoom = Math.max(initial ? (canvas.clientWidth < 600 ? .8 : .55) : .2,ratio);
+    applyZoom();
+    canvas.scrollLeft=$('stage').offsetLeft+(graphWidth*zoom-canvas.clientWidth)/2;
+    canvas.scrollTop=$('stage').offsetTop+(graphHeight*zoom-canvas.clientHeight)/2;
+    if ($('panel').classList.contains('open') && nodeMap.has(selected)) revealNode(selected);
+    updateMini();
+  }
+  function updateMini() {
+    if (!graphWidth) return;
+    const mini=$('mini'), canvas=$('canvas'), stage=$('stage');
+    mini.setAttribute('viewBox','0 0 '+graphWidth+' '+graphHeight);
+    mini.replaceChildren();
+    for (const n of document.querySelectorAll('.node')) mini.append(svg('rect',{
+      x:n.offsetLeft,y:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight,rx:8
+    }));
+    mini.append(svg('rect',{class:'viewport',x:(canvas.scrollLeft-stage.offsetLeft)/zoom,
+      y:(canvas.scrollTop-stage.offsetTop)/zoom,width:canvas.clientWidth/zoom,height:canvas.clientHeight/zoom}));
+  }
+  function revealNode(id) {
+    const target=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id);
+    if (!target) return;
+    const canvas=$('canvas');
+    function visibleFrame() {
+      const frame=canvas.getBoundingClientRect();
+      const area={left:Math.max(0,frame.left)+16,right:Math.min(innerWidth,frame.right)-16,
+        top:Math.max(0,frame.top)+16,bottom:Math.min(innerHeight,frame.bottom)-16};
+      if ($('panel').classList.contains('open')) {
+        const panel=$('panel').getBoundingClientRect();
+        if (panel.left<area.right && panel.right>area.left && panel.top<area.bottom && panel.bottom>area.top) {
+          if (matchMedia('(max-width:900px)').matches) area.bottom=Math.min(area.bottom,panel.top-16);
+          else area.right=Math.min(area.right,panel.left-16);
+        }
+      }
+      return area;
+    }
+    let box=target.getBoundingClientRect(), area=visibleFrame();
+    if (area.bottom-area.top<box.height || area.right-area.left<box.width) {
+      // Bring the map above the mobile sheet, or back into the page viewport
+      // after using a search/region control elsewhere in the document.
+      canvas.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+      area=visibleFrame();box=target.getBoundingClientRect();
+    }
+    if(box.top<area.top||box.bottom>area.bottom||box.left<area.left||box.right>area.right){
+      canvas.scrollLeft+=(box.left+box.right-area.left-area.right)/2;
+      canvas.scrollTop+=(box.top+box.bottom-area.top-area.bottom)/2;
+    }
+    updateMini();
+  }
+  function chooseNode(node) {
+    stop();
+    if (!detail && node.importance==='detail') {detail=true;$('mode').value='detail';draw();}
+    showItem(node,true);
+  }
+  function changeMode() {
+    stop();detail=$('mode').value==='detail';
+    if (view==='flow' && data.scenarios.length) {
+      stepIndex=-1;draw();setStep(0);
+      return;
+    }
+    const visible=id=>detail||nodeMap.get(id)?.importance==='core';
+    if (focusId && !visible(focusId)) focusId=null;
+    const edge=edgeMap.get(selected);
+    if ((nodeMap.has(selected) && !visible(selected)) || (edge && (!visible(edge.from)||!visible(edge.to)))) {
+      selected=null;closePanel(false);
+    }
+    draw();updateNavigation();
+    if (nodeMap.has(selected)) revealNode(selected);
+  }
+  function updateNavigation() {
+    $('structure').setAttribute('aria-pressed',String(view==='structure'));
+    $('workflow').setAttribute('aria-pressed',String(view==='flow'));
+    $('overview').classList.toggle('active',view==='structure'&&!focusId);
+    for(const button of $('flows').children) button.classList.toggle('active',view==='flow'&&Number(button.dataset.index)===scenarioIndex);
+    $('crumb').textContent = focusId ? t('연결 강조 중 · ','Connections focused · ')+nodeMap.get(focusId).label : view==='flow' ?
+      data.scenarios[scenarioIndex].title : t('설명 범위 / 구성','Explanation scope / structure');
+    const focused = !!focusId && focusId === selected;
+    $('focus-related').textContent = focused ? t('연결 강조 해제','Clear connection focus') : t('연결된 부분에 집중','Focus on connections');
+    $('focus-related').setAttribute('aria-pressed',String(focused));
+    $('back').hidden=!history.length;
+  }
+  function setView(value) {
+    if (value !== view) focusId = null;
+    stop();view=value;
+    $('player').hidden=view!=='flow'||!data.scenarios.length;
+    if(view==='flow'&&stepIndex<0)setStep(0);
+    updateNavigation();paint();
+  }
+  function initializeCanvas() {
+    const theme=$('theme-toggle');
+    function paintTheme() {
+      const dark=document.documentElement.dataset.theme==='dark';
+      theme.setAttribute('aria-checked',String(dark));
+      theme.setAttribute('aria-label',t('다크 모드','Dark mode'));
+      theme.title=dark?t('다크 모드 끄기','Turn dark mode off'):t('다크 모드 켜기','Turn dark mode on');
+      $('theme-label').textContent=t('다크 모드','Dark mode');
+    }
+    theme.addEventListener('click',()=>{
+      const value=document.documentElement.dataset.theme==='dark'?'light':'dark';
+      document.documentElement.dataset.theme=value;
+      try{localStorage.setItem('s2s-atlas-theme',value);}catch{/* File storage may be unavailable. */}
+      paintTheme();
+    });
+    paintTheme();
+    $('summary-details-title').textContent=t('입력과 결과 보기','Inputs and outputs');
+    $('rail').setAttribute('aria-label',t('설명 탐색','Explore explanation'));
+    $('rail-label').textContent='EXPLORE';
+    $('search').placeholder=t('구성 요소 검색','Search components');
+    $('search').setAttribute('aria-label',$('search').placeholder);
+    $('overview').textContent=data.layer==='atlas'?t('◈ 전체 구성','◈ Overview'):t('◈ 설명 범위의 구성','◈ Scoped overview');
+    $('list-title').textContent=t('구성 요소 목록','Components')+' · '+data.nodes.length;
+    $('flows-title').textContent=t('대표 흐름','WALKTHROUGHS');
+    $('rail-note').textContent=t('목록에서 부분을 찾거나 지도를 움직여 살펴보세요. 설명 범위와 미확인 내용은 아래에서 확인할 수 있습니다.',
+      'Find a part in the list or move around the map. Scope and unresolved details are listed below.');
+    $('structure').textContent=t('구성 보기','Structure');
+    $('workflow').textContent=t('흐름 따라가기','Walkthrough');
+    $('workflow').hidden=!data.scenarios.length;$('flow-list').hidden=!data.scenarios.length;
+    $('view-switch').setAttribute('aria-label',t('설명 관점','Explanation view'));
+    $('story-note').textContent=t('설명 순서 · 실제 실행 기록이 아닙니다','Explanation sequence · not a recorded execution');
+    $('scenario').setAttribute('aria-label',t('설명 흐름','Walkthrough'));
+    $('back').textContent=t('← 돌아가기','← Back');
+    $('zoom-out').setAttribute('aria-label',t('축소','Zoom out'));
+    $('zoom-in').setAttribute('aria-label',t('확대','Zoom in'));
+    $('fit').textContent=t('전체','Fit');
+    $('fit').setAttribute('aria-label',t('지도를 화면에 맞추기','Fit map to view'));
+    $('canvas').setAttribute('aria-label',t('관계도. 드래그 또는 방향키로 이동, +와 -로 확대 축소, 0으로 전체 보기',
+      'Relationship map. Drag or use arrow keys to move, + and - to zoom, 0 to fit.'));
+    $('connections').setAttribute('aria-label',t('구성 요소 사이의 관계','Relationships between components'));
+    $('links').setAttribute('aria-label',t('관련 설명','Related explanations'));
+    for(const node of data.nodes) {
+      const button=element('button',node.label);button.type='button';button.dataset.nodeId=node.id;
+      button.append(element('small',node.roleLabel));
+      button.addEventListener('click',()=>chooseNode(node));$('component-list').append(button);
+    }
+    $('search').addEventListener('input',()=>{
+      const query=$('search').value.trim().toLocaleLowerCase();
+      $('results').replaceChildren();$('results').hidden=!query;
+      if(!query)return;
+      const matches=data.nodes.filter(n=>[n.label,n.codeName,n.roleLabel].some(v=>v?.toLocaleLowerCase().includes(query)));
+      for(const node of matches){const button=element('button',node.label);button.type='button';button.addEventListener('click',()=>chooseNode(node));$('results').append(button);}
+      if(!matches.length)$('results').append(element('p',t('일치하는 구성 요소가 없습니다.','No matching components.')));
+    });
+    data.scenarios.forEach((scenario,index)=>{
+      const button=element('button',scenario.title);button.type='button';button.dataset.index=index;
+      button.append(element('small',scenario.steps.length+t('개 설명 단계',' explanation steps')));
+      button.addEventListener('click',()=>{scenarioIndex=index;$('scenario').value=String(index);setView('flow');setStep(0);});
+      $('flows').append(button);
+    });
+    $('structure').addEventListener('click',()=>setView('structure'));
+    $('workflow').addEventListener('click',()=>setView('flow'));
+    $('overview').addEventListener('click',()=>{history.length=0;focusId=null;selected=null;closePanel();setView('structure');fit();});
+    $('focus-related').addEventListener('click',()=>{
+      if(!nodeMap.has(selected))return;
+      if(focusId===selected){focusId=null;updateNavigation();paint();return;}
+      stop();
+      history.push({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,left:$('canvas').scrollLeft,top:$('canvas').scrollTop});
+      focusId=selected;closePanel();revealNode(focusId);updateNavigation();paint();
+    });
+    $('back').addEventListener('click',()=>{
+      const saved=history.pop();if(!saved)return;stop();closePanel();
+      ({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex}=saved);
+      $('mode').value=detail?'detail':'core';$('scenario').value=String(scenarioIndex);draw();
+      if(stepIndex>=0){const selection=selected;setStep(stepIndex,true);selected=selection;}
+      setView(view);$('canvas').scrollLeft=saved.left;$('canvas').scrollTop=saved.top;
+      if(nodeMap.has(selected))showItem(nodeMap.get(selected));
+      updateMini();paint();
+    });
+    $('zoom-in').addEventListener('click',()=>setZoom(zoom*1.2));
+    $('zoom-out').addEventListener('click',()=>setZoom(zoom/1.2));
+    $('fit').addEventListener('click',()=>fit());
+    $('canvas').addEventListener('scroll',updateMini,{passive:true});
+    let drag=null;
+    $('canvas').addEventListener('pointerdown',event=>{
+      if(event.button!==0||event.pointerType==='touch'||event.target.closest('button,.edge'))return;
+      drag={x:event.clientX,y:event.clientY,left:$('canvas').scrollLeft,top:$('canvas').scrollTop};
+      $('canvas').setPointerCapture(event.pointerId);$('canvas').classList.add('dragging');
+    });
+    $('canvas').addEventListener('pointermove',event=>{
+      if(!drag)return;
+      $('canvas').scrollLeft=drag.left+drag.x-event.clientX;$('canvas').scrollTop=drag.top+drag.y-event.clientY;
+    });
+    function endDrag(){drag=null;$('canvas').classList.remove('dragging');}
+    $('canvas').addEventListener('pointerup',endDrag);$('canvas').addEventListener('pointercancel',endDrag);
+    $('canvas').addEventListener('keydown',event=>{
+      if(event.target!==$('canvas'))return;
+      if(['+','=','-','0','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))event.preventDefault();
+      if(['+','='].includes(event.key))setZoom(zoom*1.2);
+      if(event.key==='-')setZoom(zoom/1.2);
+      if(event.key==='0')fit();
+      if(event.key==='ArrowLeft')$('canvas').scrollLeft-=80;
+      if(event.key==='ArrowRight')$('canvas').scrollLeft+=80;
+      if(event.key==='ArrowUp')$('canvas').scrollTop-=80;
+      if(event.key==='ArrowDown')$('canvas').scrollTop+=80;
+    });
+    updateNavigation();
   }
   function initialize() {
     document.querySelector('.skip').textContent=t('그림으로 바로 이동','Skip to diagram');
@@ -358,17 +602,17 @@
     for(const [label,cls] of [[t('확인한 연결','Checked connection'),''],[t('추정·미확인','Uncertain / unverified'),'dashed'],[t('등록·의존 관계','Registration / dependency'),'relation']]) {
       const item=element('span',undefined,'legend-item');item.append(element('span',undefined,'legend-line '+cls),document.createTextNode(label));$('legend').append(item);
     }
-    $('mode').addEventListener('change',()=>{stop();detail=$('mode').value==='detail';stepIndex=-1;draw();if(data.scenarios.length)setStep(0);});
+    $('mode').addEventListener('change',changeMode);
     $('close-panel').setAttribute('aria-label',t('설명 닫기','Close explanation'));
     $('close-panel').addEventListener('click',closePanel);
-    $('player').hidden=!data.scenarios.length;
+    $('player').hidden=true;
     $('previous').setAttribute('aria-label',t('이전 단계','Previous step'));
     $('next').setAttribute('aria-label',t('다음 단계','Next step'));
     $('previous').addEventListener('click',()=>{stop();setStep(stepIndex-1);});
     $('next').addEventListener('click',()=>{stop();setStep(stepIndex+1);});
     $('play').addEventListener('click',togglePlayback);stop();
     data.scenarios.forEach((s,i)=>{const option=element('option',s.title);option.value=i;$('scenario').append(option);});
-    $('scenario').addEventListener('change',()=>{stop();scenarioIndex=Number($('scenario').value);setStep(0);});
+    $('scenario').addEventListener('change',()=>{stop();scenarioIndex=Number($('scenario').value);setStep(0);updateNavigation();});
     for(const region of data.regions) {
       const block=element('div',undefined,'region');
       block.dataset.id=region.id;
@@ -402,18 +646,20 @@
       list($('insufficient'),t('다음에 시도할 것','Next attempts'),data.analysis.nextAttempts);
     } else {
       draw();
-      if(data.nodes.length) showItem(data.nodes.find(n=>n.importance==='core')||data.nodes[0]);
       if(data.scenarios.length) setStep(0);
-      $('panel').classList.remove('open');
+      selected=null;
+      closePanel();
+      paint();
     }
     let resizeTimer;
-    addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(data.analysis.status!=='insufficient')draw();},120);});
-    document.addEventListener('keydown',event=>{
-      if(event.key==='Escape')closePanel();
-      if(!data.scenarios.length||event.target.closest('input,select,textarea,[contenteditable]'))return;
-      if(event.key==='ArrowRight'){event.preventDefault();stop();setStep(stepIndex+1);}
-      if(event.key==='ArrowLeft'){event.preventDefault();stop();setStep(stepIndex-1);}
-    });
+    addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
+      if(data.analysis.status!=='insufficient') {
+        draw();
+        if($('panel').classList.contains('open') && nodeMap.has(selected))revealNode(selected);
+      }
+    },120);});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape' && $('panel').classList.contains('open'))closePanel();});
+    initializeCanvas();
     document.documentElement.dataset.ready='true';
   }
   initialize();

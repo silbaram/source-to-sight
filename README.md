@@ -1,8 +1,8 @@
 # Source to Sight
 
-The technology-neutral evolution is in development. **M0 includes common graph contracts, evidence validation, and an offline workflow viewer**, with eleven fixtures including real plugin-framework, AI-agent, and JavaScript-utility sources. The repository-discovery `code-flow` skill is the next milestone.
+The technology-neutral evolution is in development. **`code-flow` now provides the M1 source-discovery skill, six composable profiles, evidence capture, and offline HTML assembly**, on the M0 graph/validation foundation. The coding agent has traced six pinned repositories across JavaScript, Python, and Go. Independent human fact and comprehension review is pending; this is not universal-support certification.
 
-[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [Fixture provenance](fixtures/manifest.md)
+[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [M1 cases and provenance](eval/m1/README.md) · [M1 status](docs/m1-verification.md)
 
 English | [한국어](./README.ko.md)
 
@@ -10,7 +10,28 @@ An agent skill that turns complex topics into visual explanations for people see
 
 The `$visual-primer` skill checks source material and authoritative references, then creates a self-contained HTML page that explains the topic with large visuals and few words. The output opens directly in a browser without a build step or separate server.
 
-## Example output
+## Code behavior examples
+
+Use `$code-flow` for a bounded capability, public API, lifecycle, or workflow. The host agent reads the source, resolves the target, reviews the claims, and creates an offline explanation; the helper scripts validate and render that authored analysis.
+
+```text
+$code-flow Explain how ToolCallingAgent uses tools and decides to stop.
+$code-flow Explain when Cache.Add evicts an item and invokes its callback.
+$code-flow Explain which Blinker receivers are called by Signal.send.
+```
+
+| Source reading | What the page explains | Local generated page |
+| --- | --- | --- |
+| strip-ansi | One-function input checking and string transformation | `build/m1/utility-strip.html` |
+| pluggy | Registration versus a later hook invocation | `build/m1/plugin-hooks.html` |
+| smolagents | Agent loop, model/tool boundaries, and termination | `build/m1/agent-tool-loop.html` |
+| golang-lru | Eviction, state buffering, and callback after unlocking | `build/m1/library-eviction.html` |
+| httprouter | Matching request dispatch to a registered handler | `build/m1/web-dispatch.html` |
+| Blinker | Sender filtering and unordered receiver relationships | `build/m1/event-receivers.html` |
+
+Run `npm run m1:sources` and `npm run m1:examples` after the [development setup](docs/development.md). The examples are agent-authored readings, not six blind model evaluations. M1's [human review worksheet](docs/m1-human-review.md) remains pending. Generated pages now use the approved canvas UI: component search, structure/walkthrough views, pan/zoom, on-demand evidence panels, and a persistent dark-mode switch. The [atlas prototype](docs/design/atlas-prototype.html) remains a design reference; whole-project discovery remains M5 work.
+
+## Concept explanation example
 
 The following prompt creates a beginner-friendly visual guide to OAuth:
 
@@ -37,6 +58,14 @@ Install `visual-primer` with the Agent Skills CLI:
 ```bash
 npx skills add silbaram/source-to-sight --skill visual-primer
 ```
+
+For the new `code-flow` skill, install from a checkout containing this implementation:
+
+```bash
+npx skills add . --skill code-flow
+```
+
+Alternatively copy the complete `skills/code-flow` directory into your host's skill directory. Keep its scripts, references, templates, font, and licenses together. Its Python helper requires `jsonschema`; use the included `scripts/requirements.txt`. A sibling skill and Node.js are not required for rendering. Local-source and named-skill installation are described in the [Skills CLI documentation](https://github.com/vercel-labs/skills#source-formats).
 
 If the skill does not appear in the current session after installation, start a new conversation.
 
@@ -79,6 +108,9 @@ If the current session still has the previous version loaded, start a new conver
 .
 ├── README.md
 ├── README.ko.md
+├── skills/code-flow/              # Source discovery, profiles, authoring, renderer
+├── eval/m1/                       # Pinned source readings and case records
+├── docs/                          # Setup, verification, human review, atlas design
 ├── skills/visual-primer/
 │   ├── SKILL.md
 │   └── references/
