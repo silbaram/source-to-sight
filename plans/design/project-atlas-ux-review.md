@@ -4,7 +4,7 @@
 
 **권고: 프로젝트 지도에는 캔버스 중심의 탐색 화면을 적용한다.** 현재 `agent-run.html`의 설명 내용과 근거 체계는 유지하고, `atlas` 계층의 화면 구성을 구분한다. 사용자는 **전체 구성 → 대표 흐름 또는 관심 부분 → 해당 동작의 상세 설명** 순서로 탐색한다.
 
-[인터랙티브 시안 열기](atlas-prototype.html) · [기존 개발계획](../../plans/source-to-sight-evolution-plan.md) · [현재 렌더러 계약](../../skills/code-flow/references/renderer-contract.md)
+[인터랙티브 시안 열기](atlas-prototype.html) · [기존 개발계획](../source-to-sight-evolution-plan.md) · [현재 렌더러 계약](../../skills/code-flow/references/renderer-contract.md)
 
 ## 1. 현재 화면이 상세 페이지처럼 느껴지는 이유
 
@@ -119,7 +119,7 @@
 
 캔버스 조작 참고용으로 [React Flow viewport](https://reactflow.dev/learn/concepts/the-viewport)를 확인했다. **라이브러리 교체는 이번 권고의 전제가 아니다.** 현재 SVG·Dagre와 오프라인 HTML 조건에서 필요한 조작을 먼저 검증하고, 복합 구역·접힘·성능 사례가 쌓인 뒤 의존성 추가 비용과 비교한다.
 
-이 문서의 디자인을 실제 렌더러로 옮긴 결과는 [캔버스 적용 기록](../canvas-viewer-verification.md)에 있다. M1 탐색 스킬·도구의 구현과 별개로 사람 검토 게이트는 대기 중이며, M5 전체 저장소 지도 탐색은 후속 범위다. 공통 UI 적용을 M4·M5 전체 완료로 해석하지 않는다.
+이 문서의 디자인을 실제 렌더러로 옮긴 결과는 [캔버스 적용 기록](../../eval/reports/canvas-viewer-verification.md)에 있다. M1 탐색 스킬·도구의 구현과 별개로 사람 검토 게이트는 대기 중이며, M5 전체 저장소 지도 탐색은 후속 범위다. 공통 UI 적용을 M4·M5 전체 완료로 해석하지 않는다.
 
 ## 7. 시안의 구현 범위와 검토 기준
 
@@ -139,4 +139,4 @@
 - 돌아갔을 때 범위와 선택을 잃지 않고, 흐름 전환 후에도 설명·현재 단계·강조가 일치한다.
 - 기존 소스 비노출, 오프라인, 링크 대상·스냅샷 검증을 유지한다.
 
-시안 브라우저 검토 결과와 스크린샷은 [시안 검증 기록](atlas-prototype-verification.md)에 기록한다.
+시안 브라우저 검토 결과와 스크린샷은 [시안 검증 기록](../../eval/reports/design/atlas-prototype-verification.md)에 기록한다.

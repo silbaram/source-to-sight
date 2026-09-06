@@ -31,6 +31,6 @@ The utility is complete for its selected local scope. The other cases preserve u
 
 ## Human gate
 
-[Human review worksheet](../../docs/m1-human-review.md) has pending evidence and comprehension checks. It was generated without filling reviewer identities, verdicts, or answers. `prepare_m1_review.py --output <new-path>` creates another worksheet and refuses to overwrite existing reviewer work.
+[Human review worksheet](../reports/m1-human-review.md) has pending evidence and comprehension checks. It was generated without filling reviewer identities, verdicts, or answers. `prepare_m1_review.py --output <new-path>` creates another worksheet and refuses to overwrite existing reviewer work.
 
 M1 requires a human sample of up to five evidence locations per type (all when fewer exist), checking both location and semantic support. A reader unfamiliar with each capability must explain purpose, inputs/results, behavior, and meaningful limits. The same reader may review multiple types. Until that occurs, the implementation and automated checks can be recorded as finished, but the M1 final gate remains pending.

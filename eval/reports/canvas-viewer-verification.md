@@ -4,7 +4,7 @@
 
 ## 원인과 수정
 
-승인된 화면은 `docs/design/atlas-prototype.html`에만 구현되어 있었고, 실제 `s2s.py render`와 `author.py build`는 `skills/code-flow/templates/`의 이전 화면을 사용했다. 생성된 HTML은 스타일·스크립트를 포함하는 정적 파일이므로 시안을 수정하거나 새로고침하는 것만으로 바뀌지 않았다.
+승인된 화면은 디자인 시안인 `plans/design/atlas-prototype.html`에만 구현되어 있었고, 실제 `s2s.py render`와 `author.py build`는 `skills/code-flow/templates/`의 이전 화면을 사용했다. 생성된 HTML은 스타일·스크립트를 포함하는 정적 파일이므로 시안을 수정하거나 새로고침하는 것만으로 바뀌지 않았다.
 
 공통 생성 템플릿의 HTML·CSS·JavaScript에 승인한 캔버스 디자인과 다크모드를 적용했다. M0 예시 11개와 M1 실제 소스 사례 6개를 이 경로로 다시 생성했다. 시안의 가상 프로젝트·좌표는 가져오지 않고 기존 IR, Dagre 자동 배치, 근거 검증을 사용한다.
 
@@ -45,4 +45,4 @@
 
 새 결과는 공통 템플릿으로 생성한다. 이미 만들어 둔 HTML에는 자동 업데이트 기능이 없으므로 해당 생성 명령을 다시 실행해야 한다. 설치 시 복사한 스킬을 사용하는 경우 그 스킬의 템플릿도 현재 버전이어야 한다.
 
-프로젝트 전체 탐색(M5), 페이지 간 카메라 복원, 복합 구역 접기, 핀치 확대, 대규모 그래프 성능은 이번 적용 범위에 포함하지 않는다. M1 사람 검토 게이트와 독립적인 이해도 검토도 대기 중이다. [렌더러 계약](../skills/code-flow/references/renderer-contract.md)과 [M1 검증 기록](m1-verification.md)에 각 범위가 기록되어 있다.
+프로젝트 전체 탐색(M5), 페이지 간 카메라 복원, 복합 구역 접기, 핀치 확대, 대규모 그래프 성능은 이번 적용 범위에 포함하지 않는다. M1 사람 검토 게이트와 독립적인 이해도 검토도 대기 중이다. [렌더러 계약](../../skills/code-flow/references/renderer-contract.md)과 [M1 검증 기록](m1-verification.md)에 각 범위가 기록되어 있다.

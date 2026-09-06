@@ -1,12 +1,12 @@
 # Source to Sight
 
-[English](./README.md) | 한국어
+[English](README.md) | 한국어
 
 복잡한 주제를 처음 보는 사람도 이해할 수 있는 시각적 결과물로 바꾸는 에이전트 스킬입니다.
 
 범용 프로젝트 설명을 위한 고도화를 진행하고 있습니다. M0 데이터·검증 기반 위에 **M1 `code-flow` 탐색 스킬, 여섯 유형의 탐색 지침, 근거 캡처와 HTML 조립 도구**를 구현했습니다. 코딩 에이전트가 JavaScript·Python·Go의 공개 저장소 여섯 곳을 읽어 사례를 만들었습니다. 독립적인 사람의 사실·이해도 검토가 남아 있으며 범용 지원 전체가 완료된 상태는 아닙니다.
 
-[고도화 계획](plans/source-to-sight-evolution-plan.md) · [개발 및 예시 실행 방법](docs/development.md) · [M1 사례와 출처](eval/m1/README.md) · [M1 구현 상태](docs/m1-verification.md)
+[고도화 계획](plans/source-to-sight-evolution-plan.md) · [개발 및 예시 실행 방법](docs/development.md) · [M1 사례와 출처](eval/m1/README.md) · [M1 구현 상태](eval/reports/m1-verification.md)
 
 `$visual-primer` 스킬은 실제 자료와 공식 출처를 확인한 뒤, 큰 그림과 적은 글로 설명하는 단일 HTML 페이지를 만듭니다. 결과물은 빌드 과정이나 별도 서버 없이 브라우저에서 바로 열 수 있습니다.
 
@@ -29,7 +29,7 @@ $code-flow Blinker의 Signal.send에서 어떤 수신자가 호출되는지 설�
 | httprouter | 일치한 요청을 등록된 핸들러로 전달 | `build/m1/web-dispatch.html` |
 | Blinker | 발신자 필터와 순서 없는 수신자 관계 | `build/m1/event-receivers.html` |
 
-[개발 환경 준비](docs/development.md) 후 `npm run m1:sources`, `npm run m1:examples`로 재현합니다. 사례는 에이전트가 소스를 읽어 작성했으며 독립적인 모델 여섯 번의 실험을 뜻하지 않습니다. [사람 검토 자료](docs/m1-human-review.md)는 확인 대기 상태입니다. 생성 HTML에도 승인한 캔버스 UI를 적용했습니다. 구성 요소 검색, 구성/흐름 전환, 이동·확대, 선택 시 근거 패널, 다크모드 저장을 지원합니다. [지도 시안](docs/design/atlas-prototype.html)은 디자인 참고 자료이며, 프로젝트 전체 탐색은 M5 범위입니다.
+[개발 환경 준비](docs/development.md) 후 `npm run m1:sources`, `npm run m1:examples`로 재현합니다. 사례는 에이전트가 소스를 읽어 작성했으며 독립적인 모델 여섯 번의 실험을 뜻하지 않습니다. [사람 검토 자료](eval/reports/m1-human-review.md)는 확인 대기 상태입니다. 생성 HTML에도 승인한 캔버스 UI를 적용했습니다. 구성 요소 검색, 구성/흐름 전환, 이동·확대, 선택 시 근거 패널, 다크모드 저장을 지원합니다. [지도 시안](plans/design/atlas-prototype.html)은 디자인 참고 자료이며, 프로젝트 전체 탐색은 M5 범위입니다.
 
 새 `code-flow`는 이 구현이 있는 체크아웃에서 설치할 수 있습니다.
 
@@ -47,9 +47,9 @@ npx skills add . --skill code-flow
 $visual-primer OAuth를 설명해줘
 ```
 
-[![OAuth visual-primer 생성 결과 미리보기](./assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
+[![OAuth visual-primer 생성 결과 미리보기](assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
 
-[OAuth visual-primer 예제 HTML 보기](./assets/oauth-visual-primer-example.html) · GitHub에서 실행 화면이 열리지 않으면 파일을 내려받아 브라우저로 여세요.
+[OAuth visual-primer 예제 HTML 보기](assets/oauth-visual-primer-example.html) · GitHub에서 실행 화면이 열리지 않으면 파일을 내려받아 브라우저로 여세요.
 
 이 예시에는 다음 요소가 포함되어 있습니다.
 
@@ -108,6 +108,13 @@ npx skills update visual-primer
 .
 ├── README.md
 ├── README.ko.md
+├── skills/code-flow/              # 소스 탐색, 프로파일, 작성 도구, 렌더러
+├── docs/                          # 프로젝트 설명과 개발 가이드
+├── plans/                         # 개발계획과 UI 설계 제안·시안
+├── fixtures/                      # 계약·렌더러의 고정 테스트 입력
+├── eval/
+│   ├── m1/                        # 고정 소스 분석 사례와 출처
+│   └── reports/                   # 검증·리뷰 기록과 보존한 스크린샷
 ├── skills/visual-primer/
 │   ├── SKILL.md
 │   └── references/
@@ -121,5 +128,7 @@ npx skills update visual-primer
 
 - `SKILL.md`: `$visual-primer`가 설명을 조사하고 구성하는 핵심 규칙입니다.
 - `references/`: 다이어그램, 디자인, 렌더링 QA 기준을 분리해 관리합니다.
+
+프로젝트 안내는 [문서 목록](docs/README.md), 개발 중 검증 자료는 [검증 기록 목록](eval/reports/README.md)에서 확인할 수 있습니다.
 
 이 저장소는 공개 [Agent Skills](https://agentskills.io/) 형식을 사용하며 [`skills` CLI](https://github.com/vercel-labs/skills)로 설치할 수 있습니다.

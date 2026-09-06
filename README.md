@@ -2,9 +2,9 @@
 
 The technology-neutral evolution is in development. **`code-flow` now provides the M1 source-discovery skill, six composable profiles, evidence capture, and offline HTML assembly**, on the M0 graph/validation foundation. The coding agent has traced six pinned repositories across JavaScript, Python, and Go. Independent human fact and comprehension review is pending; this is not universal-support certification.
 
-[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [M1 cases and provenance](eval/m1/README.md) · [M1 status](docs/m1-verification.md)
+[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [M1 cases and provenance](eval/m1/README.md) · [M1 status](eval/reports/m1-verification.md)
 
-English | [한국어](./README.ko.md)
+English | [한국어](README.ko.md)
 
 An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
 
@@ -29,7 +29,7 @@ $code-flow Explain which Blinker receivers are called by Signal.send.
 | httprouter | Matching request dispatch to a registered handler | `build/m1/web-dispatch.html` |
 | Blinker | Sender filtering and unordered receiver relationships | `build/m1/event-receivers.html` |
 
-Run `npm run m1:sources` and `npm run m1:examples` after the [development setup](docs/development.md). The examples are agent-authored readings, not six blind model evaluations. M1's [human review worksheet](docs/m1-human-review.md) remains pending. Generated pages now use the approved canvas UI: component search, structure/walkthrough views, pan/zoom, on-demand evidence panels, and a persistent dark-mode switch. The [atlas prototype](docs/design/atlas-prototype.html) remains a design reference; whole-project discovery remains M5 work.
+Run `npm run m1:sources` and `npm run m1:examples` after the [development setup](docs/development.md). The examples are agent-authored readings, not six blind model evaluations. M1's [human review worksheet](eval/reports/m1-human-review.md) remains pending. Generated pages now use the approved canvas UI: component search, structure/walkthrough views, pan/zoom, on-demand evidence panels, and a persistent dark-mode switch. The [atlas prototype](plans/design/atlas-prototype.html) remains a design reference; whole-project discovery remains M5 work.
 
 ## Concept explanation example
 
@@ -39,9 +39,9 @@ The following prompt creates a beginner-friendly visual guide to OAuth:
 $visual-primer Explain OAuth.
 ```
 
-[![OAuth visual-primer output preview](./assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
+[![OAuth visual-primer output preview](assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
 
-[Open the OAuth visual-primer example HTML](./assets/oauth-visual-primer-example.html) · If GitHub does not display the interactive page, download the file and open it in a browser.
+[Open the OAuth visual-primer example HTML](assets/oauth-visual-primer-example.html) · If GitHub does not display the interactive page, download the file and open it in a browser.
 
 This example includes:
 
@@ -109,8 +109,12 @@ If the current session still has the previous version loaded, start a new conver
 ├── README.md
 ├── README.ko.md
 ├── skills/code-flow/              # Source discovery, profiles, authoring, renderer
-├── eval/m1/                       # Pinned source readings and case records
-├── docs/                          # Setup, verification, human review, atlas design
+├── docs/                          # Project overview and development guide
+├── plans/                         # Development plan and UI design proposals/prototypes
+├── fixtures/                      # Fixed contract and renderer test inputs
+├── eval/
+│   ├── m1/                        # Pinned source readings and case records
+│   └── reports/                   # Verification, reviews, and retained screenshots
 ├── skills/visual-primer/
 │   ├── SKILL.md
 │   └── references/
@@ -124,5 +128,7 @@ If the current session still has the previous version loaded, start a new conver
 
 - `SKILL.md` contains the core instructions used by `$visual-primer` to research and structure an explanation.
 - `references/` contains separate guidance for diagrams, visual treatment, and rendering QA.
+
+See the [documentation index](docs/README.md) for project guidance and the [verification index](eval/reports/README.md) for development records.
 
 The repository uses the open [Agent Skills](https://agentskills.io/) format and can be installed with the [`skills` CLI](https://github.com/vercel-labs/skills).
