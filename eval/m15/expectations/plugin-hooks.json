@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "caseId": "plugin-hooks",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "pluggy-pluginmanager-register-hookcaller-call-07af1588c6a1",
+      "kind": "lifecycle",
+      "title": "플러그인 등록과 훅 호출의 차이",
+      "question": "pluggy에서 플러그인 등록과 이후 일반 훅 호출은 어떻게 연결되나요?",
+      "module": "pluggy",
+      "targets": [
+        {
+          "label": "PluginManager.register + HookCaller.__call__",
+          "file": "src/pluggy/_manager.py",
+          "symbol": "PluginManager.register + HookCaller.__call__"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "정상 등록과 이후 호스트의 일반 훅 호출",
+          "기본 실행기의 구현 호출과 결과 수집"
+        ],
+        "excludes": [
+          "historic 훅과 래퍼의 준비·정리",
+          "추적 실행기 교체",
+          "플러그인의 사용자 정의 동작"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "framework-plugin"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "nodes": [
+    {
+      "key": "register",
+      "file": "src/pluggy/_manager.py",
+      "line": 158,
+      "codeNames": [
+        "PluginManager.register"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "caller",
+      "file": "src/pluggy/_hooks.py",
+      "line": 542,
+      "codeNames": [
+        "HookCaller",
+        "HookCaller.__call__"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "dispatch",
+      "file": "src/pluggy/_manager.py",
+      "line": 108,
+      "codeNames": [
+        "PluginManager._hookexec"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "multi",
+      "file": "src/pluggy/_callers.py",
+      "line": 121,
+      "codeNames": [
+        "_multicall"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "plugin",
+      "file": "src/pluggy/_callers.py",
+      "line": 121,
+      "codeNames": [],
+      "kind": "boundary",
+      "status": "uncertain"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "register",
+      "toRole": "caller",
+      "type": "registers",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "caller",
+      "toRole": "dispatch",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "dispatch",
+      "toRole": "multi",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "multi",
+      "toRole": "plugin",
+      "type": "dispatches",
+      "status": "uncertain"
+    }
+  ],
+  "noScenarios": false,
+  "requiredFacts": [
+    "등록과 나중의 일반 훅 호출을 구분",
+    "firstresult는 첫 결과로 종료 가능",
+    "실제 플러그인 구현·결과는 미해소"
+  ],
+  "forbiddenClaims": [
+    "일반 등록이 훅 구현을 바로 실행한다고 설명"
+  ],
+  "forbiddenEdges": [
+    {
+      "fromRole": "register",
+      "toRole": "caller",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "register",
+      "toRole": "plugin",
+      "type": "dispatches",
+      "status": "confirmed"
+    }
+  ]
+}

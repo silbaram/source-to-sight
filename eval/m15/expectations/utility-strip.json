@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "caseId": "utility-strip",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "strip-ansi-stripansi-9a2291855487",
+      "kind": "capability",
+      "title": "문자열에서 터미널 서식 표시 제거하기",
+      "question": "stripAnsi는 문자열을 어떻게 검사하고 터미널 서식 표시를 제거하나요?",
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "stripAnsi",
+          "file": "index.js",
+          "symbol": "stripAnsi"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "공개 함수의 입력 검사, 빠른 반환, 매처를 이용한 치환"
+        ],
+        "excludes": [
+          "ansi-regex 의존성의 정규식 내부",
+          "별도 CLI와 스트림 패키지"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "cli-utility",
+    "library-sdk"
+  ],
+  "statuses": [
+    "complete"
+  ],
+  "nodes": [
+    {
+      "key": "strip",
+      "file": "index.js",
+      "line": 6,
+      "codeNames": [
+        "stripAnsi"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [],
+  "noScenarios": true,
+  "requiredFacts": [
+    "문자열 외 입력은 TypeError",
+    "ESC와 CSI가 모두 없으면 원문 반환",
+    "매처 치환은 의존성 내부 검증과 구별"
+  ],
+  "forbiddenClaims": [
+    "HTTP 요청/응답 계층을 삽입",
+    "모든 터미널 제어 표시를 제거한다고 보장"
+  ],
+  "forbiddenEdges": []
+}

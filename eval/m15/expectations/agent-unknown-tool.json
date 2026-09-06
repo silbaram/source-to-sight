@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "caseId": "agent-unknown-tool",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "smolagents-toolcallingagent-execute-tool-call-ce67610f49d3",
+      "kind": "capability",
+      "title": "등록되지 않은 도구 이름을 요청하면 무엇을 실행하나요",
+      "question": "등록되지 않은 도구 이름을 요청하면 무엇을 실행하나요?",
+      "module": "smolagents",
+      "targets": [
+        {
+          "label": "ToolCallingAgent.execute_tool_call"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "도구와 관리 에이전트 목록 결합, 없는 이름의 오류"
+        ],
+        "excludes": [
+          "유효한 도구 실행",
+          "호출자의 재시도와 오류 처리"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "ai-agent"
+  ],
+  "statuses": [
+    "complete"
+  ],
+  "nodes": [
+    {
+      "key": "entry",
+      "file": "src/smolagents/agents.py",
+      "line": 1467,
+      "codeNames": [
+        "ToolCallingAgent.execute_tool_call"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [],
+  "noScenarios": true,
+  "requiredFacts": [
+    "합친 등록 목록에 없는 이름은 AgentToolExecutionError",
+    "인자 변환·검사·호출 전 중단"
+  ],
+  "forbiddenClaims": [
+    "이 함수가 자동 재시도나 모델 호출을 수행"
+  ],
+  "forbiddenEdges": []
+}

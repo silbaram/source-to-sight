@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 읽어 작성한 M1.5 평가 후보입니다. 사람 정답 검토와 독립 생성 평가는 아직 진행하지 않았습니다."
+  },
+  "snapshot": {
+    "repository": "pytest-dev/pluggy",
+    "branch": null,
+    "commit": "4821148db2f4c6daa62ad8bdcae2918ecf27a731",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T10:51:03Z",
+    "skillVersion": "0.2.0",
+    "model": null
+  },
+  "subject": {
+    "id": "pluggy-pluginmanager-unblock-48d0bb04461b",
+    "kind": "capability",
+    "title": "플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요",
+    "question": "플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요?",
+    "module": "pluggy",
+    "targets": [
+      {
+        "label": "PluginManager.unblock"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "unblock의 이름 조회, 삭제와 반환값"
+      ],
+      "excludes": [
+        "이후의 명시적 등록과 훅 실행"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "complete",
+    "profiles": [
+      "framework-plugin"
+    ],
+    "searched": [
+      "src/pluggy/_manager.py"
+    ],
+    "unresolved": [],
+    "nextAttempts": []
+  },
+  "summary": {
+    "title": "플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요",
+    "purpose": "차단 표시만 제거합니다.",
+    "inputs": [
+      "이름"
+    ],
+    "outputs": [
+      "실제로 차단을 해제했는지 나타내는 참·거짓"
+    ],
+    "limitations": [
+      "자동 재등록과 훅 호출은 없습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "pluggy-pluginmanager-unblock-48d0bb04461b",
+    "question": "플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요?",
+    "language": "ko",
+    "command": "$code-flow 플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요? | subject=pluggy-pluginmanager-unblock-48d0bb04461b | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "unblock",
+      "kind": "component",
+      "label": "차단 표시 해제",
+      "roleLabel": "확인한 역할",
+      "summary": "차단된 이름이면 항목을 삭제하고 True를, 아니면 False를 반환합니다. 플러그인을 다시 등록하지 않습니다.",
+      "codeName": "PluginManager.unblock",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 소스 범위의 분기와 호출을 읽었습니다. 차단된 이름이면 항목을 삭제하고 True를, 아니면 False를 반환합니다. 플러그인을 다시 등록하지 않습니다.",
+      "evidenceIds": [
+        "ev-unblock"
+      ]
+    }
+  ],
+  "edges": [],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [
+    {
+      "id": "removed",
+      "plainText": "이름의 값이 None인 차단 상태: 항목 삭제 후 True 반환",
+      "condition": "이름의 값이 None인 차단 상태",
+      "outcome": "항목 삭제 후 True 반환",
+      "numeric": false,
+      "nodeIds": [
+        "unblock"
+      ],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "해당 조건식과 반환·오류 분기를 직접 읽었습니다.",
+      "evidenceIds": [
+        "ev-unblock"
+      ]
+    },
+    {
+      "id": "unchanged",
+      "plainText": "차단된 이름이 아님: 변경 없이 False 반환",
+      "condition": "차단된 이름이 아님",
+      "outcome": "변경 없이 False 반환",
+      "numeric": false,
+      "nodeIds": [
+        "unblock"
+      ],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "해당 조건식과 반환·오류 분기를 직접 읽었습니다.",
+      "evidenceIds": [
+        "ev-unblock"
+      ]
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-unblock",
+      "kind": "code",
+      "file": "src/pluggy/_manager.py",
+      "symbolOrKey": "PluginManager.unblock",
+      "startLine": 227,
+      "endLine": 235,
+      "anchorText": "    def unblock(self, name: str) -> bool:",
+      "contentHash": "f8c36f016ee4a55102c3083b154cd8d3a2dc5310051992e15f4a36609b8a16ed",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

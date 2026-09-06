@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "caseId": "web-dispatch",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "httprouter-router-handle-router-servehttp-1e9c974d54f9",
+      "kind": "workflow",
+      "title": "등록된 경로로 요청을 연결하는 과정",
+      "question": "httprouter에 등록한 경로가 일치할 때 요청은 어떤 핸들러로 전달되나요?",
+      "module": "httprouter",
+      "targets": [
+        {
+          "label": "라우트 등록",
+          "file": "router.go",
+          "symbol": "Router.Handle"
+        },
+        {
+          "label": "요청 처리",
+          "file": "router.go",
+          "symbol": "Router.ServeHTTP"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "정상 경로 등록",
+          "메서드와 경로가 일치한 요청의 핸들러 호출과 매개변수 전달"
+        ],
+        "excludes": [
+          "리다이렉트, 경로 미일치 및 메서드 미지원 처리",
+          "사용자 핸들러 내부",
+          "SaveMatchedRoutePath 래퍼",
+          "panic 복구 내부"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "web",
+    "library-sdk"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "nodes": [
+    {
+      "key": "register",
+      "file": "router.go",
+      "line": 322,
+      "codeNames": [
+        "Router.Handle"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "tree",
+      "file": "tree.go",
+      "line": 326,
+      "codeNames": [
+        "node.addRoute / node.getValue"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "serve",
+      "file": "router.go",
+      "line": 473,
+      "codeNames": [
+        "Router.ServeHTTP"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "handler",
+      "file": "router.go",
+      "line": 475,
+      "codeNames": [
+        "Handle"
+      ],
+      "kind": "boundary",
+      "status": "uncertain"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "register",
+      "toRole": "tree",
+      "type": "registers",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "serve",
+      "toRole": "tree",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "serve",
+      "toRole": "handler",
+      "type": "dispatches",
+      "status": "confirmed"
+    }
+  ],
+  "noScenarios": false,
+  "requiredFacts": [
+    "등록과 요청 처리 구분",
+    "일치한 경로의 핸들러 호출 후 반환",
+    "애플리케이션 핸들러 본문은 미해소"
+  ],
+  "forbiddenClaims": [
+    "등록 시 핸들러 실행",
+    "범위 밖 404·405까지 모두 분석했다고 설명"
+  ],
+  "forbiddenEdges": [
+    {
+      "fromRole": "register",
+      "toRole": "handler",
+      "type": "dispatches",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "register",
+      "toRole": "tree",
+      "type": "invokes",
+      "status": "confirmed"
+    }
+  ]
+}

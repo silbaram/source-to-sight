@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "caseId": "event-receivers",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "blinker-signal-connect-signal-send-b79308fa099f",
+      "kind": "capability",
+      "title": "발신자에 맞는 이벤트 수신자에게 알리기",
+      "question": "Blinker에서 수신자를 연결한 뒤 send하면 누가 호출되고 어떤 결과가 돌아오나요?",
+      "module": "blinker",
+      "targets": [
+        {
+          "label": "수신자 등록과 발신",
+          "file": "src/blinker/base.py",
+          "symbol": "Signal.connect / Signal.send"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "Signal의 수신자 등록과 발신자 필터",
+          "동기 수신자 호출과 결과 수집",
+          "약한 참조의 수신자 정리와 음소거 경계"
+        ],
+        "excludes": [
+          "비동기 수신자 어댑터와 send_async",
+          "사용자 수신자 내부",
+          "receiver_connected 보조 신호"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "data-event",
+    "library-sdk",
+    "framework-plugin"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "nodes": [
+    {
+      "key": "connect",
+      "file": "src/blinker/base.py",
+      "line": 117,
+      "codeNames": [
+        "Signal.connect"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "registry",
+      "file": "src/blinker/base.py",
+      "line": 117,
+      "codeNames": [
+        "receivers / _by_sender"
+      ],
+      "kind": "state",
+      "status": "confirmed"
+    },
+    {
+      "key": "send",
+      "file": "src/blinker/base.py",
+      "line": 240,
+      "codeNames": [
+        "Signal.send"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "select",
+      "file": "src/blinker/base.py",
+      "line": 340,
+      "codeNames": [
+        "Signal.receivers_for"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "receiver",
+      "file": "src/blinker/base.py",
+      "line": 250,
+      "codeNames": [
+        "receiver"
+      ],
+      "kind": "boundary",
+      "status": "uncertain"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "connect",
+      "toRole": "registry",
+      "type": "writes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "send",
+      "toRole": "select",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "select",
+      "toRole": "registry",
+      "type": "reads",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "send",
+      "toRole": "receiver",
+      "type": "dispatches",
+      "status": "confirmed"
+    }
+  ],
+  "noScenarios": true,
+  "requiredFacts": [
+    "ANY와 해당 발신자 수신자를 합침",
+    "수신자 호출 순서는 기본적으로 미정",
+    "수신자 예외는 전파",
+    "실제 수신자 구현은 미해소"
+  ],
+  "forbiddenClaims": [
+    "연결 순서대로 반드시 호출",
+    "connect가 수신자를 즉시 호출"
+  ],
+  "forbiddenEdges": []
+}

@@ -8,9 +8,13 @@
 | [M0 코드리뷰](m0-review.md) | 최초 발견 사항, 수정 결과와 당시 재현 절차 |
 | [M1 검증](m1-verification.md) | 범용 스킬·작성 도구·실제 사례와 최신 자동 검사 |
 | [M1 사람 검토 자료](m1-human-review.md) | 근거 사실 확인·이해도 검토용 답변지. 검토 대기 |
+| [M1.5 검증](m15-verification.md) | 18개 후보·비교 도구·검토 게이트와 자동 검사 |
+| [M1.5 임시 기준](../runs/2026-09-06-baseline.md) | 저장된 후보 18개 재실행. 사람 승인 대기 |
 | [공통 캔버스 검증](canvas-viewer-verification.md) | 실제 생성 템플릿의 UI 적용·회귀 검사 |
+| [상세 패널 영역 수정](panel-bounds-verification.md) | 긴 설명·낮은 창에서 패널 이탈과 조작 버튼 가림 수정 |
+| [연결 이동 애니메이션](flow-animation-verification.md) | 자동재생의 이동 표시·도착 강조·방향 이름·모션 설정 검사 |
 | [디자인 시안 검증](design/atlas-prototype-verification.md) | 합성 데이터로 만든 UI 시안의 브라우저 검사 |
 
-`qa/`와 `design/qa/`는 위 기록에서 참조하는 화면 자료입니다. 매번 생성되는 전체 HTML·스크린샷·실행 보고서는 Git에서 제외되는 `build/`, `test-results/`, `playwright-report/`에 둡니다. 평가 입력과 소스 출처는 [M1 사례](../m1/README.md)에 있습니다.
+`qa/`와 `design/qa/`는 위 기록에서 참조하는 화면 자료입니다. 매번 생성되는 전체 HTML·스크린샷·실행 보고서는 Git에서 제외되는 `build/`, `test-results/`, `playwright-report/`에 둡니다. 선택해 보존하는 기준 기록은 `eval/runs/`에 둡니다. 평가 입력과 소스 출처는 [평가 사례 목록](../cases.md)과 [M1 사례](../m1/README.md)에 있습니다.
 
 프로젝트 설명과 사용·개발 안내는 [docs](../../docs/README.md), 개발계획과 UI 설계 제안·시안은 [plans](../../plans/)에서 관리합니다.

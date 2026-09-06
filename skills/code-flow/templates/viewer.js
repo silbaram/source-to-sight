@@ -29,6 +29,10 @@
   let view = 'structure', focusId = null, zoom = 1, graphWidth = 0, graphHeight = 0;
   let laidOut = false;
   const history = [];
+  const stepDuration = 1500, transferDuration = 1100;
+  const reducedMotion = matchMedia('(prefers-reduced-motion:reduce)');
+  const movingRelations = new Set(['invokes','passes-data','dispatches','reads','writes','emits','consumes','transitions','delegates']);
+  let stepStartedAt = 0, transferFrame = null, transferToken = null, transferKey = null;
 
   async function copy(text) {
     try {
@@ -100,12 +104,14 @@
     }
   }
   function showItem(item, focus = false) {
+    if (focus && timer) stop();
     // A deliberate selection starts a new inspection, ending the previous
     // connection filter. Keep Back's camera/view history independently.
     if (focus && item.id !== focusId) focusId = null;
     selected = item.id;
     const body = $('panel-body');
-    body.replaceChildren(statusBadge(item));
+    $('panel-status').replaceChildren(statusBadge(item));
+    body.replaceChildren();
     const title = element('h2', item.label || item.plainText || item.caption);
     title.id = 'panel-title';
     body.append(title);
@@ -153,10 +159,35 @@
       $('panel').inert = false;
       document.body.classList.add('panel-open');
       if (matchMedia('(max-width:900px)').matches) $('close-panel').focus({preventScroll:true});
-      else $('panel').scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+      else $('canvas').scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+      positionPanel();
       if (nodeMap.has(item.id)) revealNode(item.id);
     }
-    updateNavigation();paint();
+    updateNavigation();positionPanel();paint();
+    // Reset after replacing content and sizing the flex body; otherwise the
+    // browser can restore the previous evidence list's scroll anchor.
+    body.scrollTop = 0;
+  }
+  function positionPanel() {
+    const panel = $('panel');
+    if (!panel.classList.contains('open')) return;
+    // The mobile sheet uses its own dynamic-viewport limit. Clear desktop
+    // coordinates when crossing the breakpoint with the inspector still open.
+    if (matchMedia('(max-width:900px)').matches) {
+      panel.style.removeProperty('top');
+      panel.style.removeProperty('max-height');
+      return;
+    }
+    const frame = $('canvas').parentElement.getBoundingClientRect();
+    const inset = 16;
+    const top = Math.max(inset, inset-frame.top);
+    const bottom = Math.min(frame.height-inset, innerHeight-inset-frame.top);
+    // When the map itself leaves the viewport, let its inspector leave with it.
+    // Otherwise keep both the panel and its controls inside the visible map.
+    const available = bottom-top;
+    panel.style.top = (available >= 160 ? top : inset) + 'px';
+    panel.style.maxHeight = Math.max(0, available >= 160 ? available :
+      Math.min(frame.height-inset*2, innerHeight-inset*2)) + 'px';
   }
   function closePanel(restoreFocus = true) {
     $('panel').classList.remove('open');
@@ -171,6 +202,7 @@
     return lines.length ? lines : [''];
   }
   function draw() {
+    clearTransfer();
     const canvas = $('canvas');
     const mobile = canvas.clientWidth < 600;
     const visible = data.nodes.filter(n => detail || n.importance === 'core');
@@ -276,10 +308,66 @@
   function currentStep() {
     return stepIndex >= 0 ? data.scenarios[scenarioIndex]?.steps[stepIndex] : null;
   }
+  function stepConnection() {
+    if (view !== 'flow') return null;
+    const step = currentStep();
+    if (!step) return null;
+    if (step.edgeId) return edgeMap.get(step.edgeId);
+    const previous = data.scenarios[scenarioIndex]?.steps[stepIndex-1];
+    // Ordered node captions do not create calls, returns, or an event chain.
+    // Use only an unambiguous, checked edge already present in that direction.
+    if (!previous?.nodeId || previous.nodeId === step.nodeId ||
+        previous.displayStatus !== 'confirmed' || step.displayStatus !== 'confirmed') return null;
+    const matches = data.edges.filter(e => e.from === previous.nodeId && e.to === step.nodeId);
+    return matches.length === 1 && matches[0].displayStatus === 'confirmed' &&
+      movingRelations.has(matches[0].type) ? matches[0] : null;
+  }
+  function clearTransfer() {
+    cancelAnimationFrame(transferFrame);
+    transferFrame = null;
+    transferToken?.remove();
+    transferToken = null;
+    transferKey = null;
+    document.querySelectorAll('.node.flow-arrived').forEach(n => n.classList.remove('flow-arrived'));
+  }
+  function syncTransfer(edge) {
+    const step = currentStep();
+    if (!timer || !edge || edge.displayStatus !== 'confirmed' || step?.displayStatus !== 'confirmed' ||
+        !movingRelations.has(edge.type) || reducedMotion.matches || document.hidden) {
+      clearTransfer();
+      return;
+    }
+    const key = scenarioIndex+':'+stepIndex+':'+edge.id;
+    if (transferKey === key && transferToken?.isConnected) return;
+    clearTransfer();
+    const group = [...document.querySelectorAll('.edge')].find(n => n.dataset.id === edge.id);
+    if (!group) return;
+    const route = group.querySelector('.edge-path');
+    const length = route.getTotalLength();
+    if (!Number.isFinite(length) || length <= 0) return;
+    transferKey = key;
+    const token = svg('g', {class:'flow-token', 'aria-hidden':'true'});
+    token.append(svg('circle',{class:'transfer-halo',r:10}),svg('circle',{class:'transfer-core',r:4.5}));
+    group.append(token);
+    transferToken = token;
+    function frame(now) {
+      const progress = Math.max(0,Math.min(1,(now-stepStartedAt)/transferDuration));
+      const point = route.getPointAtLength(length*progress);
+      token.setAttribute('transform','translate('+point.x+' '+point.y+')');
+      token.style.opacity = String(Math.min(1,progress*12,(1-progress)*12));
+      if (progress < 1) transferFrame = requestAnimationFrame(frame);
+      else {
+        transferFrame = null;
+        const target = [...document.querySelectorAll('.node')].find(n => n.dataset.id === edge.to);
+        target?.classList.add('flow-arrived');
+      }
+    }
+    frame(performance.now());
+  }
   function paint() {
     const step = view === 'flow' ? currentStep() : null;
-    const activeEdge = step?.edgeId;
-    const edge = edgeMap.get(activeEdge);
+    const edge = stepConnection();
+    const activeEdge = edge?.id;
     const activeNodes = new Set(edge ? [edge.from,edge.to] : step ? [step.nodeId] : []);
     const neighbors = focusId ? new Set([focusId]) : null;
     if (neighbors) for (const e of data.edges) {
@@ -290,23 +378,35 @@
       node.classList.toggle('dim', !!neighbors && !neighbors.has(node.dataset.id));
       node.classList.toggle('selected',node.dataset.id === selected);
       node.classList.toggle('active',activeNodes.has(node.dataset.id));
+      node.classList.toggle('flow-origin',node.dataset.id === edge?.from);
+      node.classList.toggle('flow-destination',node.dataset.id === edge?.to);
       node.setAttribute('aria-pressed', String(node.dataset.id === selected));
     }
     for (const node of document.querySelectorAll('.edge')) {
       const active = node.dataset.id === activeEdge;
       const relation = edgeMap.get(node.dataset.id);
       node.classList.toggle('dim', !!neighbors && relation.from !== focusId && relation.to !== focusId);
-      node.classList.toggle('animating', active && !!timer);
       node.classList.toggle('active',active || node.dataset.id === selected);
       const path = node.querySelector('.edge-path');
-      path.setAttribute('marker-end','url(#arrow-'+(active || node.dataset.id === selected ? 'active' : path.dataset.marker)+')');
+      path.setAttribute('marker-end','url(#arrow-'+((active || node.dataset.id === selected) &&
+        relation.displayStatus === 'confirmed' ? 'active' : path.dataset.marker)+')');
     }
+    const transfer = $('flow-transfer');
+    transfer.hidden = !edge;
+    transfer.replaceChildren();
+    if (edge) {
+      transfer.append(element('span',nodeMap.get(edge.from).label,'transfer-from'),
+        element('span','→','transfer-arrow'),element('span',nodeMap.get(edge.to).label,'transfer-to'),
+        element('span','· '+edge.label,'transfer-relation'),statusBadge(edge));
+    }
+    syncTransfer(edge);
   }
   function setStep(index, preserveFocus = false) {
     const scenario = data.scenarios[scenarioIndex];
     if (!scenario) return;
     if (!preserveFocus) focusId = null;
     stepIndex = Math.max(0,Math.min(index,scenario.steps.length-1));
+    stepStartedAt = performance.now();
     const step = scenario.steps[stepIndex];
     const edge = edgeMap.get(step.edgeId);
     const ids = edge ? [edge.from,edge.to] : [step.nodeId];
@@ -319,8 +419,11 @@
     $('previous').disabled = stepIndex === 0;
     $('next').disabled = stepIndex === scenario.steps.length-1;
     showItem(edge || nodeMap.get(step.nodeId));
-    if (view === 'flow') revealNode(ids[ids.length-1]);
-    if (stepIndex === scenario.steps.length-1) stop();
+    if (view === 'flow') {
+      const connection = stepConnection();
+      if (timer && connection) revealConnection(connection);
+      else revealNode(ids[ids.length-1]);
+    }
     paint();
   }
   function stop() {
@@ -333,10 +436,16 @@
     if (timer) {stop();return;}
     const steps=data.scenarios[scenarioIndex].steps;
     if (stepIndex >= steps.length-1 || stepIndex < 0) setStep(0);
-    if (steps.length <= 1) return;
     $('play').textContent=t('Ⅱ 일시 정지','Ⅱ Pause');
     $('play').setAttribute('aria-pressed','true');
-    timer=setInterval(() => setStep(stepIndex+1),1500);
+    stepStartedAt = performance.now();
+    timer=setInterval(() => {
+      if (stepIndex >= steps.length-1) stop();
+      else setStep(stepIndex+1);
+    },stepDuration);
+    const connection = stepConnection();
+    if (connection) revealConnection(connection);
+    else if (currentStep()?.nodeId) revealNode(currentStep().nodeId);
     paint();
   }
   function applyZoom() {
@@ -386,23 +495,54 @@
     mini.append(svg('rect',{class:'viewport',x:(canvas.scrollLeft-stage.offsetLeft)/zoom,
       y:(canvas.scrollTop-stage.offsetTop)/zoom,width:canvas.clientWidth/zoom,height:canvas.clientHeight/zoom}));
   }
+  function visibleFrame() {
+    const frame=$('canvas').getBoundingClientRect();
+    const area={left:Math.max(0,frame.left)+16,right:Math.min(innerWidth,frame.right)-16,
+      top:Math.max(0,frame.top)+16,bottom:Math.min(innerHeight,frame.bottom)-16};
+    if ($('panel').classList.contains('open')) {
+      const panel=$('panel').getBoundingClientRect();
+      if (panel.left<area.right && panel.right>area.left && panel.top<area.bottom && panel.bottom>area.top) {
+        if (matchMedia('(max-width:900px)').matches) area.bottom=Math.min(area.bottom,panel.top-16);
+        else area.right=Math.min(area.right,panel.left-16);
+      }
+    }
+    return area;
+  }
+  function revealConnection(edge) {
+    const canvas = $('canvas');
+    const nodes = [...document.querySelectorAll('.node')].filter(n => n.dataset.id === edge.from || n.dataset.id === edge.to);
+    const group = [...document.querySelectorAll('.edge')].find(n => n.dataset.id === edge.id);
+    if (!nodes.length || !group) return;
+    const elements = [...nodes,group.querySelector('.edge-path'),group.querySelector('.edge-label-bg')];
+    const bounds = () => {
+      const boxes = elements.map(n => n.getBoundingClientRect());
+      return {left:Math.min(...boxes.map(b => b.left)),right:Math.max(...boxes.map(b => b.right)),
+        top:Math.min(...boxes.map(b => b.top)),bottom:Math.max(...boxes.map(b => b.bottom))};
+    };
+    // The play button can be below the map on a narrow screen. Frame the map
+    // before fitting this connection, retaining room for an open inspector.
+    canvas.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+    positionPanel();
+    let area = visibleFrame();
+    if (area.bottom-area.top < 160) {
+      canvas.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+      positionPanel();area = visibleFrame();
+    }
+    let box = bounds();
+    const ratio = Math.min((area.right-area.left)/(box.right-box.left),
+      (area.bottom-area.top)/(box.bottom-box.top),1);
+    if (ratio > 0 && ratio < 1) {
+      zoom = Math.max(.2,zoom*ratio*.94);
+      applyZoom();box = bounds();
+    }
+    canvas.scrollLeft += (box.left+box.right-area.left-area.right)/2;
+    canvas.scrollTop += (box.top+box.bottom-area.top-area.bottom)/2;
+    updateMini();
+  }
   function revealNode(id) {
     const target=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id);
     if (!target) return;
     const canvas=$('canvas');
-    function visibleFrame() {
-      const frame=canvas.getBoundingClientRect();
-      const area={left:Math.max(0,frame.left)+16,right:Math.min(innerWidth,frame.right)-16,
-        top:Math.max(0,frame.top)+16,bottom:Math.min(innerHeight,frame.bottom)-16};
-      if ($('panel').classList.contains('open')) {
-        const panel=$('panel').getBoundingClientRect();
-        if (panel.left<area.right && panel.right>area.left && panel.top<area.bottom && panel.bottom>area.top) {
-          if (matchMedia('(max-width:900px)').matches) area.bottom=Math.min(area.bottom,panel.top-16);
-          else area.right=Math.min(area.right,panel.left-16);
-        }
-      }
-      return area;
-    }
     let box=target.getBoundingClientRect(), area=visibleFrame();
     if (area.bottom-area.top<box.height || area.right-area.left<box.width) {
       // Bring the map above the mobile sheet, or back into the page viewport
@@ -486,6 +626,7 @@
     $('workflow').hidden=!data.scenarios.length;$('flow-list').hidden=!data.scenarios.length;
     $('view-switch').setAttribute('aria-label',t('설명 관점','Explanation view'));
     $('story-note').textContent=t('설명 순서 · 실제 실행 기록이 아닙니다','Explanation sequence · not a recorded execution');
+    $('flow-transfer').setAttribute('aria-label',t('이번 단계의 연결 방향','Connection direction for this step'));
     $('scenario').setAttribute('aria-label',t('설명 흐름','Walkthrough'));
     $('back').textContent=t('← 돌아가기','← Back');
     $('zoom-out').setAttribute('aria-label',t('축소','Zoom out'));
@@ -655,9 +796,21 @@
     addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
       if(data.analysis.status!=='insufficient') {
         draw();
-        if($('panel').classList.contains('open') && nodeMap.has(selected))revealNode(selected);
+        positionPanel();
+        if(timer && stepConnection())revealConnection(stepConnection());
+        else if($('panel').classList.contains('open') && nodeMap.has(selected))revealNode(selected);
+        positionPanel();
       }
     },120);});
+    let panelFrame;
+    const schedulePanel = () => {
+      cancelAnimationFrame(panelFrame);
+      panelFrame = requestAnimationFrame(positionPanel);
+    };
+    addEventListener('scroll',schedulePanel,{passive:true});
+    document.addEventListener('toggle',schedulePanel,true);
+    reducedMotion.addEventListener('change',()=>paint());
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
     document.addEventListener('keydown',event=>{if(event.key==='Escape' && $('panel').classList.contains('open'))closePanel();});
     initializeCanvas();
     document.documentElement.dataset.ready='true';

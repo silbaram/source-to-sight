@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "caseId": "plugin-unblock",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "pluggy-pluginmanager-unblock-48d0bb04461b",
+      "kind": "capability",
+      "title": "플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요",
+      "question": "플러그인 이름의 차단을 해제하면 자동으로 다시 등록되나요?",
+      "module": "pluggy",
+      "targets": [
+        {
+          "label": "PluginManager.unblock"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "unblock의 이름 조회, 삭제와 반환값"
+        ],
+        "excludes": [
+          "이후의 명시적 등록과 훅 실행"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "framework-plugin"
+  ],
+  "statuses": [
+    "complete"
+  ],
+  "nodes": [
+    {
+      "key": "entry",
+      "file": "src/pluggy/_manager.py",
+      "line": 232,
+      "codeNames": [
+        "PluginManager.unblock"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [],
+  "noScenarios": true,
+  "requiredFacts": [
+    "None인 차단 항목 삭제 후 True",
+    "비차단이면 False",
+    "자동 재등록 없음"
+  ],
+  "forbiddenClaims": [
+    "기존 플러그인을 자동 복구"
+  ],
+  "forbiddenEdges": []
+}

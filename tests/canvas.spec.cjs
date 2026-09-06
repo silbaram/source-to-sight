@@ -3,7 +3,65 @@ const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const root=path.resolve(__dirname,'..');
 const url=name=>pathToFileURL(path.join(root,'build/examples',name+'.html')).href;
+const evidenceUrl=pathToFileURL(path.join(root,'build/m1/web-dispatch.html')).href;
 test.beforeEach(async({context})=>context.setOffline(true));
+
+async function expectContainedInspector(page) {
+  await expect.poll(()=>page.evaluate(()=>{
+    const panel=document.getElementById('panel'),p=panel.getBoundingClientRect();
+    const c=document.getElementById('canvas').getBoundingClientRect();
+    const mobile=matchMedia('(max-width:900px)').matches;
+    const controls=['close-panel','focus-related'].every(id=>{
+      const button=document.getElementById(id),r=button.getBoundingClientRect();
+      return r.top>=p.top&&r.bottom<=p.bottom&&r.left>=p.left&&r.right<=p.right&&
+        document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('button')===button;
+    });
+    return {insideWindow:p.top>=0&&p.bottom<=innerHeight+.5&&p.left>=0&&p.right<=innerWidth,
+      insideMap:mobile||(p.top>=c.top&&p.bottom<=c.bottom&&p.left>=c.left&&p.right<=c.right),controls};
+  })).toEqual({insideWindow:true,insideMap:true,controls:true});
+}
+
+test('long evidence scrolls inside the panel while close and focus remain reachable',async({page},info)=>{
+  await page.setViewportSize(info.project.name==='desktop'?{width:1280,height:650}:{width:390,height:844});
+  await page.goto(evidenceUrl);
+  await page.evaluate(()=>document.fonts.ready);
+  await page.locator('.node[data-id=tree]').click();
+  await expectContainedInspector(page);
+  const body=page.locator('#panel-body');
+  expect(await body.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);
+  const pageTop=await page.evaluate(()=>scrollY);
+  await body.hover();
+  await page.mouse.wheel(0,1800);
+  await expect.poll(()=>body.evaluate(n=>n.scrollTop+n.clientHeight>=n.scrollHeight-2)).toBe(true);
+  expect(await page.evaluate(()=>scrollY)).toBe(pageTop);
+  await expect(page.locator('#panel .evidence-item button').last()).toBeInViewport({ratio:1});
+  await expectContainedInspector(page);
+  await page.locator('#focus-related').click();
+  await expect(page.locator('#focus-related')).toHaveAttribute('aria-pressed','true');
+  await page.locator('#search').fill('등록된 처리 함수');
+  await page.locator('#results button').click();
+  expect(await body.evaluate(n=>n.scrollTop)).toBe(0);
+  await expect(page.locator('#panel-title')).toHaveText('등록된 처리 함수');
+  await expectContainedInspector(page);
+  await page.locator('#close-panel').click();
+  await expect(page.locator('#panel')).toBeHidden();
+});
+
+test('open inspector adapts to page scroll and short or rotated viewports',async({page},info)=>{
+  await page.goto(evidenceUrl);
+  await page.evaluate(()=>document.fonts.ready);
+  await page.locator('.node[data-id=tree]').click();
+  const sizes=info.project.name==='desktop'?
+    [{width:1000,height:500},{width:1327,height:921},{width:390,height:844},{width:1280,height:650}]:
+    [{width:390,height:600},{width:844,height:390},{width:1000,height:500},{width:390,height:844}];
+  for(const size of sizes){
+    await page.setViewportSize(size);
+    await expectContainedInspector(page);
+    await page.evaluate(()=>window.scrollBy(0,60));
+    await expectContainedInspector(page);
+  }
+  await page.screenshot({path:path.join(root,'build/qa',info.project.name+'-bounded-panel.png')});
+});
 
 test('generated canvas starts with a map and opens real evidence on demand',async({page})=>{
   await page.goto(url('agent-run'));

@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 읽어 작성한 M1.5 평가 후보입니다. 사람 정답 검토와 독립 생성 평가는 아직 진행하지 않았습니다."
+  },
+  "snapshot": {
+    "repository": "pallets-eco/blinker",
+    "branch": null,
+    "commit": "c3364059663df1ddce32799d6b1922af89a345f6",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T10:51:04Z",
+    "skillVersion": "0.2.0",
+    "model": null
+  },
+  "subject": {
+    "id": "blinker-signal-muted-send-a9aa190b32a5",
+    "kind": "capability",
+    "title": "신호를 muted 문맥 안에서 보내면 수신자에게 나중에 전달되나요",
+    "question": "신호를 muted 문맥 안에서 보내면 수신자에게 나중에 전달되나요?",
+    "module": "blinker",
+    "targets": [
+      {
+        "label": "Signal.muted + send"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "중첩하지 않은 muted 문맥과 그 안의 send"
+      ],
+      "excludes": [
+        "중첩 muted, 비동기 send_async",
+        "수신자 내부"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "complete",
+    "profiles": [
+      "data-event"
+    ],
+    "searched": [
+      "src/blinker/base.py"
+    ],
+    "unresolved": [],
+    "nextAttempts": []
+  },
+  "summary": {
+    "title": "신호를 muted 문맥 안에서 보내면 수신자에게 나중에 전달되나요",
+    "purpose": "문맥 안에서 신호 전달을 일시적으로 생략합니다.",
+    "inputs": [
+      "중첩하지 않은 음소거 문맥 안의 send 요청"
+    ],
+    "outputs": [
+      "빈 결과 목록"
+    ],
+    "limitations": [
+      "나중에 다시 전달할 큐를 만들지 않습니다. 중첩 문맥의 이전 상태 복원은 보장하지 않습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "blinker-signal-muted-send-a9aa190b32a5",
+    "question": "신호를 muted 문맥 안에서 보내면 수신자에게 나중에 전달되나요?",
+    "language": "ko",
+    "command": "$code-flow 신호를 muted 문맥 안에서 보내면 수신자에게 나중에 전달되나요? | subject=blinker-signal-muted-send-a9aa190b32a5 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "muted",
+      "kind": "component",
+      "label": "임시 음소거",
+      "roleLabel": "확인한 역할",
+      "summary": "문맥에 들어갈 때 음소거를 켜고 finally에서 끕니다.",
+      "codeName": "Signal.muted",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 소스 범위의 분기와 호출을 읽었습니다. 문맥에 들어갈 때 음소거를 켜고 finally에서 끕니다.",
+      "evidenceIds": [
+        "ev-muted"
+      ]
+    },
+    {
+      "id": "send",
+      "kind": "component",
+      "label": "음소거 시 반환",
+      "roleLabel": "확인한 역할",
+      "summary": "음소거 중이면 수신자를 선택하거나 호출하기 전에 빈 목록을 반환합니다.",
+      "codeName": "Signal.send",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 소스 범위의 분기와 호출을 읽었습니다. 음소거 중이면 수신자를 선택하거나 호출하기 전에 빈 목록을 반환합니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    }
+  ],
+  "edges": [],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [
+    {
+      "id": "silent",
+      "plainText": "is_muted가 참: 즉시 빈 목록 반환",
+      "condition": "is_muted가 참",
+      "outcome": "즉시 빈 목록 반환",
+      "numeric": false,
+      "nodeIds": [
+        "send"
+      ],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "해당 조건식과 반환·오류 분기를 직접 읽었습니다.",
+      "evidenceIds": [
+        "ev-send"
+      ]
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-muted",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.muted",
+      "startLine": 192,
+      "endLine": 202,
+      "anchorText": "    def muted(self) -> c.Generator[None, None, None]:",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-send",
+      "kind": "code",
+      "file": "src/blinker/base.py",
+      "symbolOrKey": "Signal.send",
+      "startLine": 204,
+      "endLine": 253,
+      "anchorText": "    def send(",
+      "contentHash": "4290eebd75dcc09178f65501707e418924f8e91cfdc121bb556fe9ecdff4dbb3",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

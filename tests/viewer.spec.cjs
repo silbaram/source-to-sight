@@ -157,6 +157,9 @@ test('automatic playback advances and pauses at the final step',async({page})=>{
   await page.locator('#play').click();
   await page.clock.fastForward(1700);
   await expect(page.locator('#step-count')).toHaveText('02 / 02');
+  await expect(page.locator('#play')).toHaveAttribute('aria-pressed','true');
+  // The final step gets its full display/transfer time before playback stops.
+  await page.clock.fastForward(1500);
   await expect(page.locator('#play')).toHaveAttribute('aria-pressed','false');
 });
 

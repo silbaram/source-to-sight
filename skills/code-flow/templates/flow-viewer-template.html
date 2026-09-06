@@ -46,6 +46,11 @@
             <div id="graph-space"><div id="stage" class="stage"><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div></div>
           </div>
           <svg id="mini" class="mini" aria-hidden="true"></svg>
+          <aside id="panel" class="panel" aria-labelledby="panel-title" inert>
+            <div class="panel-header"><div id="panel-status"></div><button id="close-panel" class="close-panel" type="button">×</button></div>
+            <div id="panel-body" class="panel-body"></div>
+            <button id="focus-related" class="focus-related" type="button" hidden></button>
+          </aside>
         </div>
         <div class="canvas-footer">
           <div id="legend" class="legend"></div>
@@ -55,13 +60,9 @@
           <p id="story-note" class="story-note"></p>
           <div class="player-controls"><select id="scenario" aria-label="Scenario"></select><div class="transport"><button id="previous" type="button">←</button><button id="play" type="button"></button><button id="next" type="button">→</button></div><span id="step-count"></span></div>
           <div id="caption" class="caption" aria-live="polite"></div>
+          <div id="flow-transfer" class="flow-transfer" role="group" hidden></div>
           <div id="returns" class="returns"></div>
         </section>
-        <aside id="panel" class="panel" aria-labelledby="panel-title" inert>
-          <button id="close-panel" class="close-panel" type="button">×</button>
-          <div id="panel-body"></div>
-          <button id="focus-related" class="focus-related" type="button" hidden></button>
-        </aside>
       </div>
     </section>
     <div id="regions" class="regions"></div>

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 읽어 작성한 M1.5 평가 후보입니다. 사람 정답 검토와 독립 생성 평가는 아직 진행하지 않았습니다."
+  },
+  "snapshot": {
+    "repository": "hashicorp/golang-lru",
+    "branch": null,
+    "commit": "9c13c57de0bedd6b3e21183b34072e417ffa69d1",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T10:51:03Z",
+    "skillVersion": "0.2.0",
+    "model": null
+  },
+  "subject": {
+    "id": "golang-lru-cache-peek-b8ce74427563",
+    "kind": "capability",
+    "title": "Cache.Peek는 최근 사용 순서를 바꾸나요",
+    "question": "Cache.Peek는 최근 사용 순서를 바꾸나요?",
+    "module": "golang-lru",
+    "targets": [
+      {
+        "label": "Cache.Peek"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "공개 Peek의 읽기 잠금과 내부 조회"
+      ],
+      "excludes": [
+        "Get, Add, 퇴출과 사용자 콜백"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "complete",
+    "profiles": [
+      "library-sdk"
+    ],
+    "searched": [
+      "lru.go",
+      "simplelru/lru.go"
+    ],
+    "unresolved": [],
+    "nextAttempts": []
+  },
+  "summary": {
+    "title": "Cache.Peek는 최근 사용 순서를 바꾸나요",
+    "purpose": "최근 사용 순서를 유지하며 값을 조회합니다.",
+    "inputs": [
+      "키"
+    ],
+    "outputs": [
+      "값과 존재 여부"
+    ],
+    "limitations": [
+      "값 자체를 이후 변경하는 동작이나 Get의 순서 갱신은 설명하지 않습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "golang-lru-cache-peek-b8ce74427563",
+    "question": "Cache.Peek는 최근 사용 순서를 바꾸나요?",
+    "language": "ko",
+    "command": "$code-flow Cache.Peek는 최근 사용 순서를 바꾸나요? | subject=golang-lru-cache-peek-b8ce74427563 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "peek",
+      "kind": "component",
+      "label": "읽기 잠금으로 조회",
+      "roleLabel": "확인한 역할",
+      "summary": "읽기 잠금 안에서 내부 Peek를 호출하고 잠금을 해제한 뒤 결과를 반환합니다.",
+      "codeName": "Cache.Peek",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 소스 범위의 분기와 호출을 읽었습니다. 읽기 잠금 안에서 내부 Peek를 호출하고 잠금을 해제한 뒤 결과를 반환합니다.",
+      "evidenceIds": [
+        "ev-peek"
+      ]
+    },
+    {
+      "id": "lookup",
+      "kind": "component",
+      "label": "순서 유지 조회",
+      "roleLabel": "확인한 역할",
+      "summary": "항목이 있으면 값과 true를, 없으면 제로 값과 false를 반환하며 최근 사용 순서는 바꾸지 않습니다.",
+      "codeName": "simplelru.LRU.Peek",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 소스 범위의 분기와 호출을 읽었습니다. 항목이 있으면 값과 true를, 없으면 제로 값과 false를 반환하며 최근 사용 순서는 바꾸지 않습니다.",
+      "evidenceIds": [
+        "ev-inner"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "read",
+      "from": "peek",
+      "to": "lookup",
+      "label": "내부 Peek 호출",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "해당 범위에서 호출 또는 데이터 관계를 확인했습니다. 내부 Peek 호출",
+      "evidenceIds": [
+        "ev-peek"
+      ]
+    }
+  ],
+  "scenarios": [],
+  "stateTransitions": [],
+  "rules": [],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-peek",
+      "kind": "code",
+      "file": "lru.go",
+      "symbolOrKey": "Cache.Peek",
+      "startLine": 112,
+      "endLine": 119,
+      "anchorText": "// the \"recently used\"-ness of the key.",
+      "contentHash": "529954c22649f0ecac5de6799af5316a91efde4c60e618582815ab3934238879",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-inner",
+      "kind": "code",
+      "file": "simplelru/lru.go",
+      "symbolOrKey": "LRU.Peek",
+      "startLine": 87,
+      "endLine": 94,
+      "anchorText": "// the \"recently used\"-ness of the key.",
+      "contentHash": "24745738bd3e7fe49d30be912468cd1feaba5a0536e92ee75b7ce4c87ef82692",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

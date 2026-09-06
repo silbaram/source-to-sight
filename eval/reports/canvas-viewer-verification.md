@@ -2,6 +2,8 @@
 
 2026-09-06 · 실제 HTML 생성 경로 적용
 
+후속 수정: 긴 근거 패널의 화면 이탈과 닫기·연결 강조 버튼 가림을 수정했다. 최신 검사와 재생성 범위는 [패널 영역 수정 기록](panel-bounds-verification.md)에 있다. 아래 표는 초기 캔버스 적용 당시 결과다.
+
 ## 원인과 수정
 
 승인된 화면은 디자인 시안인 `plans/design/atlas-prototype.html`에만 구현되어 있었고, 실제 `s2s.py render`와 `author.py build`는 `skills/code-flow/templates/`의 이전 화면을 사용했다. 생성된 HTML은 스타일·스크립트를 포함하는 정적 파일이므로 시안을 수정하거나 새로고침하는 것만으로 바뀌지 않았다.

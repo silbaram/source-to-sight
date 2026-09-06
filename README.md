@@ -4,6 +4,8 @@ The technology-neutral evolution is in development. **`code-flow` now provides t
 
 [Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [M1 cases and provenance](eval/m1/README.md) · [M1 status](eval/reports/m1-verification.md)
 
+M1.5 now supplies [18 evaluation candidates](eval/cases.md), a [rubric](eval/rubric.md), and [comparison/review tooling](docs/evaluation.md). Each of the six profiles has typical, boundary, and minimal or dynamic cases. The recorded-candidate baseline is provisional: independent human fact and comprehension review remains pending.
+
 English | [한국어](README.ko.md)
 
 An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
@@ -114,6 +116,8 @@ If the current session still has the previous version loaded, start a new conver
 ├── fixtures/                      # Fixed contract and renderer test inputs
 ├── eval/
 │   ├── m1/                        # Pinned source readings and case records
+│   ├── m15/                       # 18 candidates and source-based review criteria
+│   ├── runs/                      # Retained provisional baseline records
 │   └── reports/                   # Verification, reviews, and retained screenshots
 ├── skills/visual-primer/
 │   ├── SKILL.md

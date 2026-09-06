@@ -7,6 +7,8 @@
     "fixtures": "python3 scripts/build_examples.py",
     "m1:sources": "python3 scripts/fetch_m1_sources.py",
     "m1:examples": "python3 scripts/build_m1_examples.py",
+    "eval:run": "python3 scripts/evaluate.py run",
+    "eval:compare": "python3 scripts/evaluate.py compare",
     "test:browser": "playwright test",
     "vendor": "node scripts/vendor-layout.cjs"
   },

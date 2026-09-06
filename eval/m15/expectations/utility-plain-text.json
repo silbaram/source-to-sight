@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "caseId": "utility-plain-text",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "strip-ansi-stripansi-093424141583",
+      "kind": "capability",
+      "title": "제어 표시가 없는 문자열도 치환하나요",
+      "question": "제어 표시가 없는 문자열도 치환하나요?",
+      "module": "strip-ansi",
+      "targets": [
+        {
+          "label": "stripAnsi"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "문자열이며 ESC와 CSI가 모두 없는 빠른 반환"
+        ],
+        "excludes": [
+          "제어 표시가 있는 입력과 의존성 구현"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "cli-utility"
+  ],
+  "statuses": [
+    "complete"
+  ],
+  "nodes": [
+    {
+      "key": "entry",
+      "file": "index.js",
+      "line": 11,
+      "codeNames": [
+        "stripAnsi"
+      ],
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [],
+  "noScenarios": true,
+  "requiredFacts": [
+    "ESC와 CSI가 모두 없는 문자열은 원문 반환",
+    "빈 문자열도 동일",
+    "모듈 초기화와 호출 분기를 구분"
+  ],
+  "forbiddenClaims": [
+    "빠른 반환 분기에서 replace 실행"
+  ],
+  "forbiddenEdges": []
+}
