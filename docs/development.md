@@ -1,6 +1,6 @@
 # Development
 
-M0 implements the technology-neutral data contracts, evidence/location checks, offline graph renderer, and fixture/browser tests. M1 adds the `code-flow` source-discovery skill, six profiles, draft/evidence/build helpers, and six pinned source readings. M1.5 adds 18 evaluation candidates, source-role comparisons, regression reports, and digest-bound human review forms. Independent human gates remain pending. The complete free-form rules workflow (M3) and repository-map discovery (M5) remain later milestones.
+M0 implements the technology-neutral data contracts, evidence/location checks, offline graph renderer, and fixture/browser tests. M1 adds the `code-flow` source-discovery skill, six profiles, draft/evidence/build helpers, and six pinned source readings. M1.5 adds source-role comparisons, regression reports, and digest-bound human review forms. M2 expands the corpus to 24 candidates and adds complex-behavior guidance, path conditions, execution-order labels, and required behavior/path checks. Independent human gates remain pending. The complete free-form rules workflow (M3) and repository-map discovery (M5) remain later milestones.
 
 See the [development plan](../plans/source-to-sight-evolution-plan.md), [M0 verification record](../eval/reports/m0-verification.md), [renderer contract](../skills/code-flow/references/renderer-contract.md), and [fixture provenance](../fixtures/manifest.md).
 
@@ -16,7 +16,7 @@ python3 scripts/fetch_fixture_sources.py
 npm run fixtures
 npm run m1:sources
 npm run m1:examples
-npm run eval:run -- --output build/eval/m15
+npm run eval:run -- --output build/eval/m2
 npm test
 npm run test:browser
 ~~~
@@ -27,9 +27,11 @@ Open `build/examples/agent-run.html`, `framework-plugin.html`, or `utility-minim
 
 The six M1 readings are in `build/m1/`; their browser screenshots go to `build/m1/qa/`. `npm run m1:examples` renders the checked-in readings with fresh evidence checks. It is not an automatic analyzer. For a new repository/question, the host follows [code-flow](../skills/code-flow/SKILL.md) and its discovery/assembly protocols. See [M1 verification](../eval/reports/m1-verification.md), [case provenance](../eval/m1/README.md), and the [human review worksheet](../eval/reports/m1-human-review.md).
 
-The 18 M1.5 candidates are rendered to `build/eval/m15/` by the command above. Runs require a new output directory to preserve earlier results and reviewer answers. For subsequent runs choose another directory and set `S2S_EVAL_DIR=build/eval/<run-name>` when running the browser suite. See the [evaluation guide](evaluation.md), [case catalog](../eval/cases.md), and [rubric](../eval/rubric.md). These are recorded candidate replays, not independent model generation experiments.
+The 24 candidates are rendered to `build/eval/m2/` by the command above. Runs require a new output directory to preserve earlier results and reviewer answers. For subsequent runs choose another directory and set `S2S_EVAL_DIR=build/eval/<run-name>` when running the browser suite. See the [evaluation guide](evaluation.md), [case catalog](../eval/cases.md), and [rubric](../eval/rubric.md). The original 18-case manifest remains at `eval/cases-m15.json`. These are recorded candidate replays, not independent model generation experiments.
 
-Open `build/eval/m15/agent-tool-loop.html`, choose the walkthrough view, then Play to see the source-to-target marker and arrival highlight. Registration/dependency and uncertain connections remain static; reduced motion retains direction and step information. See the [animation verification record](../eval/reports/flow-animation-verification.md) for its limits and checks.
+Open `build/eval/m2/agent-parallel-tools.html` for parallel tool dispatch and result recording, or `utility-retry-budget.html` for retry/stop conditions. Choose the walkthrough view and a scenario. Each step shows its path kind, branch, prerequisite and execution-order metadata when present. Confirmed explicit dispatch/call/result-recording connections can animate within parallel groups too; node-only captions do not invent connections or worker order across parallel/unordered boundaries. Registration/dependency and uncertain connections retain static direction styling. Every step shows explanation progress. Steps without a moving transfer pulse the currently explained nodes, and parallel groups have an explicit playback label.
+
+Offscreen targets come into view with a 360 ms eased camera movement; targets already visible keep the map still. When needed, page alignment and zoom happen within the same movement. The connection animation and 1.5-second step time start after the camera settles. Pause freezes movement and progress; resume finishes framing before continuing the remaining step time. Manual wheel scrolling or canvas panning pauses autoplay. Reduced motion keeps immediate framing, static emphasis and discrete step progress.
 
 The M1 source fetcher can resume a failed download from an empty, unborn Git checkout with the expected origin (or one interrupted immediately after init). It preserves checkouts with local files, another origin, local changes, or another commit. Recovery tests use local Git repositories and need no network.
 
@@ -41,7 +43,7 @@ Keep project explanations and development guides in `docs/`. Store retained veri
 
 - Edit `scripts/build_schemas.py`, then run `python3 scripts/build_schemas.py` to regenerate both schemas.
 - Edit `viewer.css`, `viewer.js`, or `flow-viewer-template.html` under `skills/code-flow/templates/`, then run `npm run fixtures` and `npm run m1:examples`. Both builders and installed `author.py build` use this same template bundle. The HTML under `plans/design/` is a design reference, not the generation entrypoint.
-- After shared renderer/schema/validator changes, also run the full 18-case evaluation and its browser checks using the same production template.
+- After shared renderer/schema/validator changes, also run the full 24-case evaluation and its browser checks using the same production template.
 - Rebuild fixtures with `python3 scripts/build_fixtures.py` only after reviewing the underlying sources/claims. This recreates the synthetic evidence model too.
 - Update vendored Dagre from the locked dependency with `npm run vendor`.
 - The two-pass example build demonstrates lazy links: sibling pages are produced first, then parent link state is refreshed.

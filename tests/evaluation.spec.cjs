@@ -3,12 +3,13 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const root=path.resolve(__dirname,'..');
-const run=path.resolve(root,process.env.S2S_EVAL_DIR||'build/eval/m15');
-const cases=JSON.parse(fs.readFileSync(path.join(root,'eval/cases.json'),'utf8')).cases;
+const run=path.resolve(root,process.env.S2S_EVAL_DIR||'build/eval/m2');
+const manifest=path.resolve(root,process.env.S2S_EVAL_MANIFEST||'eval/cases.json');
+const cases=JSON.parse(fs.readFileSync(manifest,'utf8')).cases;
 
 test.beforeEach(async({context})=>context.setOffline(true));
 
-for(const item of cases)test('M1.5 '+item.id+' uses the common offline viewer',async({page})=>{
+for(const item of cases)test('Evaluation '+item.id+' uses the common offline viewer',async({page})=>{
   const errors=[],requests=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url())});
@@ -16,7 +17,7 @@ for(const item of cases)test('M1.5 '+item.id+' uses the common offline viewer',a
   await expect(page.locator('html')).toHaveAttribute('data-ready','true');
   await expect(page.locator('html')).toHaveAttribute('data-viewer','canvas');
   await page.evaluate(()=>document.fonts.ready);
-  const ref=JSON.parse(fs.readFileSync(path.join(root,'eval',item.expectation),'utf8'));
+  const ref=JSON.parse(fs.readFileSync(path.resolve(path.dirname(manifest),item.expectation),'utf8'));
   const state=await page.evaluate(()=>{
     const data=JSON.parse(document.getElementById('s2s-data').textContent);
     const nodes=[...document.querySelectorAll('.node')].map(n=>({id:n.dataset.id,r:n.getBoundingClientRect()}));

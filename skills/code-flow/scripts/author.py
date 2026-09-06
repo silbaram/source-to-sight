@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 import s2s
 
 PROFILES = ("cli-utility", "library-sdk", "framework-plugin", "ai-agent", "data-event", "web")
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 
 def now():
@@ -163,7 +163,7 @@ def write_json(path, data, exclusive=False):
 def doctor():
     for stage in ("internal", "render"):
         s2s.Draft202012Validator.check_schema(s2s.schema(stage))
-    required = ["SKILL.md", "references/discovery-protocol.md", "references/explainer-guide.md",
+    required = ["SKILL.md", "references/discovery-protocol.md", "references/explainer-guide.md", "references/complex-behavior.md",
                 "references/assembly-protocol.md", "references/renderer-contract.md",
                 "templates/flow-viewer-template.html", "templates/viewer.js", "templates/viewer.css",
                 "templates/vendor/dagre.min.js", "templates/vendor/dagre.LICENSE",

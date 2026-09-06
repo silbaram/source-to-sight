@@ -6,6 +6,8 @@ Distinguish code-controlled behavior from model-dependent choices. Source may es
 
 Check streaming and nonstreaming branches separately. Planning, retries, step budgets, stop/final-answer checks, and delegated agents can change the path. Do not reuse the normal-path caption for every branch. Record exactly which branch was read.
 
+For parallel tool calls, read submission, result iteration and memory assembly separately. A failed future may skip the final observation write even after other tools have effects. Distinguish an agent's next model decision from retrying the same tool, and per-run step overrides from model-client retry policy.
+
 Example reading: smolagents has multiple agent classes sharing run machinery. Resolve `MultiStepAgent.run` and `_run_stream` through the selected `ToolCallingAgent` implementation. Trace the model call, tool-call processing, memory recording, and termination checks; the configured model/tool implementations remain external boundaries when absent. `CodeAgent` behavior is not interchangeable with `ToolCallingAgent`.
 
 For harness questions, inspect task loading, run/reset, result collection, scoring, and configuration separately rather than assuming the harness is only the agent loop. Combine data/event or framework/plugin profiles when their responsibility is actually present.

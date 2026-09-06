@@ -10,7 +10,7 @@ Source to Sight는 소프트웨어의 목적·구성·동작·규칙을 소스 �
 | --- | --- |
 | [한국어 시작 안내](../README.ko.md) / [English](../README.md) | 설치, 스킬 사용, 실제 사례와 지원 범위 |
 | [개발 가이드](development.md) | 개발 환경, 예제 재현, 템플릿 변경과 검사 방법 |
-| [평가 가이드](evaluation.md) | 18개 사례 실행·결과 비교·사람 검토 반영 |
+| [평가 가이드](evaluation.md) | 24개 사례 실행·결과 비교·사람 검토 반영 |
 | [code-flow](../skills/code-flow/SKILL.md) | 동작 설명 스킬의 입력·출력과 사용 계약 |
 | [렌더러 계약](../skills/code-flow/references/renderer-contract.md) | 데이터·근거·오프라인 화면의 동작 기준 |
 

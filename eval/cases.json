@@ -181,6 +181,66 @@
       "origin": "new-source-reading",
       "candidate": "m15/graphs/event-receiver-check.json",
       "expectation": "m15/expectations/event-receiver-check.json"
+    },
+    {
+      "id": "utility-retry-budget",
+      "source": "smolagents",
+      "profile": "cli-utility",
+      "variant": "complex",
+      "sourceLanguage": "Python",
+      "origin": "m2-source-reading",
+      "candidate": "m2/graphs/utility-retry-budget.json",
+      "expectation": "m2/expectations/utility-retry-budget.json"
+    },
+    {
+      "id": "plugin-wrapper-unwind",
+      "source": "pluggy",
+      "profile": "framework-plugin",
+      "variant": "complex",
+      "sourceLanguage": "Python",
+      "origin": "m2-source-reading",
+      "candidate": "m2/graphs/plugin-wrapper-unwind.json",
+      "expectation": "m2/expectations/plugin-wrapper-unwind.json"
+    },
+    {
+      "id": "library-resize-callbacks",
+      "source": "golang-lru",
+      "profile": "library-sdk",
+      "variant": "complex",
+      "sourceLanguage": "Go",
+      "origin": "m2-source-reading",
+      "candidate": "m2/graphs/library-resize-callbacks.json",
+      "expectation": "m2/expectations/library-resize-callbacks.json"
+    },
+    {
+      "id": "agent-parallel-tools",
+      "source": "smolagents",
+      "profile": "ai-agent",
+      "variant": "complex",
+      "sourceLanguage": "Python",
+      "origin": "m2-source-reading",
+      "candidate": "m2/graphs/agent-parallel-tools.json",
+      "expectation": "m2/expectations/agent-parallel-tools.json"
+    },
+    {
+      "id": "event-async-lifecycle",
+      "source": "blinker",
+      "profile": "data-event",
+      "variant": "complex",
+      "sourceLanguage": "Python",
+      "origin": "m2-source-reading",
+      "candidate": "m2/graphs/event-async-lifecycle.json",
+      "expectation": "m2/expectations/event-async-lifecycle.json"
+    },
+    {
+      "id": "web-routing-fallbacks",
+      "source": "httprouter",
+      "profile": "web",
+      "variant": "complex",
+      "sourceLanguage": "Go",
+      "origin": "m2-source-reading",
+      "candidate": "m2/graphs/web-routing-fallbacks.json",
+      "expectation": "m2/expectations/web-routing-fallbacks.json"
     }
   ]
 }

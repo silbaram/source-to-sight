@@ -1,5 +1,7 @@
 # Web discovery
 
+For fallback routing, read branch precedence and immediate returns before combining redirect, OPTIONS, method errors and missing-route explanations. A redirect response is not an internal rerun of the destination handler. Keep custom middleware/error handlers as unresolved boundaries unless their implementation is also read.
+
 Determine whether the request concerns server handling, a browser/UI event, client state, routing, rendering, or another web capability. HTTP routing is one possible public surface, not the default structure for every project.
 
 For server routing, inspect registration, method/path matching, middleware or wrapper composition, handler selection, response/error boundaries, and external calls that affect the chosen request. Verify redirects and fallback behavior before including them. Do not invent storage or layered controllers/services.

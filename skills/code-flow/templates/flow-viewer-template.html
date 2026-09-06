@@ -59,6 +59,9 @@
         <section id="player" class="player" hidden>
           <p id="story-note" class="story-note"></p>
           <div class="player-controls"><select id="scenario" aria-label="Scenario"></select><div class="transport"><button id="previous" type="button">←</button><button id="play" type="button"></button><button id="next" type="button">→</button></div><span id="step-count"></span></div>
+          <div class="playback-feedback"><span id="playback-status"></span><div id="playback-progress" class="playback-progress" role="progressbar" aria-valuemin="0"><span id="playback-fill"></span></div></div>
+          <div id="step-context" class="step-context"></div>
+          <p id="step-condition" class="step-condition" hidden></p>
           <div id="caption" class="caption" aria-live="polite"></div>
           <div id="flow-transfer" class="flow-transfer" role="group" hidden></div>
           <div id="returns" class="returns"></div>

@@ -21,6 +21,19 @@
     unverified: t('근거 위치 미확인', 'Location unverified'),
     context: t('설명을 위한 문맥', 'Context only')
   };
+  const scenarioLabels = {
+    typical:t('기본 경로','Typical path'), alternate:t('대안 경로','Alternate path'),
+    error:t('오류 경로','Error path'), retry:t('재시도 경로','Retry path'), lifecycle:t('생명주기','Lifecycle')
+  };
+  const branchLabels = {
+    normal:t('진행','Continue'), alternate:t('다른 경로','Alternative'), error:t('오류','Error'),
+    retry:t('재시도','Retry'), stop:t('종료','Stop')
+  };
+  const executionLabels = {
+    sequential:t('순서대로 진행','Sequential'), parallel:t('병렬 구간 · 내부 순서 미정','Parallel · no internal order'),
+    unordered:t('대상 순서 미정','Unspecified target order')
+  };
+  const nonSequential = step => ['parallel','unordered'].includes(step?.execution);
   const nodeMap = new Map(data.nodes.map(n => [n.id, n]));
   const edgeMap = new Map(data.edges.map(e => [e.id, e]));
   const evidenceMap = new Map(data.evidence.map(e => [e.id, e]));
@@ -33,6 +46,10 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion:reduce)');
   const movingRelations = new Set(['invokes','passes-data','dispatches','reads','writes','emits','consumes','transitions','delegates']);
   let stepStartedAt = 0, transferFrame = null, transferToken = null, transferKey = null;
+  let stepElapsed = 0, playbackFrame = null, playbackState = 'idle';
+  const isPlaying = () => playbackState === 'playing';
+  const cameraDuration = 360;
+  let cameraMotion = null, cameraFrame = null, preparingStep = false;
 
   async function copy(text) {
     try {
@@ -104,7 +121,7 @@
     }
   }
   function showItem(item, focus = false) {
-    if (focus && timer) stop();
+    if (focus) stop();
     // A deliberate selection starts a new inspection, ending the previous
     // connection filter. Keep Back's camera/view history independently.
     if (focus && item.id !== focusId) focusId = null;
@@ -116,10 +133,15 @@
     title.id = 'panel-title';
     body.append(title);
     if (item.codeName) body.append(element('p', item.codeName, 'code-name'));
-    if (edgeMap.has(item.id)) {
-      body.append(element('p', nodeMap.get(item.from).label + ' → ' + nodeMap.get(item.to).label, 'description'));
-    } else if (item.summary) body.append(element('p', item.summary, 'description'));
-    if (item.verificationNote) body.append(element('p', item.verificationNote, 'evidence-note'));
+    const description = edgeMap.has(item.id) ? nodeMap.get(item.from).label + ' → ' + nodeMap.get(item.to).label : item.summary;
+    if (description) body.append(element('p', description, 'description'));
+    // Different fields can carry the same sentence. Keep distinct review notes,
+    // but do not repeat text already visible in this item's title or summary.
+    const normalize = text => (text || '').replace(/\s+/g,' ').trim();
+    const note = normalize(item.verificationNote);
+    if (note && ![title.textContent,description].some(text => normalize(text) === note)) {
+      body.append(element('p', item.verificationNote, 'evidence-note'));
+    }
     if (item.actions?.length) {
       body.append(element('h3', t('이 동작에서 하는 일', 'Actions in this behavior')));
       const ul = element('ul');
@@ -159,9 +181,10 @@
       $('panel').inert = false;
       document.body.classList.add('panel-open');
       if (matchMedia('(max-width:900px)').matches) $('close-panel').focus({preventScroll:true});
-      else $('canvas').scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
       positionPanel();
-      if (nodeMap.has(item.id)) revealNode(item.id);
+      if (nodeMap.has(item.id)) revealNode(item.id,true);
+      else if (edgeMap.has(item.id)) revealConnection(item,true);
+      else moveCamera({...readCamera(),pageTop:mapPageTop()},true);
     }
     updateNavigation();positionPanel();paint();
     // Reset after replacing content and sizing the flex body; otherwise the
@@ -190,6 +213,7 @@
       Math.min(frame.height-inset*2, innerHeight-inset*2)) + 'px';
   }
   function closePanel(restoreFocus = true) {
+    finishCamera();
     $('panel').classList.remove('open');
     $('panel').inert = true;
     document.body.classList.remove('panel-open');
@@ -201,9 +225,11 @@
     for (let i = 0; i < characters.length; i += length) lines.push(characters.slice(i, i + length).join(''));
     return lines.length ? lines : [''];
   }
-  function draw() {
+  function draw(anchorId) {
     clearTransfer();
     const canvas = $('canvas');
+    const anchor = () => [...document.querySelectorAll('.node')].find(n => n.dataset.id === anchorId)?.getBoundingClientRect();
+    const before = anchorId ? anchor() : null;
     const mobile = canvas.clientWidth < 600;
     const visible = data.nodes.filter(n => detail || n.importance === 'core');
     const visibleIds = new Set(visible.map(n => n.id));
@@ -302,6 +328,11 @@
     graphWidth = width; graphHeight = height;
     if (!laidOut) { fit(true); laidOut = true; }
     else applyZoom();
+    const after = before ? anchor() : null;
+    if (after) {
+      canvas.scrollLeft += (after.left+after.right-before.left-before.right)/2;
+      canvas.scrollTop += (after.top+after.bottom-before.top-before.bottom)/2;
+    }
     updateMini();
     paint();
   }
@@ -316,7 +347,7 @@
     const previous = data.scenarios[scenarioIndex]?.steps[stepIndex-1];
     // Ordered node captions do not create calls, returns, or an event chain.
     // Use only an unambiguous, checked edge already present in that direction.
-    if (!previous?.nodeId || previous.nodeId === step.nodeId ||
+    if (nonSequential(step) || nonSequential(previous) || !previous?.nodeId || previous.nodeId === step.nodeId ||
         previous.displayStatus !== 'confirmed' || step.displayStatus !== 'confirmed') return null;
     const matches = data.edges.filter(e => e.from === previous.nodeId && e.to === step.nodeId);
     return matches.length === 1 && matches[0].displayStatus === 'confirmed' &&
@@ -330,10 +361,17 @@
     transferKey = null;
     document.querySelectorAll('.node.flow-arrived').forEach(n => n.classList.remove('flow-arrived'));
   }
-  function syncTransfer(edge) {
+  function canAnimateTransfer(edge) {
     const step = currentStep();
-    if (!timer || !edge || edge.displayStatus !== 'confirmed' || step?.displayStatus !== 'confirmed' ||
-        !movingRelations.has(edge.type) || reducedMotion.matches || document.hidden) {
+    // A named, checked dispatch/call/join can cross a parallel boundary. It
+    // describes that relationship, not an order between concurrent workers.
+    // Node-only captions still cannot infer a transfer across that boundary.
+    const explicit = step?.edgeId === edge?.id;
+    return isPlaying() && !cameraMotion && !preparingStep && !!edge && (!nonSequential(step) || explicit) && edge.displayStatus === 'confirmed' &&
+      step?.displayStatus === 'confirmed' && movingRelations.has(edge.type) && !reducedMotion.matches && !document.hidden;
+  }
+  function syncTransfer(edge) {
+    if (!canAnimateTransfer(edge)) {
       clearTransfer();
       return;
     }
@@ -364,6 +402,31 @@
     }
     frame(performance.now());
   }
+  function syncPlayback() {
+    cancelAnimationFrame(playbackFrame);
+    playbackFrame = null;
+    const step = currentStep(), scenario = data.scenarios[scenarioIndex];
+    if (view !== 'flow' || !step) return;
+    const status = isPlaying() ? (cameraMotion ? t('다음 위치로 이동 중','Moving to the next focus') :
+      step.execution === 'parallel' ? t('병렬 구간 설명 중','Explaining a parallel group') :
+      step.execution === 'unordered' ? t('대상 순서 미정 · 설명 중','Explaining unspecified target order') :
+      t('현재 단계 설명 중','Explaining this step')) : playbackState === 'complete' ? t('설명 재생 완료','Walkthrough complete') :
+      playbackState === 'paused' ? t('일시 정지','Paused') : t('자동 재생 준비','Ready to play');
+    $('playback-status').textContent = status;
+    const progress = $('playback-progress');
+    progress.setAttribute('aria-valuemax',String(scenario.steps.length));
+    progress.setAttribute('aria-valuenow',String(stepIndex+1));
+    progress.setAttribute('aria-valuetext',(stepIndex+1)+' / '+scenario.steps.length+' · '+status);
+    // This is explanation progress, independent of whether a checked transfer
+    // exists. Parallel groups must not look paused or acquire serial edges.
+    function frame(now) {
+      const elapsed = elapsedStep(now);
+      const fraction = reducedMotion.matches ? (playbackState === 'complete' ? 1 : 0) : elapsed/stepDuration;
+      $('playback-fill').style.transform = 'scaleX('+((stepIndex+fraction)/scenario.steps.length)+')';
+      if (isPlaying() && !reducedMotion.matches && !document.hidden) playbackFrame = requestAnimationFrame(frame);
+    }
+    frame(performance.now());
+  }
   function paint() {
     const step = view === 'flow' ? currentStep() : null;
     const edge = stepConnection();
@@ -380,6 +443,8 @@
       node.classList.toggle('active',activeNodes.has(node.dataset.id));
       node.classList.toggle('flow-origin',node.dataset.id === edge?.from);
       node.classList.toggle('flow-destination',node.dataset.id === edge?.to);
+      node.classList.toggle('explaining',isPlaying() && !cameraMotion && !preparingStep && activeNodes.has(node.dataset.id) && !canAnimateTransfer(edge) && !reducedMotion.matches);
+      node.setAttribute('aria-current',node.dataset.id === (edge?.to || step?.nodeId) ? 'step' : 'false');
       node.setAttribute('aria-pressed', String(node.dataset.id === selected));
     }
     for (const node of document.querySelectorAll('.edge')) {
@@ -400,53 +465,83 @@
         element('span','· '+edge.label,'transfer-relation'),statusBadge(edge));
     }
     syncTransfer(edge);
+    syncPlayback();
   }
   function setStep(index, preserveFocus = false) {
     const scenario = data.scenarios[scenarioIndex];
     if (!scenario) return;
+    clearTimeout(timer);timer=null;
+    cancelCamera();
+    preparingStep = true;
     if (!preserveFocus) focusId = null;
     stepIndex = Math.max(0,Math.min(index,scenario.steps.length-1));
+    stepElapsed = 0;
+    if (!isPlaying()) playbackState = 'idle';
     stepStartedAt = performance.now();
     const step = scenario.steps[stepIndex];
     const edge = edgeMap.get(step.edgeId);
     const ids = edge ? [edge.from,edge.to] : [step.nodeId];
     if (!detail && ids.some(id => nodeMap.get(id)?.importance === 'detail')) {
-      detail = true; $('mode').value = 'detail'; draw();
+      detail = true; $('mode').value = 'detail'; draw(edge?.from);
     }
     $('step-count').textContent = String(stepIndex+1).padStart(2,'0')+' / '+String(scenario.steps.length).padStart(2,'0');
     $('caption').replaceChildren(document.createTextNode(step.caption+' '),statusBadge(step));
+    $('step-context').replaceChildren(element('span', scenarioLabels[scenario.kind], 'path-tag'));
+    if (step.branch) $('step-context').append(element('span', branchLabels[step.branch], 'path-tag'));
+    if (step.execution) $('step-context').append(element('span', executionLabels[step.execution], 'path-tag'));
+    $('step-condition').textContent = step.condition ? t('이 조건에서: ','When: ')+step.condition : '';
+    $('step-condition').hidden = !step.condition;
     $('returns').textContent = step.returns ? '↳ '+step.returns : '';
     $('previous').disabled = stepIndex === 0;
     $('next').disabled = stepIndex === scenario.steps.length-1;
     showItem(edge || nodeMap.get(step.nodeId));
+    preparingStep = false;
     if (view === 'flow') {
-      const connection = stepConnection();
-      if (timer && connection) revealConnection(connection);
-      else revealNode(ids[ids.length-1]);
+      revealStep(true,isPlaying() ? startStepClock : null);
     }
     paint();
   }
-  function stop() {
-    clearInterval(timer);timer=null;
+  function elapsedStep(now = performance.now()) {
+    return isPlaying() && !cameraMotion && !preparingStep ? Math.max(0,Math.min(stepDuration,now-stepStartedAt)) : stepElapsed;
+  }
+  function startStepClock() {
+    if (!isPlaying()) return;
+    stepStartedAt = performance.now()-stepElapsed;
+    clearTimeout(timer);
+    timer = setTimeout(advancePlayback,stepDuration-stepElapsed);
+    paint();
+  }
+  function stop(completed = false) {
+    if (isPlaying()) {
+      stepElapsed = completed ? stepDuration : elapsedStep();
+      playbackState = completed ? 'complete' : 'paused';
+    }
+    clearTimeout(timer);timer=null;
+    cancelCamera();
     $('play').textContent=t('▶ 자동 재생','▶ Play');
     $('play').setAttribute('aria-pressed','false');
     paint();
   }
+  function advancePlayback() {
+    if (!isPlaying()) return;
+    if (stepIndex >= data.scenarios[scenarioIndex].steps.length-1) stop(true);
+    else setStep(stepIndex+1);
+  }
   function togglePlayback() {
-    if (timer) {stop();return;}
+    if (isPlaying()) {stop();return;}
     const steps=data.scenarios[scenarioIndex].steps;
-    if (stepIndex >= steps.length-1 || stepIndex < 0) setStep(0);
+    if (playbackState === 'complete' || stepIndex < 0 || (stepIndex === steps.length-1 && playbackState !== 'paused')) setStep(0);
     $('play').textContent=t('Ⅱ 일시 정지','Ⅱ Pause');
     $('play').setAttribute('aria-pressed','true');
-    stepStartedAt = performance.now();
-    timer=setInterval(() => {
-      if (stepIndex >= steps.length-1) stop();
-      else setStep(stepIndex+1);
-    },stepDuration);
-    const connection = stepConnection();
-    if (connection) revealConnection(connection);
-    else if (currentStep()?.nodeId) revealNode(currentStep().nodeId);
+    playbackState = 'playing';
+    revealStep(true,startStepClock);
     paint();
+  }
+  function revealStep(smooth, done) {
+    const connection = stepConnection();
+    if (connection) revealConnection(connection,smooth,done);
+    else if (currentStep()?.nodeId) revealNode(currentStep().nodeId,smooth,done);
+    else done?.();
   }
   function applyZoom() {
     const canvas = $('canvas');
@@ -464,6 +559,7 @@
   }
   function setZoom(value) {
     if (!graphWidth) return;
+    finishCamera();
     const canvas = $('canvas'), stage = $('stage');
     const cx = (canvas.scrollLeft+canvas.clientWidth/2-stage.offsetLeft)/zoom;
     const cy = (canvas.scrollTop+canvas.clientHeight/2-stage.offsetTop)/zoom;
@@ -475,6 +571,7 @@
     updateMini();
   }
   function fit(initial = false) {
+    if (!initial) finishCamera();
     const canvas = $('canvas');
     const ratio = Math.min(1,(canvas.clientWidth-32)/graphWidth,(canvas.clientHeight-32)/graphHeight);
     zoom = Math.max(initial ? (canvas.clientWidth < 600 ? .8 : .55) : .2,ratio);
@@ -495,70 +592,118 @@
     mini.append(svg('rect',{class:'viewport',x:(canvas.scrollLeft-stage.offsetLeft)/zoom,
       y:(canvas.scrollTop-stage.offsetTop)/zoom,width:canvas.clientWidth/zoom,height:canvas.clientHeight/zoom}));
   }
-  function visibleFrame() {
+  function visibleFrame(pageTop = scrollY) {
     const frame=$('canvas').getBoundingClientRect();
+    const shift=scrollY-pageTop;
     const area={left:Math.max(0,frame.left)+16,right:Math.min(innerWidth,frame.right)-16,
-      top:Math.max(0,frame.top)+16,bottom:Math.min(innerHeight,frame.bottom)-16};
+      top:Math.max(0,frame.top+shift)+16,bottom:Math.min(innerHeight,frame.bottom+shift)-16};
     if ($('panel').classList.contains('open')) {
       const panel=$('panel').getBoundingClientRect();
-      if (panel.left<area.right && panel.right>area.left && panel.top<area.bottom && panel.bottom>area.top) {
+      if (panel.left<area.right && panel.right>area.left) {
         if (matchMedia('(max-width:900px)').matches) area.bottom=Math.min(area.bottom,panel.top-16);
         else area.right=Math.min(area.right,panel.left-16);
       }
     }
     return area;
   }
-  function revealConnection(edge) {
-    const canvas = $('canvas');
+  function readCamera() {
+    return {left:$('canvas').scrollLeft,top:$('canvas').scrollTop,zoom,pageTop:scrollY};
+  }
+  function applyCamera(position) {
+    if (zoom !== position.zoom) {zoom=position.zoom;applyZoom();}
+    $('canvas').scrollLeft=position.left;
+    $('canvas').scrollTop=position.top;
+    if (Math.abs(scrollY-position.pageTop)>.5) scrollTo({top:position.pageTop,behavior:'instant'});
+    positionPanel();updateMini();
+  }
+  function cancelCamera() {
+    cancelAnimationFrame(cameraFrame);
+    cameraFrame=null;cameraMotion=null;
+    $('canvas').classList.remove('camera-moving');
+  }
+  function finishCamera(snap = false) {
+    const motion=cameraMotion;
+    if (!motion) return;
+    cancelCamera();
+    if (snap) applyCamera(motion.to);
+    if (motion.done) motion.done();
+    else paint();
+  }
+  function moveCamera(target,smooth = false,done = null) {
+    cancelCamera();
+    const canvas=$('canvas'),from=readCamera();
+    const to={zoom:Math.max(.2,Math.min(2,target.zoom)),
+      left:Math.max(0,Math.min(graphWidth*target.zoom+canvas.clientWidth,target.left)),
+      top:Math.max(0,Math.min(graphHeight*target.zoom+canvas.clientHeight,target.top)),
+      pageTop:Math.max(0,Math.min(document.documentElement.scrollHeight-innerHeight,target.pageTop))};
+    const distance=Math.max(Math.abs(to.left-from.left),Math.abs(to.top-from.top),Math.abs(to.pageTop-from.pageTop),
+      Math.abs(to.zoom-from.zoom)*Math.max(graphWidth,graphHeight));
+    if (!smooth || reducedMotion.matches || document.hidden || distance<2) {
+      applyCamera(to);
+      if (done) done(); else paint();
+      return;
+    }
+    const motion={from,to,done,startedAt:performance.now()};
+    cameraMotion=motion;
+    $('canvas').classList.add('camera-moving');
+    // Frame the explanation first; the transfer and its reading time start
+    // only after this movement completes. New input can cancel this job.
+    clearTransfer();
+    function frame(now) {
+      if (cameraMotion!==motion) return;
+      const progress=Math.min(1,Math.max(0,(now-motion.startedAt)/cameraDuration));
+      const ease=progress*progress*(3-2*progress);
+      const position={};
+      for (const key of ['left','top','zoom','pageTop']) position[key]=from[key]+(to[key]-from[key])*ease;
+      applyCamera(position);
+      if (progress<1) cameraFrame=requestAnimationFrame(frame);
+      else finishCamera(true);
+    }
+    cameraFrame=requestAnimationFrame(frame);
+  }
+  function mapPageTop() {
+    const frame=$('canvas').getBoundingClientRect();
+    const bottom=$('panel').classList.contains('open') && matchMedia('(max-width:900px)').matches ?
+      $('panel').getBoundingClientRect().top : innerHeight;
+    let pageTop=scrollY;
+    if (frame.top<0 || frame.height>bottom) pageTop+=frame.top;
+    else if (frame.bottom>bottom) pageTop+=frame.bottom-bottom;
+    return Math.max(0,Math.min(document.documentElement.scrollHeight-innerHeight,pageTop));
+  }
+  function frameBounds(box,smooth,done) {
+    const canvas=$('canvas'),frame=canvas.getBoundingClientRect(),stage=$('stage');
+    const pageTop=mapPageTop(),area=visibleFrame(pageTop),frameTop=frame.top+scrollY-pageTop;
+    const left=frame.left+stage.offsetLeft+box.left*zoom-canvas.scrollLeft;
+    const top=frameTop+stage.offsetTop+box.top*zoom-canvas.scrollTop;
+    const width=(box.right-box.left)*zoom,height=(box.bottom-box.top)*zoom;
+    if (left>=area.left && left+width<=area.right && top>=area.top && top+height<=area.bottom) {
+      moveCamera({...readCamera(),pageTop},smooth,done);
+      return;
+    }
+    const ratio=Math.min((area.right-area.left)/width,(area.bottom-area.top)/height,1);
+    const targetZoom=ratio>0 && ratio<1 ? Math.max(.2,zoom*ratio*.94) : zoom;
+    moveCamera({zoom:targetZoom,pageTop,
+      left:stage.offsetLeft+(box.left+box.right)*targetZoom/2-((area.left+area.right)/2-frame.left),
+      top:stage.offsetTop+(box.top+box.bottom)*targetZoom/2-((area.top+area.bottom)/2-frameTop)},smooth,done);
+  }
+  function revealConnection(edge,smooth = false,done = null) {
     const nodes = [...document.querySelectorAll('.node')].filter(n => n.dataset.id === edge.from || n.dataset.id === edge.to);
     const group = [...document.querySelectorAll('.edge')].find(n => n.dataset.id === edge.id);
-    if (!nodes.length || !group) return;
-    const elements = [...nodes,group.querySelector('.edge-path'),group.querySelector('.edge-label-bg')];
-    const bounds = () => {
-      const boxes = elements.map(n => n.getBoundingClientRect());
-      return {left:Math.min(...boxes.map(b => b.left)),right:Math.max(...boxes.map(b => b.right)),
-        top:Math.min(...boxes.map(b => b.top)),bottom:Math.max(...boxes.map(b => b.bottom))};
-    };
-    // The play button can be below the map on a narrow screen. Frame the map
-    // before fitting this connection, retaining room for an open inspector.
-    canvas.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
-    positionPanel();
-    let area = visibleFrame();
-    if (area.bottom-area.top < 160) {
-      canvas.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
-      positionPanel();area = visibleFrame();
-    }
-    let box = bounds();
-    const ratio = Math.min((area.right-area.left)/(box.right-box.left),
-      (area.bottom-area.top)/(box.bottom-box.top),1);
-    if (ratio > 0 && ratio < 1) {
-      zoom = Math.max(.2,zoom*ratio*.94);
-      applyZoom();box = bounds();
-    }
-    canvas.scrollLeft += (box.left+box.right-area.left-area.right)/2;
-    canvas.scrollTop += (box.top+box.bottom-area.top-area.bottom)/2;
-    updateMini();
+    if (!nodes.length || !group) {done?.();return;}
+    const boxes=nodes.map(n=>({x:n.offsetLeft,y:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight}));
+    boxes.push(group.querySelector('.edge-path').getBBox(),group.querySelector('.edge-label-bg').getBBox());
+    frameBounds({left:Math.min(...boxes.map(b=>b.x)),right:Math.max(...boxes.map(b=>b.x+b.width)),
+      top:Math.min(...boxes.map(b=>b.y)),bottom:Math.max(...boxes.map(b=>b.y+b.height))},smooth,done);
   }
-  function revealNode(id) {
+  function revealNode(id,smooth = false,done = null) {
     const target=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id);
-    if (!target) return;
-    const canvas=$('canvas');
-    let box=target.getBoundingClientRect(), area=visibleFrame();
-    if (area.bottom-area.top<box.height || area.right-area.left<box.width) {
-      // Bring the map above the mobile sheet, or back into the page viewport
-      // after using a search/region control elsewhere in the document.
-      canvas.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
-      area=visibleFrame();box=target.getBoundingClientRect();
-    }
-    if(box.top<area.top||box.bottom>area.bottom||box.left<area.left||box.right>area.right){
-      canvas.scrollLeft+=(box.left+box.right-area.left-area.right)/2;
-      canvas.scrollTop+=(box.top+box.bottom-area.top-area.bottom)/2;
-    }
-    updateMini();
+    if (!target) {done?.();return;}
+    frameBounds({left:target.offsetLeft,top:target.offsetTop,right:target.offsetLeft+target.offsetWidth,
+      bottom:target.offsetTop+target.offsetHeight},smooth,done);
   }
   function chooseNode(node) {
     stop();
-    if (!detail && node.importance==='detail') {detail=true;$('mode').value='detail';draw();}
+    if (!detail && node.importance==='detail') {detail=true;$('mode').value='detail';draw(nodeMap.has(selected)?selected:edgeMap.get(selected)?.to);}
     showItem(node,true);
   }
   function changeMode() {
@@ -627,6 +772,7 @@
     $('view-switch').setAttribute('aria-label',t('설명 관점','Explanation view'));
     $('story-note').textContent=t('설명 순서 · 실제 실행 기록이 아닙니다','Explanation sequence · not a recorded execution');
     $('flow-transfer').setAttribute('aria-label',t('이번 단계의 연결 방향','Connection direction for this step'));
+    $('playback-progress').setAttribute('aria-label',t('설명 재생 진행','Walkthrough progress'));
     $('scenario').setAttribute('aria-label',t('설명 흐름','Walkthrough'));
     $('back').textContent=t('← 돌아가기','← Back');
     $('zoom-out').setAttribute('aria-label',t('축소','Zoom out'));
@@ -681,7 +827,9 @@
     $('canvas').addEventListener('scroll',updateMini,{passive:true});
     let drag=null;
     $('canvas').addEventListener('pointerdown',event=>{
-      if(event.button!==0||event.pointerType==='touch'||event.target.closest('button,.edge'))return;
+      if(event.button!==0||event.target.closest('button,.edge'))return;
+      stop();
+      if(event.pointerType==='touch')return;
       drag={x:event.clientX,y:event.clientY,left:$('canvas').scrollLeft,top:$('canvas').scrollTop};
       $('canvas').setPointerCapture(event.pointerId);$('canvas').classList.add('dragging');
     });
@@ -694,6 +842,7 @@
     $('canvas').addEventListener('keydown',event=>{
       if(event.target!==$('canvas'))return;
       if(['+','=','-','0','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))event.preventDefault();
+      if(event.key.startsWith('Arrow'))stop();
       if(['+','='].includes(event.key))setZoom(zoom*1.2);
       if(event.key==='-')setZoom(zoom/1.2);
       if(event.key==='0')fit();
@@ -795,9 +944,10 @@
     let resizeTimer;
     addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
       if(data.analysis.status!=='insufficient') {
+        finishCamera();
         draw();
         positionPanel();
-        if(timer && stepConnection())revealConnection(stepConnection());
+        if(isPlaying())revealStep(false);
         else if($('panel').classList.contains('open') && nodeMap.has(selected))revealNode(selected);
         positionPanel();
       }
@@ -809,7 +959,8 @@
     };
     addEventListener('scroll',schedulePanel,{passive:true});
     document.addEventListener('toggle',schedulePanel,true);
-    reducedMotion.addEventListener('change',()=>paint());
+    addEventListener('wheel',()=>{if(cameraMotion || isPlaying())stop();},{passive:true});
+    reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches)finishCamera(true);paint();});
     document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
     document.addEventListener('keydown',event=>{if(event.key==='Escape' && $('panel').classList.contains('open'))closePanel();});
     initializeCanvas();

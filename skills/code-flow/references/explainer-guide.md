@@ -8,7 +8,7 @@ Describe edge labels with concrete verbs: registers, requests, forwards, records
 
 Scenarios are optional. Each caption must have its own semantic reread, even when it reuses a node's evidence. A caption such as “always calls every receiver” is a stronger claim than “dispatches to matching receivers.” Preserve alternate/error/retry/stop conditions. A repeated node in a walkthrough is an explanation of the loop, not a recorded runtime trace or a fixed iteration count.
 
-For parallel work, label the fork/join and absence of a guaranteed internal order; a linear walkthrough is a teaching sequence, not proof of serialization. For unordered APIs or registration-only views, leave scenarios empty.
+For parallel work, label the fork/join and absence of a guaranteed internal order; a linear walkthrough is a teaching sequence, not proof of serialization. Mark the claimed group step's `execution` as `parallel` or `unordered` so playback cannot imply a serial transfer. Put a branch prerequisite in `condition` and its effect in the caption. See [complex behavior](complex-behavior.md) for retry, cleanup and mixed-profile contracts. For unordered APIs or registration-only views without a meaningful surrounding lifecycle, leave scenarios empty.
 
 Useful limits name the boundary: nonstreaming model path; registered implementations selected at runtime; normal method/path match with redirect behavior excluded. Avoid empty boilerplate such as “details may vary.” Do not introduce numerical rules, latency, scores, token use, runtime outputs, or undocumented guarantees to make the page look complete.
 

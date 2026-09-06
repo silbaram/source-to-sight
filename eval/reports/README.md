@@ -10,6 +10,10 @@
 | [M1 사람 검토 자료](m1-human-review.md) | 근거 사실 확인·이해도 검토용 답변지. 검토 대기 |
 | [M1.5 검증](m15-verification.md) | 18개 후보·비교 도구·검토 게이트와 자동 검사 |
 | [M1.5 임시 기준](../runs/2026-09-06-baseline.md) | 저장된 후보 18개 재실행. 사람 승인 대기 |
+| [M2 검증](m2-verification.md) | 복합 동작 지침·분기/실행 방식·24개 평가. 사람 승인 대기 |
+| [M2 자동재생 표시 수정](m2-playback-verification.md) | 모든 단계의 진행 표시·병렬 노드 강조·가시 영역·정지 후 이어 재생 |
+| [M2 병렬 진입 연결 수정](m2-parallel-handoffs-verification.md) | 3→4단계 진입과 확인된 호출·결과 기록의 이동 복원 |
+| [부드러운 화면 이동](smooth-camera-verification.md) | 노드·연결을 따라 이동, 도착 후 재생, 직접 조작·모션 설정·창 크기 변경 |
 | [공통 캔버스 검증](canvas-viewer-verification.md) | 실제 생성 템플릿의 UI 적용·회귀 검사 |
 | [상세 패널 영역 수정](panel-bounds-verification.md) | 긴 설명·낮은 창에서 패널 이탈과 조작 버튼 가림 수정 |
 | [연결 이동 애니메이션](flow-animation-verification.md) | 자동재생의 이동 표시·도착 강조·방향 이름·모션 설정 검사 |

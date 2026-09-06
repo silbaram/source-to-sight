@@ -78,7 +78,9 @@ def build(stage):
     step = claimed({
         "id": ID, "caption": TEXT, "edgeId": ID, "nodeId": ID, "returns": TEXT,
         "branch": enum("normal", "alternate", "error", "retry", "stop"),
-    }, ("edgeId", "nodeId", "returns", "branch"))
+        "condition": TEXT,
+        "execution": enum("sequential", "parallel", "unordered"),
+    }, ("edgeId", "nodeId", "returns", "branch", "condition", "execution"))
     step["oneOf"] = [{"required": ["edgeId"], "not": {"required": ["nodeId"]}},
                      {"required": ["nodeId"], "not": {"required": ["edgeId"]}}]
     evidence_fields = {

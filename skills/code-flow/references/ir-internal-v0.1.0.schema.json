@@ -799,6 +799,17 @@
             "stop"
           ]
         },
+        "condition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "execution": {
+          "enum": [
+            "sequential",
+            "parallel",
+            "unordered"
+          ]
+        },
         "confidence": {
           "enum": [
             "exact",

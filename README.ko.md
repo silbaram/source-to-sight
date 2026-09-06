@@ -8,7 +8,7 @@
 
 [고도화 계획](plans/source-to-sight-evolution-plan.md) · [개발 및 예시 실행 방법](docs/development.md) · [M1 사례와 출처](eval/m1/README.md) · [M1 구현 상태](eval/reports/m1-verification.md)
 
-M1.5에서는 [18개 평가 후보](eval/cases.md), [평가 기준](eval/rubric.md), [비교·검토 도구](docs/evaluation.md)를 추가했습니다. 여섯 유형마다 일반·경계·최소 또는 동적 사례를 포함합니다. 저장된 후보를 재검증한 임시 기준이며, 독립적인 사람의 사실·이해도 검토는 대기 중입니다.
+M2에서는 기존 18개를 보존하고 유형별 복합 사례를 추가해 [24개 평가 후보](eval/cases.md)로 확대했습니다. 재시도·예외·래퍼·병렬·상태·자원 경계의 탐색 지침과 화면의 분기 조건·실행 방식 표시를 보완했습니다. [평가 기준](eval/rubric.md)과 [비교·검토 도구](docs/evaluation.md)는 필수 행동 주장·경로도 검사합니다. 저장된 후보를 재검증한 임시 기준이며, 독립적인 사람의 사실·이해도 검토는 대기 중입니다.
 
 `$visual-primer` 스킬은 실제 자료와 공식 출처를 확인한 뒤, 큰 그림과 적은 글로 설명하는 단일 HTML 페이지를 만듭니다. 결과물은 빌드 과정이나 별도 서버 없이 브라우저에서 바로 열 수 있습니다.
 
@@ -117,6 +117,7 @@ npx skills update visual-primer
 ├── eval/
 │   ├── m1/                        # 고정 소스 분석 사례와 출처
 │   ├── m15/                       # 18개 후보와 소스 기반 정답 검토 기준
+│   ├── m2/                        # 복합 동작 후보 6개와 경로·행동 검토 기준
 │   ├── runs/                      # 보존한 임시 기준 실행 기록
 │   └── reports/                   # 검증·리뷰 기록과 보존한 스크린샷
 ├── skills/visual-primer/

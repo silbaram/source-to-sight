@@ -6,6 +6,8 @@ Registration and execution are separate facts. A registration call may validate 
 
 Resolve naming conventions, explicit annotations/configuration, priorities, wrappers, and first-result/short-circuit rules from code. Never infer total order from file order or imply every registered plugin runs. When selection is dynamic, show the known rule with unresolved concrete implementations.
 
+For wrappers, trace which entries reached their yield point, the unwind order, and whether a wrapper can replace results or clear exceptions. Short-circuiting ordinary implementations does not by itself skip entered-wrapper cleanup; verify the executor's actual finally path.
+
 Example reading: pluggy's `PluginManager.register`, hook specification checks, `HookCaller.__call__`, `_hookexec`, and `_multicall` establish different parts of registration and dispatch. For ordinary nonhistoric, nonwrapper hooks, state those exclusions. Inspect all corresponding ranges before drawing a single lifecycle across them.
 
 For web frameworks, add the web profile only when routing or UI events are part of the selected capability. The core/extension model does not require Controller/Service/Repository layers.

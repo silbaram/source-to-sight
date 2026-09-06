@@ -7,6 +7,7 @@ const evidenceUrl=pathToFileURL(path.join(root,'build/m1/web-dispatch.html')).hr
 test.beforeEach(async({context})=>context.setOffline(true));
 
 async function expectContainedInspector(page) {
+  await expect(page.locator('#canvas')).not.toHaveClass(/camera-moving/);
   await expect.poll(()=>page.evaluate(()=>{
     const panel=document.getElementById('panel'),p=panel.getBoundingClientRect();
     const c=document.getElementById('canvas').getBoundingClientRect();

@@ -1,6 +1,6 @@
-# M1.5 평가 사례 목록
+# 동작 설명 평가 사례 목록
 
-공개 저장소 6개·언어 3개·유형별 3개, 총 18개입니다. 기존 M1 분석 6개를 재사용하고 고정 소스를 읽은 분석 12개를 추가했습니다. 모두 코딩 에이전트가 작성한 후보이며 **사람이 확정한 골든셋이나 독립적인 모델 생성 실험이 아닙니다.**
+공개 저장소 6개·언어 3개·유형별 4개, 총 24개입니다. M1.5의 기존 18개 입력을 보존하고 M2 복합 사례를 유형별 하나씩 추가했습니다. 모두 코딩 에이전트가 작성한 후보이며 **사람이 확정한 골든셋이나 독립적인 모델 생성 실험이 아닙니다.**
 
 ## 고정 소스
 
@@ -39,6 +39,19 @@
 | web | 최소 | [Router.Lookup은 찾은 핸들러를 실행하거나 리다이렉트하나요?](m15/expectations/web-lookup.json) | complete | [web-lookup](m15/graphs/web-lookup.json) |
 
 ## 검토 기준과 출처 기록
+
+M2의 복합 사례는 아래와 같습니다. 같은 저장소 안에서도 실제 설명 대상에 따라 프로파일을 고릅니다. 예를 들어 smolagents의 `Retrying`은 모델과 무관한 함수 재시도 유틸리티이며, `ApiModel`의 호출 정책 설정을 함께 읽습니다.
+
+| 유형 | 설명 질문 / 정답 후보 | 분석 IR |
+| --- | --- | --- |
+| cli-utility | [실패한 함수를 언제 다시 호출하고 중단하는가](m2/expectations/utility-retry-budget.json) | [utility-retry-budget](m2/graphs/utility-retry-budget.json) |
+| framework-plugin | [첫 결과와 오류가 래퍼를 거쳐 어떻게 반환되는가](m2/expectations/plugin-wrapper-unwind.json) | [plugin-wrapper-unwind](m2/graphs/plugin-wrapper-unwind.json) |
+| library-sdk | [캐시 축소의 제거 반복과 콜백·잠금 경계](m2/expectations/library-resize-callbacks.json) | [library-resize-callbacks](m2/graphs/library-resize-callbacks.json) |
+| ai-agent | [병렬 도구의 제출·수집·기록과 다음 단계의 판단](m2/expectations/agent-parallel-tools.json) | [agent-parallel-tools](m2/graphs/agent-parallel-tools.json) |
+| data-event | [비동기 전달과 임시 수신자의 실패·해제 경계](m2/expectations/event-async-lifecycle.json) | [event-async-lifecycle](m2/graphs/event-async-lifecycle.json) |
+| web | [경로 불일치 시 리다이렉트·OPTIONS·405·404 선택](m2/expectations/web-routing-fallbacks.json) | [web-routing-fallbacks](m2/graphs/web-routing-fallbacks.json) |
+
+여섯 복합 사례는 외부 구현 또는 동적 결과를 남긴 `partial` 후보입니다. 전체 예상 상태는 `complete` 12개 / `partial` 12개입니다. [M2 소스 읽기 기록](m2/discovery.md)은 범위·근거와 확인한 한계를 설명합니다. [전체 manifest](cases.json)는 24개이며 [M1.5 manifest](cases-m15.json)는 기존 18개 구성을 그대로 보존합니다.
 
 각 정답 후보에는 고정 질문·범위, 필수 역할과 소스 위치, 관계의 방향·종류·확신 수준, 빠지면 안 되는 사실, 금지할 주장, 명시적 금지 관계, 순서 없는 설명 여부가 있습니다. 역할·관계 기준은 작성자가 소스를 읽어 별도로 기록했으며 후보 IR의 ID에서 자동 추출한 정답이 아닙니다. 같은 작성자가 분석과 정답 후보를 작성했으므로 독립 검토가 필요합니다.
 

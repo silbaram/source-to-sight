@@ -1,0 +1,364 @@
+{
+  "version": 1,
+  "caseId": "agent-parallel-tools",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "smolagents-toolcallingagent-run-process-tool-calls-tool-call-3bf99674914e",
+      "kind": "capability",
+      "title": "도구를 병렬 처리하는 에이전트의 반복과 실패 경계",
+      "question": "도구를 병렬 처리하는 에이전트의 반복과 실패 경계?",
+      "module": "smolagents",
+      "targets": [
+        {
+          "label": "ToolCallingAgent run + process_tool_calls + Tool.__call__"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "양수 단계 한계, 비스트리밍 ToolCallingAgent와 기본 Tool.__call__을 상속한 도구",
+          "고유 호출 ID, 텍스트 결과, 병렬 제출·수집·기록, 단계 오류와 종료"
+        ],
+        "excludes": [
+          "계획·최종 답 검사·사용자 단계 콜백 실패, managed agent",
+          "이미지·음성 공유 상태, 중복 호출 ID, 실제 모델·도구 내부, 스레드 실행기 내부"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "ai-agent",
+    "library-sdk",
+    "framework-plugin"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "nodes": [
+    {
+      "key": "entry",
+      "codeNames": [
+        "MultiStepAgent.run"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 468,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "loop",
+      "codeNames": [
+        "MultiStepAgent._run_stream"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 545,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "decision",
+      "codeNames": [
+        "ToolCallingAgent._step_stream"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 1336,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "model",
+      "codeNames": [
+        "model.generate"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 1309,
+      "kind": "boundary",
+      "status": "uncertain"
+    },
+    {
+      "key": "group",
+      "codeNames": [
+        "ToolCallingAgent.process_tool_calls"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 1426,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "execute",
+      "codeNames": [
+        "ToolCallingAgent.execute_tool_call"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 1486,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "tool",
+      "codeNames": [
+        "Tool.__call__"
+      ],
+      "file": "src/smolagents/tools.py",
+      "line": 246,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "implementation",
+      "codeNames": [
+        "Tool.forward"
+      ],
+      "file": "src/smolagents/tools.py",
+      "line": 246,
+      "kind": "boundary",
+      "status": "uncertain"
+    },
+    {
+      "key": "observations",
+      "codeNames": [
+        "memory_step.observations"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 1438,
+      "kind": "state",
+      "status": "confirmed"
+    },
+    {
+      "key": "fallback",
+      "codeNames": [
+        "MultiStepAgent._handle_max_steps_reached"
+      ],
+      "file": "src/smolagents/agents.py",
+      "line": 627,
+      "kind": "component",
+      "status": "confirmed"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "entry",
+      "toRole": "loop",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "loop",
+      "toRole": "decision",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "decision",
+      "toRole": "model",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "decision",
+      "toRole": "group",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "group",
+      "toRole": "execute",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "execute",
+      "toRole": "tool",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "tool",
+      "toRole": "implementation",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "group",
+      "toRole": "observations",
+      "type": "writes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "loop",
+      "toRole": "loop",
+      "type": "transitions",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "loop",
+      "toRole": "fallback",
+      "type": "invokes",
+      "status": "confirmed"
+    }
+  ],
+  "noScenarios": false,
+  "requiredFacts": [
+    "Positive per-run max_steps overrides the configured default; constructor default is 20. Steps are not tool calls.",
+    "Nonstreaming, unique IDs, ordinary tools inheriting Tool.__call__, text observations and normal callbacks only.",
+    "One call is direct; multiple calls are submitted to the executor. Completion order need not equal submission order.",
+    "Normal complete consumption records calls and observations sorted by call ID, separate from completion order.",
+    "Tool.__call__ checks initialization then transforms inputs, calls forward and transforms outputs; concrete tool internals unresolved.",
+    "A future-result failure skips final group observation assembly; earlier side effects need not be rolled back or fully recorded.",
+    "AgentGenerationError is reraised; other AgentError is recorded and a later budgeted decision can follow, without guaranteeing the same tool retry.",
+    "The finally records the step and increments its number. No final answer at the positive limit invokes the fallback."
+  ],
+  "forbiddenClaims": [
+    "Every tool starts simultaneously",
+    "Output order proves execution order",
+    "async or threads imply a guaranteed worker order",
+    "Tool failure rolls back the whole batch",
+    "Every successful tool output is always recorded after a batch failure",
+    "A generation error automatically retries the model",
+    "max_steps counts tool invocations",
+    "Agent error always retries the same tool"
+  ],
+  "forbiddenEdges": [
+    {
+      "fromRole": "observations",
+      "toRole": "implementation",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "model",
+      "toRole": "implementation",
+      "type": "invokes",
+      "status": "confirmed"
+    }
+  ],
+  "behaviors": [
+    {
+      "key": "effective-limit",
+      "kind": "rule",
+      "role": "entry",
+      "file": "src/smolagents/agents.py",
+      "line": 468,
+      "status": "confirmed",
+      "numeric": true
+    },
+    {
+      "key": "completion-order",
+      "kind": "rule",
+      "role": "group",
+      "file": "src/smolagents/agents.py",
+      "line": 1431,
+      "status": "confirmed",
+      "numeric": false
+    },
+    {
+      "key": "parallel-group",
+      "kind": "step",
+      "role": "group",
+      "file": "src/smolagents/agents.py",
+      "line": 1426,
+      "status": "confirmed",
+      "execution": "parallel",
+      "condition": true,
+      "scenarioKind": "typical"
+    },
+    {
+      "key": "parallel-worker",
+      "kind": "step",
+      "role": "execute",
+      "file": "src/smolagents/agents.py",
+      "line": 1430,
+      "status": "confirmed",
+      "execution": "parallel",
+      "scenarioKind": "typical"
+    },
+    {
+      "key": "join-record",
+      "kind": "step",
+      "role": "observations",
+      "file": "src/smolagents/agents.py",
+      "line": 1438,
+      "status": "confirmed",
+      "execution": "sequential",
+      "condition": true,
+      "scenarioKind": "typical"
+    },
+    {
+      "key": "observations-state",
+      "kind": "transition",
+      "role": "observations",
+      "file": "src/smolagents/agents.py",
+      "line": 1439,
+      "status": "confirmed"
+    },
+    {
+      "key": "step-count-state",
+      "kind": "transition",
+      "role": "loop",
+      "file": "src/smolagents/agents.py",
+      "line": 604,
+      "status": "confirmed"
+    },
+    {
+      "key": "failed-batch",
+      "kind": "step",
+      "role": "group",
+      "file": "src/smolagents/agents.py",
+      "line": 1432,
+      "status": "confirmed",
+      "branch": "error",
+      "execution": "parallel",
+      "scenarioKind": "error"
+    },
+    {
+      "key": "generation-stop",
+      "kind": "step",
+      "role": "loop",
+      "file": "src/smolagents/agents.py",
+      "line": 596,
+      "status": "confirmed",
+      "branch": "stop",
+      "scenarioKind": "error"
+    }
+  ],
+  "paths": [
+    {
+      "key": "group-join",
+      "kind": "typical",
+      "roles": [
+        "entry",
+        "loop",
+        "decision",
+        "group",
+        "execute",
+        "tool",
+        "observations",
+        "loop"
+      ]
+    },
+    {
+      "key": "recoverable-error",
+      "kind": "error",
+      "roles": [
+        "group",
+        "loop",
+        "fallback"
+      ]
+    },
+    {
+      "key": "fatal-generation",
+      "kind": "error",
+      "roles": [
+        "decision",
+        "loop"
+      ]
+    }
+  ]
+}

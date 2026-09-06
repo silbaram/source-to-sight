@@ -248,7 +248,10 @@ def main():
             m1.author.write_json(reference_path, reference, exclusive=True)
         manifest["cases"].append({**case, "candidate": f"m15/graphs/{identifier}.json",
                                   "expectation": f"m15/expectations/{identifier}.json"})
-    m1.author.write_json(ROOT / "eval/cases.json", manifest)
+    m1.author.write_json(ROOT / "eval/cases-m15.json", manifest)
+    active = ROOT / "eval/cases.json"
+    if not active.exists() or not any(c["variant"] == "complex" for c in json.loads(active.read_text())["cases"]):
+        m1.author.write_json(active, manifest)
 
 
 if __name__ == "__main__":

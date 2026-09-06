@@ -45,7 +45,7 @@ Use the [internal schema](ir-internal-v0.1.0.schema.json) and [renderer contract
 | `summary` | Purpose, inputs/results, decision-relevant limitations in the output language |
 | `nodes`, `actions` | Role, readable label/summary, optional identifier, importance, evidence and claim-specific review |
 | `edges` | Existing endpoints, semantic type/derivation, evidence of the relationship itself |
-| `scenarios` | Optional; every step has exactly one node or edge reference and independently checked caption |
+| `scenarios` | Optional; every step has exactly one node or edge reference and independently checked caption. Use `kind`, step `branch`, and optional `condition`/`execution` for the path semantics in [complex behavior](complex-behavior.md) |
 | `stateTransitions` | Owner, before/after, exact trigger condition, explanation and evidence |
 | `rules` | Only verified conditions/results; numerical rules need supported evidence |
 | `warnings` | Structured uncertainty/candidates with valid references; not hidden disclaimers |

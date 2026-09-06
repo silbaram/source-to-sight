@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "caseId": "library-resize-callbacks",
+  "review": {
+    "status": "pending",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "identity": {
+    "layer": "behavior",
+    "language": "ko",
+    "subject": {
+      "id": "golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652",
+      "kind": "capability",
+      "title": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서",
+      "question": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서?",
+      "module": "golang-lru",
+      "targets": [
+        {
+          "label": "Cache.Resize + simplelru.LRU.Resize"
+        }
+      ],
+      "scope": {
+        "includes": [
+          "정상 생성된 캐시의 0 이상 크기 변경, 퇴출 반복과 잠금 해제 후 콜백",
+          "동기 사용자 콜백의 정상 반환 또는 panic"
+        ],
+        "excludes": [
+          "음수 크기, 내부 제거·할당 실패",
+          "콜백 내부와 별도 고루틴의 전체 실행 순서"
+        ]
+      }
+    }
+  },
+  "profiles": [
+    "library-sdk",
+    "framework-plugin"
+  ],
+  "statuses": [
+    "partial"
+  ],
+  "nodes": [
+    {
+      "key": "api",
+      "codeNames": [
+        "Cache.Resize"
+      ],
+      "file": "lru.go",
+      "line": 194,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "resize",
+      "codeNames": [
+        "simplelru.LRU.Resize"
+      ],
+      "file": "simplelru/lru.go",
+      "line": 157,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "remove",
+      "codeNames": [
+        "removeOldest / removeElement"
+      ],
+      "file": "simplelru/lru.go",
+      "line": 178,
+      "kind": "component",
+      "status": "confirmed"
+    },
+    {
+      "key": "buffer",
+      "codeNames": [
+        "Cache.evictedKeys / evictedVals"
+      ],
+      "file": "lru.go",
+      "line": 191,
+      "kind": "state",
+      "status": "confirmed"
+    },
+    {
+      "key": "notify",
+      "codeNames": [
+        "onEvictedCB"
+      ],
+      "file": "lru.go",
+      "line": 197,
+      "kind": "boundary",
+      "status": "uncertain"
+    }
+  ],
+  "edges": [
+    {
+      "fromRole": "api",
+      "toRole": "resize",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "resize",
+      "toRole": "remove",
+      "type": "invokes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "remove",
+      "toRole": "buffer",
+      "type": "writes",
+      "status": "confirmed"
+    },
+    {
+      "fromRole": "api",
+      "toRole": "notify",
+      "type": "dispatches",
+      "status": "confirmed"
+    }
+  ],
+  "noScenarios": false,
+  "requiredFacts": [
+    "Scope includes a successfully constructed cache and nonnegative new size; negative resize is excluded.",
+    "Removal count is max(current length − requested size, 0). Remove oldest that many times, then set capacity.",
+    "Internal eviction callback records keys/values under lock; public Resize detaches lists, initializes new buffers and unlocks.",
+    "User callbacks run outside the lock only if configured and eviction count is positive. Growth without eviction sends no notifications.",
+    "A propagated synchronous callback panic skips later callbacks, with already-applied cache updates remaining.",
+    "Callback internals, other goroutine order and unconditional lock release after internal failure are not guaranteed."
+  ],
+  "forbiddenClaims": [
+    "Resize always evicts at least one item",
+    "Callback executes while the cache lock is held",
+    "Callback panic rolls back the resize",
+    "All callbacks run even if one panics",
+    "Negative capacity has the same count contract as a nonnegative capacity"
+  ],
+  "forbiddenEdges": [],
+  "behaviors": [
+    {
+      "key": "count",
+      "kind": "rule",
+      "role": "resize",
+      "file": "simplelru/lru.go",
+      "line": 157,
+      "status": "confirmed",
+      "numeric": true
+    },
+    {
+      "key": "notify-release",
+      "kind": "rule",
+      "role": "api",
+      "file": "lru.go",
+      "line": 194,
+      "status": "confirmed",
+      "numeric": false
+    },
+    {
+      "key": "buffer-lifetime",
+      "kind": "transition",
+      "role": "buffer",
+      "file": "lru.go",
+      "line": 192,
+      "status": "confirmed"
+    },
+    {
+      "key": "new-capacity",
+      "kind": "transition",
+      "role": "resize",
+      "file": "simplelru/lru.go",
+      "line": 164,
+      "status": "confirmed"
+    },
+    {
+      "key": "notify-condition",
+      "kind": "step",
+      "role": "notify",
+      "file": "lru.go",
+      "line": 197,
+      "status": "confirmed",
+      "condition": true,
+      "execution": "sequential",
+      "scenarioKind": "typical"
+    },
+    {
+      "key": "callback-failure",
+      "kind": "step",
+      "role": "api",
+      "file": "lru.go",
+      "line": 197,
+      "status": "confirmed",
+      "condition": true,
+      "branch": "error",
+      "scenarioKind": "error"
+    }
+  ],
+  "paths": [
+    {
+      "key": "release-before-notify",
+      "kind": "typical",
+      "roles": [
+        "api",
+        "remove",
+        "buffer",
+        "api",
+        "notify",
+        "api"
+      ]
+    },
+    {
+      "key": "growth",
+      "kind": "alternate",
+      "roles": [
+        "resize",
+        "api"
+      ]
+    },
+    {
+      "key": "callback-error",
+      "kind": "error",
+      "roles": [
+        "notify",
+        "api"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+# Source-backed evaluation run
+
+- Run: `2026-09-06T14:13:14.037622+00:00`
+- Mode: `recorded-candidate-replay`; this is candidate replay, not independent model generation.
+- Gate: **pending-review**; coverage: 24/24
+- Engine: `f709c97e2f2777465d26dad3b06175cf1be7752fee8b8f7f3dddf3d2647c7cb2`; repository: `849cde09c2f5d4ad52198b046245738f0a3d4248`; clean: `False`
+- Unknown generation tokens, time, cost and model remain null. Evidence lines are not total discovery reads.
+- Automatic checks verify explicit structure/location criteria. Human facts, conditions and comprehension require review.
+
+| Profile | Cases | Automatic pass | Human accepted | Node recall | Edge recall | Critical findings |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| cli-utility | 4 | 4 | 0 | 100% | 100% | 0 |
+| library-sdk | 4 | 4 | 0 | 100% | 100% | 0 |
+| framework-plugin | 4 | 4 | 0 | 100% | 100% | 0 |
+| ai-agent | 4 | 4 | 0 | 100% | 100% | 0 |
+| data-event | 4 | 4 | 0 | 100% | 100% | 0 |
+| web | 4 | 4 | 0 | 100% | 100% | 0 |
+
+| Case | Auto | Final | Analysis | Behaviors / paths matched | Evidence files/lines | Review | Errors |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| utility-strip | passed | pending-review | complete | 0/0 · 0/0 | 1/15 | pending | — |
+| plugin-hooks | passed | pending-review | partial | 0/0 · 0/0 | 3/140 | pending | — |
+| agent-tool-loop | passed | pending-review | partial | 0/0 · 0/0 | 1/311 | pending | — |
+| library-eviction | passed | pending-review | partial | 0/0 · 0/0 | 2/63 | pending | — |
+| web-dispatch | passed | pending-review | partial | 0/0 · 0/0 | 2/179 | pending | — |
+| event-receivers | passed | pending-review | partial | 0/0 · 0/0 | 1/136 | pending | — |
+| utility-invalid-input | passed | pending-review | complete | 0/0 · 0/0 | 1/15 | pending | — |
+| utility-plain-text | passed | pending-review | complete | 0/0 · 0/0 | 1/15 | pending | — |
+| plugin-blocked-registration | passed | pending-review | complete | 0/0 · 0/0 | 1/85 | pending | — |
+| plugin-unblock | passed | pending-review | complete | 0/0 · 0/0 | 1/9 | pending | — |
+| library-invalid-capacity | passed | pending-review | complete | 0/0 · 0/0 | 1/13 | pending | — |
+| library-peek | passed | pending-review | complete | 0/0 · 0/0 | 2/16 | pending | — |
+| web-invalid-registration | passed | pending-review | complete | 0/0 · 0/0 | 1/45 | pending | — |
+| web-lookup | passed | pending-review | complete | 0/0 · 0/0 | 2/120 | pending | — |
+| agent-unknown-tool | passed | pending-review | complete | 0/0 · 0/0 | 1/36 | pending | — |
+| agent-max-steps | passed | pending-review | partial | 0/0 · 0/0 | 1/131 | pending | — |
+| event-muted | passed | pending-review | complete | 0/0 · 0/0 | 1/61 | pending | — |
+| event-receiver-check | passed | pending-review | complete | 0/0 · 0/0 | 1/20 | pending | — |
+| utility-retry-budget | passed | pending-review | partial | 5/5 · 3/3 | 2/100 | pending | — |
+| plugin-wrapper-unwind | passed | pending-review | partial | 6/6 · 2/2 | 3/122 | pending | — |
+| library-resize-callbacks | passed | pending-review | partial | 6/6 · 3/3 | 2/65 | pending | — |
+| agent-parallel-tools | passed | pending-review | partial | 9/9 · 3/3 | 2/412 | pending | — |
+| event-async-lifecycle | passed | pending-review | partial | 7/7 · 2/2 | 1/197 | pending | — |
+| web-routing-fallbacks | passed | pending-review | partial | 6/6 · 4/4 | 2/238 | pending | — |

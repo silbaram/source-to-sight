@@ -1,0 +1,534 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 읽어 작성한 M2 복합 동작 후보입니다. 대상 실행·독립 생성 평가·사람 검토는 하지 않았습니다."
+  },
+  "snapshot": {
+    "repository": "pytest-dev/pluggy",
+    "branch": null,
+    "commit": "4821148db2f4c6daa62ad8bdcae2918ecf27a731",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T13:24:54Z",
+    "skillVersion": "0.3.0",
+    "model": null
+  },
+  "subject": {
+    "id": "pluggy-hookcaller-call-multicall-wrappers-52769b7aa1e3",
+    "kind": "capability",
+    "title": "훅의 첫 결과와 오류가 래퍼를 거쳐 반환되는 과정",
+    "question": "훅의 첫 결과와 오류가 래퍼를 거쳐 반환되는 과정?",
+    "module": "pluggy",
+    "targets": [
+      {
+        "label": "HookCaller.__call__ + _multicall wrappers"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "기본 실행기의 비historic 훅, 새 방식 wrapper의 진입과 역순 복귀",
+        "firstresult와 구현 오류, 래퍼의 결과·예외 변경"
+      ],
+      "excludes": [
+        "old-style hookwrapper, 실행기 재정의",
+        "실제 플러그인 구현과 구체적인 우선순위 구성"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "framework-plugin",
+      "library-sdk"
+    ],
+    "searched": [
+      "src/pluggy/_callers.py",
+      "src/pluggy/_hooks.py",
+      "src/pluggy/_manager.py"
+    ],
+    "unresolved": [
+      "등록 순서나 파일 순서만으로 실제 플러그인의 총 실행 순서를 정하지 않습니다. 래퍼가 원래 오류를 반드시 보존한다고 가정하지 않습니다."
+    ],
+    "nextAttempts": [
+      "호출 애플리케이션의 설정·구현과 해당 경계의 소스를 별도로 확인합니다."
+    ]
+  },
+  "summary": {
+    "title": "훅의 첫 결과와 오류가 래퍼를 거쳐 반환되는 과정",
+    "purpose": "훅의 첫 결과와 오류가 래퍼를 거쳐 반환되는 과정",
+    "inputs": [
+      "호스트의 훅 호출, 구현 목록, firstresult 설정"
+    ],
+    "outputs": [
+      "래퍼 복귀 후 결과 또는 최종 예외"
+    ],
+    "limitations": [
+      "등록 순서나 파일 순서만으로 실제 플러그인의 총 실행 순서를 정하지 않습니다. 래퍼가 원래 오류를 반드시 보존한다고 가정하지 않습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "pluggy-hookcaller-call-multicall-wrappers-52769b7aa1e3",
+    "question": "훅의 첫 결과와 오류가 래퍼를 거쳐 반환되는 과정?",
+    "language": "ko",
+    "command": "$code-flow 훅의 첫 결과와 오류가 래퍼를 거쳐 반환되는 과정? | subject=pluggy-hookcaller-call-multicall-wrappers-52769b7aa1e3 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "caller",
+      "kind": "component",
+      "label": "훅 실행 요청",
+      "roleLabel": "이 범위의 역할",
+      "summary": "훅 설정에서 firstresult를 읽고 구현 목록의 복사본을 실행기에 전달합니다.",
+      "codeName": "HookCaller.__call__",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "훅 설정에서 firstresult를 읽고 구현 목록의 복사본을 실행기에 전달합니다.",
+      "evidenceIds": [
+        "ev-caller"
+      ]
+    },
+    {
+      "id": "dispatch",
+      "kind": "component",
+      "label": "구현 순회와 결과 판단",
+      "roleLabel": "이 범위의 역할",
+      "summary": "전달된 구현 목록을 역순으로 방문합니다. 첫 유효 결과 설정이면 None이 아닌 결과에서 일반 구현 순회를 중단합니다.",
+      "codeName": "_multicall",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "전달된 구현 목록을 역순으로 방문합니다. 첫 유효 결과 설정이면 None이 아닌 결과에서 일반 구현 순회를 중단합니다.",
+      "evidenceIds": [
+        "ev-call",
+        "ev-first",
+        "ev-manager"
+      ]
+    },
+    {
+      "id": "wrapper",
+      "kind": "boundary",
+      "label": "실행을 감싸는 래퍼",
+      "roleLabel": "동적 경계",
+      "summary": "진입한 래퍼는 나중에 결과나 예외를 받습니다. 실제 래퍼는 반환값이나 예외를 바꿀 수 있어 최종 결과는 정적으로 확정하지 않습니다.",
+      "codeName": "hook_impl.function (wrapper)",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "진입한 래퍼는 나중에 결과나 예외를 받습니다. 실제 래퍼는 반환값이나 예외를 바꿀 수 있어 최종 결과는 정적으로 확정하지 않습니다.",
+      "evidenceIds": [
+        "ev-wrapper",
+        "ev-unwind"
+      ]
+    },
+    {
+      "id": "implementation",
+      "kind": "boundary",
+      "label": "실행할 훅 구현",
+      "roleLabel": "동적 경계",
+      "summary": "실행기가 선택한 구현을 호출합니다. 실제 플러그인 내부와 반환값은 이 범위에서 정해지지 않습니다.",
+      "codeName": "hook_impl.function",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "실행기가 선택한 구현을 호출합니다. 실제 플러그인 내부와 반환값은 이 범위에서 정해지지 않습니다.",
+      "evidenceIds": [
+        "ev-first"
+      ]
+    },
+    {
+      "id": "stack",
+      "kind": "state",
+      "label": "복귀할 래퍼 기록",
+      "roleLabel": "이 범위의 역할",
+      "summary": "첫 yield까지 진입한 래퍼만 저장하고 나중에 저장 순서의 역순으로 재개합니다.",
+      "codeName": "teardowns",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "첫 yield까지 진입한 래퍼만 저장하고 나중에 저장 순서의 역순으로 재개합니다.",
+      "evidenceIds": [
+        "ev-wrapper",
+        "ev-unwind"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "dispatch-hook",
+      "from": "caller",
+      "to": "dispatch",
+      "label": "기본 실행기로 위임",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "기본 실행기로 위임에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-caller",
+        "ev-manager"
+      ]
+    },
+    {
+      "id": "enter-wrapper",
+      "from": "dispatch",
+      "to": "wrapper",
+      "label": "래퍼를 첫 yield까지 진행",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "래퍼를 첫 yield까지 진행에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-wrapper"
+      ]
+    },
+    {
+      "id": "remember-wrapper",
+      "from": "dispatch",
+      "to": "stack",
+      "label": "진입한 래퍼 저장",
+      "type": "writes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "진입한 래퍼 저장에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-wrapper"
+      ]
+    },
+    {
+      "id": "call-implementation",
+      "from": "dispatch",
+      "to": "implementation",
+      "label": "중단 전 일반 구현 호출",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "중단 전 일반 구현 호출에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-first"
+      ]
+    },
+    {
+      "id": "resume-wrapper",
+      "from": "dispatch",
+      "to": "wrapper",
+      "label": "진입한 래퍼를 역순으로 재개",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "진입한 래퍼를 역순으로 재개에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-unwind"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "wrapped-result",
+      "title": "첫 결과 뒤 래퍼 복귀",
+      "kind": "lifecycle",
+      "steps": [
+        {
+          "id": "wrapped-result-1",
+          "caption": "호스트의 훅 요청을 기본 실행기에 전달합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "호스트의 훅 요청을 기본 실행기에 전달합니다.",
+          "evidenceIds": [
+            "ev-caller",
+            "ev-manager"
+          ],
+          "nodeId": "caller"
+        },
+        {
+          "id": "wrapped-result-2",
+          "caption": "새 방식 래퍼를 첫 yield까지 실행합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "새 방식 래퍼를 첫 yield까지 실행합니다.",
+          "evidenceIds": [
+            "ev-wrapper"
+          ],
+          "edgeId": "enter-wrapper",
+          "condition": "이 항목이 wrapper임"
+        },
+        {
+          "id": "wrapped-result-3",
+          "caption": "진입한 래퍼를 복귀 목록에 저장합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "진입한 래퍼를 복귀 목록에 저장합니다.",
+          "evidenceIds": [
+            "ev-wrapper"
+          ],
+          "nodeId": "stack"
+        },
+        {
+          "id": "wrapped-result-4",
+          "caption": "순회가 계속되는 동안 일반 훅 구현을 호출합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "순회가 계속되는 동안 일반 훅 구현을 호출합니다.",
+          "evidenceIds": [
+            "ev-first"
+          ],
+          "edgeId": "call-implementation"
+        },
+        {
+          "id": "wrapped-result-5",
+          "caption": "첫 결과 설정에서는 None이 아닌 결과로 일반 순회를 중단합니다.",
+          "branch": "alternate",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "첫 결과 설정에서는 None이 아닌 결과로 일반 순회를 중단합니다.",
+          "evidenceIds": [
+            "ev-first"
+          ],
+          "nodeId": "dispatch",
+          "condition": "firstresult이며 None이 아닌 결과"
+        },
+        {
+          "id": "wrapped-result-6",
+          "caption": "진입한 래퍼들을 역순으로 재개합니다. 결과는 이 과정에서 바뀔 수 있습니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "진입한 래퍼들을 역순으로 재개합니다. 결과는 이 과정에서 바뀔 수 있습니다.",
+          "evidenceIds": [
+            "ev-unwind"
+          ],
+          "edgeId": "resume-wrapper"
+        },
+        {
+          "id": "wrapped-result-7",
+          "caption": "복귀 후 남은 예외가 없으면 최종 결과를 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "복귀 후 남은 예외가 없으면 최종 결과를 반환합니다.",
+          "evidenceIds": [
+            "ev-unwind"
+          ],
+          "nodeId": "dispatch",
+          "condition": "래퍼 복귀 후 예외 없음"
+        }
+      ]
+    },
+    {
+      "id": "wrapped-error",
+      "title": "오류도 래퍼를 통해 복귀",
+      "kind": "error",
+      "steps": [
+        {
+          "id": "wrapped-error-1",
+          "caption": "구현 호출이나 인자 준비에서 난 예외를 저장합니다.",
+          "branch": "error",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "구현 호출이나 인자 준비에서 난 예외를 저장합니다.",
+          "evidenceIds": [
+            "ev-call"
+          ],
+          "nodeId": "dispatch",
+          "condition": "구현 순회 중 예외"
+        },
+        {
+          "id": "wrapped-error-2",
+          "caption": "이미 진입한 래퍼에 역순으로 예외를 전달합니다.",
+          "branch": "error",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "이미 진입한 래퍼에 역순으로 예외를 전달합니다.",
+          "evidenceIds": [
+            "ev-unwind"
+          ],
+          "edgeId": "resume-wrapper"
+        },
+        {
+          "id": "wrapped-error-3",
+          "caption": "래퍼가 종료값을 반환하면 결과가 바뀌고 예외가 해소될 수 있습니다.",
+          "branch": "alternate",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "래퍼가 종료값을 반환하면 결과가 바뀌고 예외가 해소될 수 있습니다.",
+          "evidenceIds": [
+            "ev-unwind"
+          ],
+          "nodeId": "dispatch",
+          "condition": "래퍼가 StopIteration으로 종료"
+        },
+        {
+          "id": "wrapped-error-4",
+          "caption": "마지막에 예외가 남으면 발생시키고, 없으면 변경된 결과를 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "마지막에 예외가 남으면 발생시키고, 없으면 변경된 결과를 반환합니다.",
+          "evidenceIds": [
+            "ev-unwind"
+          ],
+          "nodeId": "dispatch"
+        }
+      ]
+    }
+  ],
+  "stateTransitions": [
+    {
+      "id": "wrapper-pushed",
+      "subjectNodeId": "stack",
+      "from": "이 래퍼의 복귀 기록 없음",
+      "to": "이 래퍼의 복귀 기록 있음",
+      "trigger": "래퍼가 첫 yield까지 진입했을 때",
+      "plainText": "이 래퍼의 복귀 기록 없음에서 이 래퍼의 복귀 기록 있음로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "래퍼가 첫 yield까지 진입했을 때에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-wrapper"
+      ]
+    },
+    {
+      "id": "error-replaced",
+      "subjectNodeId": "dispatch",
+      "from": "처리 중 예외 있음",
+      "to": "래퍼 반환값과 예외 없음",
+      "trigger": "복귀 중 래퍼가 StopIteration으로 종료했을 때",
+      "plainText": "처리 중 예외 있음에서 래퍼 반환값과 예외 없음로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "복귀 중 래퍼가 StopIteration으로 종료했을 때에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-unwind"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "first-result",
+      "nodeIds": [
+        "dispatch"
+      ],
+      "condition": "firstresult가 참이고 구현 반환값이 None이 아님",
+      "outcome": "일반 구현 순회를 중단하지만 이미 진입한 래퍼의 복귀는 수행합니다.",
+      "plainText": "firstresult가 참이고 구현 반환값이 None이 아님이면 일반 구현 순회를 중단하지만 이미 진입한 래퍼의 복귀는 수행합니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 조건과 결과를 해당 소스 분기에서 확인했습니다.",
+      "evidenceIds": [
+        "ev-first",
+        "ev-unwind"
+      ]
+    },
+    {
+      "id": "wrapper-result",
+      "nodeIds": [
+        "stack"
+      ],
+      "condition": "저장된 래퍼를 복귀시킴",
+      "outcome": "예외가 있으면 throw로, 없으면 send로 전달합니다. 래퍼 종료값이 결과를 바꾸고 예외를 해소할 수 있습니다.",
+      "plainText": "저장된 래퍼를 복귀시킴이면 예외가 있으면 throw로, 없으면 send로 전달합니다. 래퍼 종료값이 결과를 바꾸고 예외를 해소할 수 있습니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 조건과 결과를 해당 소스 분기에서 확인했습니다.",
+      "evidenceIds": [
+        "ev-unwind"
+      ]
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-caller",
+      "kind": "code",
+      "file": "src/pluggy/_hooks.py",
+      "symbolOrKey": "HookCaller.__call__",
+      "startLine": 527,
+      "endLine": 542,
+      "anchorText": "    def __call__(self, **kwargs: object) -> Any:",
+      "contentHash": "a5c93af80ca482f10660a2c4c8368b73fb7a4a4307d1f9176f3e63b903d7188a",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-manager",
+      "kind": "code",
+      "file": "src/pluggy/_manager.py",
+      "symbolOrKey": "PluginManager._hookexec",
+      "startLine": 95,
+      "endLine": 108,
+      "anchorText": "            \"pluginmanage\"",
+      "contentHash": "f8c36f016ee4a55102c3083b154cd8d3a2dc5310051992e15f4a36609b8a16ed",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-call",
+      "kind": "code",
+      "file": "src/pluggy/_callers.py",
+      "symbolOrKey": "_multicall setup",
+      "startLine": 82,
+      "endLine": 132,
+      "anchorText": "def _multicall(",
+      "contentHash": "bcc9618b647069ed52a04b318bbaa93e4daef96e1fad746beb122e7fd95b3846",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-wrapper",
+      "kind": "code",
+      "file": "src/pluggy/_callers.py",
+      "symbolOrKey": "_multicall wrapper entry",
+      "startLine": 112,
+      "endLine": 124,
+      "anchorText": "            elif hook_impl.wrapper:",
+      "contentHash": "bcc9618b647069ed52a04b318bbaa93e4daef96e1fad746beb122e7fd95b3846",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-first",
+      "kind": "code",
+      "file": "src/pluggy/_callers.py",
+      "symbolOrKey": "_multicall firstresult",
+      "startLine": 125,
+      "endLine": 137,
+      "anchorText": "            else:",
+      "contentHash": "bcc9618b647069ed52a04b318bbaa93e4daef96e1fad746beb122e7fd95b3846",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-unwind",
+      "kind": "code",
+      "file": "src/pluggy/_callers.py",
+      "symbolOrKey": "_multicall teardown",
+      "startLine": 139,
+      "endLine": 174,
+      "anchorText": "        # run all wrapper post-yield blocks",
+      "contentHash": "bcc9618b647069ed52a04b318bbaa93e4daef96e1fad746beb122e7fd95b3846",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

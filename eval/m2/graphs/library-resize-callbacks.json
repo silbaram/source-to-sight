@@ -1,0 +1,507 @@
+{
+  "schemaVersion": "0.1.0",
+  "layer": "behavior",
+  "language": "ko",
+  "provenance": {
+    "kind": "source-traced",
+    "humanReviewed": false,
+    "description": "고정 소스를 읽어 작성한 M2 복합 동작 후보입니다. 대상 실행·독립 생성 평가·사람 검토는 하지 않았습니다."
+  },
+  "snapshot": {
+    "repository": "hashicorp/golang-lru",
+    "branch": null,
+    "commit": "9c13c57de0bedd6b3e21183b34072e417ffa69d1",
+    "workingTreeClean": true,
+    "generatedAt": "2026-09-06T13:24:54Z",
+    "skillVersion": "0.3.0",
+    "model": null
+  },
+  "subject": {
+    "id": "golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652",
+    "kind": "capability",
+    "title": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서",
+    "question": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서?",
+    "module": "golang-lru",
+    "targets": [
+      {
+        "label": "Cache.Resize + simplelru.LRU.Resize"
+      }
+    ],
+    "scope": {
+      "includes": [
+        "정상 생성된 캐시의 0 이상 크기 변경, 퇴출 반복과 잠금 해제 후 콜백",
+        "동기 사용자 콜백의 정상 반환 또는 panic"
+      ],
+      "excludes": [
+        "음수 크기, 내부 제거·할당 실패",
+        "콜백 내부와 별도 고루틴의 전체 실행 순서"
+      ]
+    }
+  },
+  "analysis": {
+    "status": "partial",
+    "profiles": [
+      "library-sdk",
+      "framework-plugin"
+    ],
+    "searched": [
+      "lru.go",
+      "simplelru/lru.go"
+    ],
+    "unresolved": [
+      "콜백 내부와 다른 고루틴의 실행 순서는 미확인입니다. 내부 실패에도 항상 잠금이 풀린다는 보장은 이 범위에 포함하지 않습니다."
+    ],
+    "nextAttempts": [
+      "호출 애플리케이션의 설정·구현과 해당 경계의 소스를 별도로 확인합니다."
+    ]
+  },
+  "summary": {
+    "title": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서",
+    "purpose": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서",
+    "inputs": [
+      "캐시와 0 이상 새 크기, 선택적 퇴출 콜백"
+    ],
+    "outputs": [
+      "변경된 용량·항목, 정상 경로의 퇴출 수 또는 콜백 panic"
+    ],
+    "limitations": [
+      "콜백 내부와 다른 고루틴의 실행 순서는 미확인입니다. 내부 실패에도 항상 잠금이 풀린다는 보장은 이 범위에 포함하지 않습니다."
+    ]
+  },
+  "links": {},
+  "regeneration": {
+    "subjectId": "golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652",
+    "question": "캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서?",
+    "language": "ko",
+    "command": "$code-flow 캐시 크기를 줄일 때 제거와 알림이 이루어지는 순서? | subject=golang-lru-cache-resize-simplelru-lru-resize-56aa45eb9652 | language=ko"
+  },
+  "nodes": [
+    {
+      "id": "resize",
+      "kind": "component",
+      "label": "크기 변경 요청",
+      "roleLabel": "이 범위의 역할",
+      "summary": "잠금을 잡고 내부 크기를 바꿉니다. 알림할 항목을 분리한 뒤 잠금을 풀고 사용자 콜백을 호출합니다.",
+      "codeName": "Cache.Resize",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "잠금을 잡고 내부 크기를 바꿉니다. 알림할 항목을 분리한 뒤 잠금을 풀고 사용자 콜백을 호출합니다.",
+      "evidenceIds": [
+        "ev-resize"
+      ]
+    },
+    {
+      "id": "inner",
+      "kind": "component",
+      "label": "필요한 만큼 제거",
+      "roleLabel": "이 범위의 역할",
+      "summary": "현재 항목 수와 새 크기의 차이가 양수이면 그만큼 가장 오래된 항목을 제거하고 새 크기를 저장합니다.",
+      "codeName": "simplelru.LRU.Resize",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "현재 항목 수와 새 크기의 차이가 양수이면 그만큼 가장 오래된 항목을 제거하고 새 크기를 저장합니다.",
+      "evidenceIds": [
+        "ev-inner"
+      ]
+    },
+    {
+      "id": "remove",
+      "kind": "component",
+      "label": "오래된 항목 삭제",
+      "roleLabel": "이 범위의 역할",
+      "summary": "목록과 키 조회에서 항목을 제거하고, 설정된 내부 퇴출 콜백을 호출합니다.",
+      "codeName": "removeOldest / removeElement",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "목록과 키 조회에서 항목을 제거하고, 설정된 내부 퇴출 콜백을 호출합니다.",
+      "evidenceIds": [
+        "ev-remove"
+      ]
+    },
+    {
+      "id": "buffer",
+      "kind": "state",
+      "label": "알림할 항목 보관",
+      "roleLabel": "이 범위의 역할",
+      "summary": "생성 시 연결한 내부 콜백이 키와 값을 모읍니다. 공개 Resize는 알림 목록을 분리하고 새 버퍼를 준비합니다.",
+      "codeName": "Cache.evictedKeys / evictedVals",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "생성 시 연결한 내부 콜백이 키와 값을 모읍니다. 공개 Resize는 알림 목록을 분리하고 새 버퍼를 준비합니다.",
+      "evidenceIds": [
+        "ev-setup",
+        "ev-resize"
+      ]
+    },
+    {
+      "id": "callback",
+      "kind": "boundary",
+      "label": "사용자에게 퇴출 알림",
+      "roleLabel": "동적 경계",
+      "summary": "콜백이 있고 실제 퇴출 수가 양수이면 잠금 밖에서 수집한 항목들을 알립니다. 콜백의 부작용은 미확인입니다.",
+      "codeName": "onEvictedCB",
+      "importance": "core",
+      "contextOnly": false,
+      "actions": [],
+      "confidence": "inferred",
+      "supportStatus": "uncertain",
+      "verificationNote": "콜백이 있고 실제 퇴출 수가 양수이면 잠금 밖에서 수집한 항목들을 알립니다. 콜백의 부작용은 미확인입니다.",
+      "evidenceIds": [
+        "ev-resize"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "resize-inner",
+      "from": "resize",
+      "to": "inner",
+      "label": "잠금 안에서 크기 변경",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "잠금 안에서 크기 변경에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-resize"
+      ]
+    },
+    {
+      "id": "remove-loop",
+      "from": "inner",
+      "to": "remove",
+      "label": "초과한 항목 수만큼 제거",
+      "type": "invokes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "초과한 항목 수만큼 제거에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-inner"
+      ]
+    },
+    {
+      "id": "buffer-removed",
+      "from": "remove",
+      "to": "buffer",
+      "label": "내부 콜백으로 키와 값 보관",
+      "type": "writes",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "내부 콜백으로 키와 값 보관에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-setup",
+        "ev-remove"
+      ]
+    },
+    {
+      "id": "notify-removed",
+      "from": "resize",
+      "to": "callback",
+      "label": "잠금 해제 후 조건부 알림",
+      "type": "dispatches",
+      "derivation": "direct-code",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "잠금 해제 후 조건부 알림에 해당하는 호출·조건·대입을 확인했습니다.",
+      "evidenceIds": [
+        "ev-resize"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "shrink-notify",
+      "title": "항목 제거 후 잠금 밖에서 알림",
+      "kind": "typical",
+      "steps": [
+        {
+          "id": "shrink-notify-1",
+          "caption": "잠금을 잡고 내부 Resize를 호출합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "잠금을 잡고 내부 Resize를 호출합니다.",
+          "evidenceIds": [
+            "ev-resize"
+          ],
+          "nodeId": "resize",
+          "condition": "정상 생성된 캐시, 0 이상인 새 크기"
+        },
+        {
+          "id": "shrink-notify-2",
+          "caption": "현재 항목 수가 새 크기보다 많으면 차이만큼 오래된 항목을 제거합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "현재 항목 수가 새 크기보다 많으면 차이만큼 오래된 항목을 제거합니다.",
+          "evidenceIds": [
+            "ev-inner"
+          ],
+          "edgeId": "remove-loop"
+        },
+        {
+          "id": "shrink-notify-3",
+          "caption": "내부 콜백이 제거한 항목을 수집합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "내부 콜백이 제거한 항목을 수집합니다.",
+          "evidenceIds": [
+            "ev-setup",
+            "ev-remove"
+          ],
+          "nodeId": "buffer"
+        },
+        {
+          "id": "shrink-notify-4",
+          "caption": "알림 목록을 분리하고 새 버퍼를 준비한 뒤 잠금을 해제합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "알림 목록을 분리하고 새 버퍼를 준비한 뒤 잠금을 해제합니다.",
+          "evidenceIds": [
+            "ev-resize"
+          ],
+          "nodeId": "resize"
+        },
+        {
+          "id": "shrink-notify-5",
+          "caption": "잠금 밖에서 수집한 항목을 순서대로 알립니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "잠금 밖에서 수집한 항목을 순서대로 알립니다.",
+          "evidenceIds": [
+            "ev-resize"
+          ],
+          "edgeId": "notify-removed",
+          "condition": "콜백 있음, 퇴출 수 양수",
+          "execution": "sequential"
+        },
+        {
+          "id": "shrink-notify-6",
+          "caption": "콜백이 정상 반환하면 퇴출 수를 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "콜백이 정상 반환하면 퇴출 수를 반환합니다.",
+          "evidenceIds": [
+            "ev-resize"
+          ],
+          "nodeId": "resize"
+        }
+      ]
+    },
+    {
+      "id": "grow-without-eviction",
+      "title": "제거할 항목이 없는 크기 변경",
+      "kind": "alternate",
+      "steps": [
+        {
+          "id": "grow-without-eviction-1",
+          "caption": "새 크기가 현재 항목 수 이상이면 제거 반복 없이 크기를 저장합니다.",
+          "branch": "alternate",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "새 크기가 현재 항목 수 이상이면 제거 반복 없이 크기를 저장합니다.",
+          "evidenceIds": [
+            "ev-inner"
+          ],
+          "nodeId": "inner",
+          "condition": "새 크기 ≥ 현재 항목 수"
+        },
+        {
+          "id": "grow-without-eviction-2",
+          "caption": "잠금을 풀고 퇴출 알림 없이 0을 반환합니다.",
+          "branch": "stop",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "잠금을 풀고 퇴출 알림 없이 0을 반환합니다.",
+          "evidenceIds": [
+            "ev-resize",
+            "ev-inner"
+          ],
+          "nodeId": "resize",
+          "returns": "퇴출 수 0"
+        }
+      ]
+    },
+    {
+      "id": "callback-failure",
+      "title": "콜백이 실패한 뒤의 상태",
+      "kind": "error",
+      "steps": [
+        {
+          "id": "callback-failure-1",
+          "caption": "이미 잠금을 푼 상태에서 사용자 콜백을 호출합니다.",
+          "branch": "normal",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "이미 잠금을 푼 상태에서 사용자 콜백을 호출합니다.",
+          "evidenceIds": [
+            "ev-resize"
+          ],
+          "edgeId": "notify-removed"
+        },
+        {
+          "id": "callback-failure-2",
+          "caption": "콜백 panic이 전파되면 이후 알림은 중단되고 이미 수행한 변경은 남습니다.",
+          "branch": "error",
+          "confidence": "exact",
+          "supportStatus": "supported",
+          "verificationNote": "콜백 panic이 전파되면 이후 알림은 중단되고 이미 수행한 변경은 남습니다.",
+          "evidenceIds": [
+            "ev-resize"
+          ],
+          "nodeId": "resize",
+          "condition": "동기 콜백의 panic이 전파됨"
+        }
+      ]
+    }
+  ],
+  "stateTransitions": [
+    {
+      "id": "buffer-detached",
+      "subjectNodeId": "buffer",
+      "from": "공유 버퍼에 퇴출 항목 있음",
+      "to": "이전 항목은 지역 목록, 공유 버퍼는 새로 준비됨",
+      "trigger": "콜백이 있고 내부 Resize가 양수 퇴출 수를 반환했을 때",
+      "plainText": "공유 버퍼에 퇴출 항목 있음에서 이전 항목은 지역 목록, 공유 버퍼는 새로 준비됨로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "콜백이 있고 내부 Resize가 양수 퇴출 수를 반환했을 때에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-setup",
+        "ev-resize"
+      ]
+    },
+    {
+      "id": "size-updated",
+      "subjectNodeId": "inner",
+      "from": "이전 용량",
+      "to": "요청한 새 용량",
+      "trigger": "필요한 제거 반복을 마친 뒤",
+      "plainText": "이전 용량에서 요청한 새 용량로 바뀝니다.",
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "필요한 제거 반복을 마친 뒤에 해당하는 상태 쓰기를 확인했습니다.",
+      "evidenceIds": [
+        "ev-inner"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "remove-count",
+      "nodeIds": [
+        "inner"
+      ],
+      "condition": "새 크기가 0 이상",
+      "outcome": "제거 횟수는 현재 항목 수에서 새 크기를 뺀 값과 0 중 큰 값입니다. 현재 항목 수 이상으로 늘리면 제거하지 않습니다.",
+      "plainText": "새 크기가 0 이상이면 제거 횟수는 현재 항목 수에서 새 크기를 뺀 값과 0 중 큰 값입니다. 현재 항목 수 이상으로 늘리면 제거하지 않습니다.",
+      "numeric": true,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 조건과 결과를 해당 소스 분기에서 확인했습니다.",
+      "evidenceIds": [
+        "ev-inner"
+      ]
+    },
+    {
+      "id": "callback-order",
+      "nodeIds": [
+        "resize"
+      ],
+      "condition": "사용자 콜백이 있고 퇴출 수가 양수",
+      "outcome": "알림 목록 분리와 새 버퍼 준비, 잠금 해제 뒤 콜백을 호출합니다.",
+      "plainText": "사용자 콜백이 있고 퇴출 수가 양수이면 알림 목록 분리와 새 버퍼 준비, 잠금 해제 뒤 콜백을 호출합니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 조건과 결과를 해당 소스 분기에서 확인했습니다.",
+      "evidenceIds": [
+        "ev-resize"
+      ]
+    },
+    {
+      "id": "callback-panic",
+      "nodeIds": [
+        "callback"
+      ],
+      "condition": "동기 콜백에서 panic이 전파됨",
+      "outcome": "이 함수는 나머지 알림을 계속하지 않습니다. 이미 바꾼 캐시 크기와 삭제를 되돌리는 처리는 없습니다.",
+      "plainText": "동기 콜백에서 panic이 전파됨이면 이 함수는 나머지 알림을 계속하지 않습니다. 이미 바꾼 캐시 크기와 삭제를 되돌리는 처리는 없습니다.",
+      "numeric": false,
+      "confidence": "exact",
+      "supportStatus": "supported",
+      "verificationNote": "표시한 조건과 결과를 해당 소스 분기에서 확인했습니다.",
+      "evidenceIds": [
+        "ev-resize"
+      ]
+    }
+  ],
+  "regions": [],
+  "subjects": [],
+  "evidence": [
+    {
+      "id": "ev-setup",
+      "kind": "code",
+      "file": "lru.go",
+      "symbolOrKey": "NewWithEvict",
+      "startLine": 33,
+      "endLine": 55,
+      "anchorText": "func NewWithEvict[K comparable, V any](size int, onEvicted func(key K, value V)) (c *Cache[K, V], err error) {",
+      "contentHash": "529954c22649f0ecac5de6799af5316a91efde4c60e618582815ab3934238879",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-resize",
+      "kind": "code",
+      "file": "lru.go",
+      "symbolOrKey": "Cache.Resize",
+      "startLine": 185,
+      "endLine": 201,
+      "anchorText": "func (c *Cache[K, V]) Resize(size int) (evicted int) {",
+      "contentHash": "529954c22649f0ecac5de6799af5316a91efde4c60e618582815ab3934238879",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-inner",
+      "kind": "code",
+      "file": "simplelru/lru.go",
+      "symbolOrKey": "LRU.Resize",
+      "startLine": 156,
+      "endLine": 166,
+      "anchorText": "func (c *LRU[K, V]) Resize(size int) (evicted int) {",
+      "contentHash": "24745738bd3e7fe49d30be912468cd1feaba5a0536e92ee75b7ce4c87ef82692",
+      "locationStatus": "passed"
+    },
+    {
+      "id": "ev-remove",
+      "kind": "code",
+      "file": "simplelru/lru.go",
+      "symbolOrKey": "removeOldest / removeElement",
+      "startLine": 169,
+      "endLine": 182,
+      "anchorText": "func (c *LRU[K, V]) removeOldest() {",
+      "contentHash": "24745738bd3e7fe49d30be912468cd1feaba5a0536e92ee75b7ce4c87ef82692",
+      "locationStatus": "passed"
+    }
+  ],
+  "warnings": [],
+  "sources": []
+}

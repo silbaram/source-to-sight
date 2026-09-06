@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "sources": "m1/sources.json",
+  "cases": [
+    {
+      "id": "utility-strip",
+      "source": "strip-ansi",
+      "profile": "cli-utility",
+      "variant": "typical",
+      "sourceLanguage": "JavaScript",
+      "origin": "m1-recorded-reading",
+      "candidate": "m15/graphs/utility-strip.json",
+      "expectation": "m15/expectations/utility-strip.json"
+    },
+    {
+      "id": "plugin-hooks",
+      "source": "pluggy",
+      "profile": "framework-plugin",
+      "variant": "typical",
+      "sourceLanguage": "Python",
+      "origin": "m1-recorded-reading",
+      "candidate": "m15/graphs/plugin-hooks.json",
+      "expectation": "m15/expectations/plugin-hooks.json"
+    },
+    {
+      "id": "agent-tool-loop",
+      "source": "smolagents",
+      "profile": "ai-agent",
+      "variant": "typical",
+      "sourceLanguage": "Python",
+      "origin": "m1-recorded-reading",
+      "candidate": "m15/graphs/agent-tool-loop.json",
+      "expectation": "m15/expectations/agent-tool-loop.json"
+    },
+    {
+      "id": "library-eviction",
+      "source": "golang-lru",
+      "profile": "library-sdk",
+      "variant": "typical",
+      "sourceLanguage": "Go",
+      "origin": "m1-recorded-reading",
+      "candidate": "m15/graphs/library-eviction.json",
+      "expectation": "m15/expectations/library-eviction.json"
+    },
+    {
+      "id": "web-dispatch",
+      "source": "httprouter",
+      "profile": "web",
+      "variant": "typical",
+      "sourceLanguage": "Go",
+      "origin": "m1-recorded-reading",
+      "candidate": "m15/graphs/web-dispatch.json",
+      "expectation": "m15/expectations/web-dispatch.json"
+    },
+    {
+      "id": "event-receivers",
+      "source": "blinker",
+      "profile": "data-event",
+      "variant": "typical",
+      "sourceLanguage": "Python",
+      "origin": "m1-recorded-reading",
+      "candidate": "m15/graphs/event-receivers.json",
+      "expectation": "m15/expectations/event-receivers.json"
+    },
+    {
+      "id": "utility-invalid-input",
+      "source": "strip-ansi",
+      "profile": "cli-utility",
+      "variant": "boundary",
+      "sourceLanguage": "JavaScript",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/utility-invalid-input.json",
+      "expectation": "m15/expectations/utility-invalid-input.json"
+    },
+    {
+      "id": "utility-plain-text",
+      "source": "strip-ansi",
+      "profile": "cli-utility",
+      "variant": "minimal",
+      "sourceLanguage": "JavaScript",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/utility-plain-text.json",
+      "expectation": "m15/expectations/utility-plain-text.json"
+    },
+    {
+      "id": "plugin-blocked-registration",
+      "source": "pluggy",
+      "profile": "framework-plugin",
+      "variant": "boundary",
+      "sourceLanguage": "Python",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/plugin-blocked-registration.json",
+      "expectation": "m15/expectations/plugin-blocked-registration.json"
+    },
+    {
+      "id": "plugin-unblock",
+      "source": "pluggy",
+      "profile": "framework-plugin",
+      "variant": "minimal",
+      "sourceLanguage": "Python",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/plugin-unblock.json",
+      "expectation": "m15/expectations/plugin-unblock.json"
+    },
+    {
+      "id": "library-invalid-capacity",
+      "source": "golang-lru",
+      "profile": "library-sdk",
+      "variant": "boundary",
+      "sourceLanguage": "Go",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/library-invalid-capacity.json",
+      "expectation": "m15/expectations/library-invalid-capacity.json"
+    },
+    {
+      "id": "library-peek",
+      "source": "golang-lru",
+      "profile": "library-sdk",
+      "variant": "minimal",
+      "sourceLanguage": "Go",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/library-peek.json",
+      "expectation": "m15/expectations/library-peek.json"
+    },
+    {
+      "id": "web-invalid-registration",
+      "source": "httprouter",
+      "profile": "web",
+      "variant": "boundary",
+      "sourceLanguage": "Go",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/web-invalid-registration.json",
+      "expectation": "m15/expectations/web-invalid-registration.json"
+    },
+    {
+      "id": "web-lookup",
+      "source": "httprouter",
+      "profile": "web",
+      "variant": "minimal",
+      "sourceLanguage": "Go",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/web-lookup.json",
+      "expectation": "m15/expectations/web-lookup.json"
+    },
+    {
+      "id": "agent-unknown-tool",
+      "source": "smolagents",
+      "profile": "ai-agent",
+      "variant": "boundary",
+      "sourceLanguage": "Python",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/agent-unknown-tool.json",
+      "expectation": "m15/expectations/agent-unknown-tool.json"
+    },
+    {
+      "id": "agent-max-steps",
+      "source": "smolagents",
+      "profile": "ai-agent",
+      "variant": "dynamic",
+      "sourceLanguage": "Python",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/agent-max-steps.json",
+      "expectation": "m15/expectations/agent-max-steps.json"
+    },
+    {
+      "id": "event-muted",
+      "source": "blinker",
+      "profile": "data-event",
+      "variant": "boundary",
+      "sourceLanguage": "Python",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/event-muted.json",
+      "expectation": "m15/expectations/event-muted.json"
+    },
+    {
+      "id": "event-receiver-check",
+      "source": "blinker",
+      "profile": "data-event",
+      "variant": "minimal",
+      "sourceLanguage": "Python",
+      "origin": "new-source-reading",
+      "candidate": "m15/graphs/event-receiver-check.json",
+      "expectation": "m15/expectations/event-receiver-check.json"
+    }
+  ]
+}

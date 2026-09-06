@@ -2,6 +2,8 @@
 
 Find the exported API and separate it from similarly named internal helpers. Read construction, ownership, resource lifetime, returns/errors, and allowed usage sequence where relevant. An SDK's transport boundary does not make every library a web application.
 
+For callbacks during mutation or resizing, trace buffer ownership and lock release before the external callback. Check which updates remain if a callback raises, and do not infer rollback or unconditional release from the public API's thread-safe description.
+
 For wrappers, follow the delegation and identify what the wrapper adds: locking, adaptation, retries, callbacks, or error conversion. Do not collapse a wrapper's behavior into the underlying function and lose its contract.
 
 Show independent APIs without imposing a sequence. For a lifecycle, verify acquisition, use, and release paths, including early errors. For concurrency, inspect the actual lock and callback boundaries before claiming atomicity or callback ordering.

@@ -14,22 +14,28 @@ import evaluate as ev
 
 
 def reference(identifier):
-    return ev.read(ROOT / "eval/m15/expectations" / f"{identifier}.json")
+    case = next(c for c in ev.read(ROOT / "eval/cases.json")["cases"] if c["id"] == identifier)
+    return ev.read(ROOT / "eval" / case["expectation"])
 
 
 def rendered(identifier):
     """Supply display fields for matcher tests; source rechecking has separate integration tests."""
-    g = ev.read(ROOT / "eval/m15/graphs" / f"{identifier}.json")
+    case = next(c for c in ev.read(ROOT / "eval/cases.json")["cases"] if c["id"] == identifier)
+    g = ev.read(ROOT / "eval" / case["candidate"])
     for item in ev.s2s.claims(g):
         item["displayStatus"] = "context" if item.get("contextOnly") else "uncertain" if item["supportStatus"] == "uncertain" else "confirmed"
     return g
 
 
 class EvaluationTests(unittest.TestCase):
-    def test_manifest_covers_eighteen_cases_six_profiles_three_languages(self):
+    def test_manifest_covers_twenty_four_cases_and_preserves_original_eighteen(self):
         suite, sources = ev.load_suite(ROOT / "eval/cases.json")
-        self.assertEqual(len(suite["cases"]), 18)
+        self.assertEqual(len(suite["cases"]), 24)
         self.assertEqual(len(sources), 6)
+        legacy, _ = ev.load_suite(ROOT / "eval/cases-m15.json")
+        self.assertEqual(suite["cases"][:18], legacy["cases"])
+        prior = ev.read(ROOT / "eval/runs/2026-09-06-flow-animation.json")
+        self.assertEqual(ev.digest(legacy), prior["manifestHash"])
         for c in suite["cases"]:
             self.assertEqual(ev.check_graph(rendered(c["id"]), reference(c["id"]))["errors"], [])
 

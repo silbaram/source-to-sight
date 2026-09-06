@@ -20,6 +20,7 @@ import s2s
 VERSION = 1
 AXES = ("scope", "structure", "semantics", "rules", "comprehension", "genericity")
 VARIANTS = ({"typical", "boundary", "minimal"}, {"typical", "boundary", "dynamic"})
+VARIANTS = (*VARIANTS, *(v | {"complex"} for v in VARIANTS))
 
 
 def read(path):
@@ -75,8 +76,9 @@ def load_suite(path):
         validate_reference(reference, identifier)
         if case["profile"] not in reference["profiles"]:
             raise ValueError("Case profile missing from reference")
-    if set(profiles) != set(author.PROFILES) or any(len(v) != 3 or set(v) not in VARIANTS for v in profiles.values()):
-        raise ValueError("Suite needs each of six profiles × typical/boundary/minimal-or-dynamic")
+    if (set(profiles) != set(author.PROFILES) or len({len(v) for v in profiles.values()}) != 1
+            or any(len(v) != len(set(v)) or set(v) not in VARIANTS for v in profiles.values())):
+        raise ValueError("Suite needs six profiles × typical/boundary/minimal-or-dynamic, optionally one complex case each")
     if len({c["source"] for c in suite["cases"]}) < 6 or len({c["sourceLanguage"] for c in suite["cases"]}) < 3:
         raise ValueError("Suite needs six source repositories and three languages")
     return suite, sources
@@ -110,6 +112,81 @@ def validate_reference(ref, identifier):
     for field in ("requiredFacts", "forbiddenClaims"):
         if not ref[field] or any(not isinstance(t, str) or not t.strip() for t in ref[field]):
             raise ValueError(f"Reference needs nonempty {field}")
+    behavior_keys = set()
+    for item in ref.get("behaviors", []):
+        if item["key"] in behavior_keys or item["role"] not in keys:
+            raise ValueError("Duplicate behavior key or unknown role")
+        behavior_keys.add(item["key"])
+        if item["kind"] not in {"step", "rule", "transition"} or not s2s.relative_path(item["file"]) or type(item["line"]) is not int or item["line"] < 1:
+            raise ValueError("Invalid behavior location/kind")
+        if item["status"] not in {"confirmed", "uncertain", "unverified"}:
+            raise ValueError("Invalid behavior status")
+        for field, allowed in (("branch", {"normal", "alternate", "error", "retry", "stop"}),
+                               ("execution", {"sequential", "parallel", "unordered"}),
+                               ("scenarioKind", {"typical", "alternate", "error", "retry", "lifecycle"})):
+            if field in item and (item["kind"] != "step" or item[field] not in allowed):
+                raise ValueError(f"Invalid behavior {field}")
+        if "numeric" in item and (item["kind"] != "rule" or type(item["numeric"]) is not bool):
+            raise ValueError("Invalid behavior numeric flag")
+        if "condition" in item and (item["kind"] != "step" or type(item["condition"]) is not bool):
+            raise ValueError("Invalid behavior condition flag")
+    path_keys = set()
+    for path in ref.get("paths", []):
+        if path["key"] in path_keys or not path["roles"] or any(role not in keys for role in path["roles"]):
+            raise ValueError("Invalid path roles or duplicate key")
+        path_keys.add(path["key"])
+        if path["kind"] not in {"typical", "alternate", "error", "retry", "lifecycle"}:
+            raise ValueError("Invalid path kind")
+
+
+def check_behaviors(graph, ref, mapped):
+    """Match source locations and execution metadata; prose remains a human check."""
+    evidence = {e["id"]: e for e in graph["evidence"]}
+    edges = {e["id"]: e for e in graph["edges"]}
+    def target(step):
+        return step.get("nodeId") or edges.get(step.get("edgeId"), {}).get("to")
+    items = [("rule", r, r["nodeIds"], None) for r in graph["rules"]]
+    items += [("transition", r, [r["subjectNodeId"]], None) for r in graph["stateTransitions"]]
+    items += [("step", step, [target(step)], scenario["kind"])
+              for scenario in graph["scenarios"] for step in scenario.get("steps", [])]
+    errors, critical, missing = [], [], []
+    for expected in ref.get("behaviors", []):
+        found = []
+        for kind, item, owners, scenario_kind in items:
+            if kind != expected["kind"] or mapped.get(expected["role"]) is None or mapped[expected["role"]] not in owners:
+                continue
+            if any(item.get(k) != expected[k] for k in ("branch", "execution", "numeric") if k in expected):
+                continue
+            if "scenarioKind" in expected and expected["scenarioKind"] != scenario_kind:
+                continue
+            if "condition" in expected and bool(item.get("condition", "").strip()) != expected["condition"]:
+                continue
+            if any(evidence[e]["file"] == expected["file"] and evidence[e]["startLine"] <= expected["line"] <= evidence[e]["endLine"]
+                   for e in item["evidenceIds"]):
+                found.append(item)
+        if not any(item["displayStatus"] == expected["status"] for item in found):
+            missing.append(expected["key"])
+            errors.append("behavior-missing:"+expected["key"])
+        if expected["status"] != "confirmed" and any(item["displayStatus"] == "confirmed" for item in found):
+            critical.append("behavior-certainty:"+expected["key"])
+    missing_paths = []
+    for expected in ref.get("paths", []):
+        wanted = [mapped.get(role) for role in expected["roles"]]
+        matches = False
+        for scenario in graph["scenarios"]:
+            if scenario.get("kind") != expected["kind"] or None in wanted:
+                continue
+            # Ordered subsequence: extra explanatory steps are allowed, reversals are not.
+            remaining = iter(target(step) for step in scenario["steps"])
+            if all(any(actual == role for actual in remaining) for role in wanted):
+                matches = True
+                break
+        if not matches:
+            missing_paths.append(expected["key"])
+            errors.append("path-missing:"+expected["key"])
+    return dict(errors=errors, criticalErrors=critical, missingBehaviors=missing, missingPaths=missing_paths,
+                requiredBehaviors=len(ref.get("behaviors", [])), matchedBehaviors=len(ref.get("behaviors", []))-len(missing),
+                requiredPaths=len(ref.get("paths", [])), matchedPaths=len(ref.get("paths", []))-len(missing_paths))
 
 
 def match_roles(graph, ref):
@@ -183,7 +260,10 @@ def check_graph(graph, ref):
         errors.append("invented-ordered-scenario")
     if any(e["locationStatus"] != "passed" for e in graph["evidence"]):
         errors.append("evidence-location-failed")
-    return dict(errors=errors, criticalErrors=critical, missingNodes=missing_nodes, missingEdges=missing_edges,
+    behavior = check_behaviors(graph, ref, mapped)
+    errors += behavior.pop("errors")
+    critical += behavior.pop("criticalErrors")
+    return dict(**behavior, errors=errors, criticalErrors=critical, missingNodes=missing_nodes, missingEdges=missing_edges,
                 requiredNodes=len(ref["nodes"]), matchedNodes=len(ref["nodes"])-len(missing_nodes),
                 requiredEdges=len(ref["edges"]), matchedEdges=len(ref["edges"])-len(missing_edges),
                 additionalNodes=[n["id"] for n in graph["nodes"] if n["id"] not in mapped.values()],
@@ -270,6 +350,10 @@ def evaluate_case(case, source, ref, candidate_path, source_root, output, finger
                   errors=[], criticalErrors=[], reviewStatus="pending",
                   metrics=dict(generationSeconds=None, inputTokens=None, outputTokens=None, costUSD=None, model=None),
                   requiredNodes=len(ref["nodes"]), matchedNodes=0, requiredEdges=len(ref["edges"]), matchedEdges=0,
+                  requiredBehaviors=len(ref.get("behaviors", [])), matchedBehaviors=0,
+                  requiredPaths=len(ref.get("paths", [])), matchedPaths=0,
+                  missingBehaviors=[b["key"] for b in ref.get("behaviors", [])],
+                  missingPaths=[p["key"] for p in ref.get("paths", [])],
                   missingNodes=[n["key"] for n in ref["nodes"]],
                   missingEdges=[f"{e['fromRole']}:{e['type']}:{e['toRole']}" for e in ref["edges"]])
     try:
@@ -335,7 +419,7 @@ def summarize(results):
 
 
 def markdown(report):
-    lines = ["# M1.5 evaluation run", "", f"- Run: `{report['createdAt']}`",
+    lines = ["# Source-backed evaluation run", "", f"- Run: `{report['createdAt']}`",
              f"- Mode: `{report['mode']}`; this is candidate replay, not independent model generation.",
              f"- Gate: **{report['status']}**; coverage: {len(report['results'])}/{report['suiteSize']}",
              f"- Engine: `{report['engineHash']}`; repository: `{report['repositorySnapshot']['commit']}`; clean: `{report['repositorySnapshot']['workingTreeClean']}`",
@@ -346,12 +430,13 @@ def markdown(report):
     for profile, s in report["profiles"].items():
         pct = lambda v: "N/A" if v is None else f"{v:.0%}"
         lines.append(f"| {profile} | {s['cases']} | {s['autoPassed']} | {s['accepted']} | {pct(s['nodeRecall'])} | {pct(s['edgeRecall'])} | {s['criticalErrors']} |")
-    lines += ["", "| Case | Auto | Final | Analysis | Evidence files/lines | Review | Errors |",
-              "| --- | --- | --- | --- | --- | --- | --- |"]
+    lines += ["", "| Case | Auto | Final | Analysis | Behaviors / paths matched | Evidence files/lines | Review | Errors |",
+              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for r in report["results"]:
         error = "; ".join(r["errors"] + r["criticalErrors"]).replace("|", "\\|").replace("\n", " ") or "—"
         m = r["metrics"]
-        lines.append(f"| {r['id']} | {r['autoStatus']} | {r['status']} | {r.get('analysisStatus', '—')} | {m.get('evidenceFiles', '—')}/{m.get('evidenceLines', '—')} | {r['reviewStatus']} | {error} |")
+        behavior = f"{r.get('matchedBehaviors', 0)}/{r.get('requiredBehaviors', 0)} · {r.get('matchedPaths', 0)}/{r.get('requiredPaths', 0)}"
+        lines.append(f"| {r['id']} | {r['autoStatus']} | {r['status']} | {r.get('analysisStatus', '—')} | {behavior} | {m.get('evidenceFiles', '—')}/{m.get('evidenceLines', '—')} | {r['reviewStatus']} | {error} |")
     return "\n".join(lines) + "\n"
 
 
@@ -396,7 +481,7 @@ def run(args):
     return 1 if status == "failed" or (args.strict and status != "passed") else 0
 
 
-def compare(before, after):
+def compare(before, after, allow_suite_extension=False):
     """Report per-case regressions; changed reference/source criteria are incomparable."""
     if before["version"] != VERSION or after["version"] != VERSION:
         raise ValueError("Unsupported report version")
@@ -404,7 +489,10 @@ def compare(before, after):
         raise ValueError("Duplicate report case IDs")
     regressions, incomparable = [], []
     old, new = ({r["id"]: r for r in report["results"]} for report in (before, after))
-    if before["manifestHash"] != after["manifestHash"] or before["sources"] != after["sources"]:
+    extension = (allow_suite_extension and old.keys() < new.keys()
+                 and after.get("suiteSize") == len(new) and before.get("suiteSize") == len(old)
+                 and before["sources"] == after["sources"])
+    if (before["manifestHash"] != after["manifestHash"] and not extension) or before["sources"] != after["sources"]:
         incomparable.append("suite-or-source-changed")
     for identifier, b in old.items():
         a = new.get(identifier)
@@ -423,7 +511,7 @@ def compare(before, after):
             regressions.append(f"{identifier}:automatic-check-regressed")
         if b["status"] == "passed" and a["status"] != "passed":
             regressions.append(f"{identifier}:accepted-result-lost")
-        for kind in ("Nodes", "Edges"):
+        for kind in ("Nodes", "Edges", "Behaviors", "Paths"):
             if a.get("matched"+kind, 0) < b.get("matched"+kind, 0):
                 regressions.append(f"{identifier}:required-{kind.lower()}-lost")
         if set(a["errors"]) - set(b["errors"]):
@@ -433,6 +521,7 @@ def compare(before, after):
             regressions.append(f"{identifier}:added-case-failed")
     return dict(status="regressed" if regressions else "incomparable" if incomparable else "no-regression",
                 regressions=regressions, incomparable=incomparable,
+                comparedCases=len(old.keys() & new.keys()), addedCases=sorted(new.keys()-old.keys()),
                 note="No regression is not human acceptance; inspect each run's gate and profile results.")
 
 
@@ -446,15 +535,16 @@ def main(argv=None):
     execute.add_argument("--reviews", help="Directory containing digest-bound <case-id>.json human reviews")
     execute.add_argument("--output", required=True, help="New output directory; existing directories are preserved")
     execute.add_argument("--case", action="append")
-    execute.add_argument("--strict", action="store_true", help="Fail unless all 18 cases pass automatic and human gates")
+    execute.add_argument("--strict", action="store_true", help="Fail unless every suite case passes automatic and human gates")
     diff = commands.add_parser("compare")
     diff.add_argument("before")
     diff.add_argument("after")
+    diff.add_argument("--allow-suite-extension", action="store_true", help="Compare an expanded complete suite while retaining every prior source/reference/classification")
     args = parser.parse_args(argv)
     try:
         if args.command == "run":
             return run(args)
-        result = compare(read(args.before), read(args.after))
+        result = compare(read(args.before), read(args.after), args.allow_suite_extension)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result["status"] == "no-regression" else 1
     except (OSError, ValueError, KeyError, TypeError) as exc:

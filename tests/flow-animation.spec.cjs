@@ -3,13 +3,15 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const {spawnSync}=require('node:child_process');
+const {settleCamera,reachStep}=require('./playback-clock.cjs');
 const root=path.resolve(__dirname,'..');
 const url=(folder,name)=>pathToFileURL(path.join(root,'build',folder,name+'.html')).href;
 
 test.beforeEach(async({context,page})=>{
   await context.setOffline(true);
   await page.emulateMedia({reducedMotion:'no-preference'});
-  await page.clock.install();
+  await page.clock.install({time:new Date('2026-01-01T00:00:00Z')});
+  await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
 });
 
 function variant(info,change){
@@ -32,6 +34,7 @@ async function start(page,target=url('examples','agent-run')){
   await page.locator('#workflow').click();
   await expect(page.locator('.flow-token')).toHaveCount(0);
   await page.locator('#play').click();
+  await settleCamera(page);
 }
 
 async function tokenProgress(page){
@@ -83,13 +86,14 @@ test('playback moves one marker along the actual source-to-target route and paus
 test('node captions animate only an existing unique forward connection',async({page})=>{
   await start(page,url('m1','web-dispatch'));
   await expect(page.locator('.flow-token')).toHaveCount(0); // registration entry
-  await page.clock.runFor(1500);
+  await reachStep(page,2,4);
   await expect(page.locator('.flow-token')).toHaveCount(0); // no register → serve call
-  await page.clock.runFor(1700);
+  await reachStep(page,3,4);
+  await page.clock.runFor(200);
   const token=await tokenProgress(page);
   expect(token.edge).toBe('find-route');
   await expect(page.locator('#flow-transfer')).toContainText('메서드별 경로 트리');
-  await page.clock.runFor(1400);
+  await reachStep(page,4,4);
   await expect(page.locator('.flow-token')).toHaveCount(0); // no invented tree → serve return
   await expect(page.locator('#flow-transfer')).toBeHidden();
 });
@@ -100,7 +104,7 @@ test('registration and uncertain relationships retain static evidence styling',a
   await expect(page.locator('.flow-token')).toHaveCount(0);
   await expect(page.locator('.edge[data-id=register-hook]')).toHaveClass(/active/);
   await expect(page.locator('#flow-transfer')).toBeVisible();
-  await page.clock.runFor(5900);
+  await reachStep(page,5,5);
   await expect(page.locator('#step-count')).toHaveText('05 / 05');
   await expect(page.locator('.flow-token')).toHaveCount(0);
   await expect(page.locator('#flow-transfer .pill')).toHaveClass(/uncertain/);
@@ -116,10 +120,11 @@ test('ambiguous edges and unchecked step captions do not acquire motion',async({
     steps[2].supportStatus='uncertain';steps[2].confidence='inferred';
   });
   await start(page,target);
-  await page.clock.runFor(1700);
+  await reachStep(page,2,6);
+  await page.clock.runFor(200);
   await expect(page.locator('.flow-token')).toHaveCount(0);
   await expect(page.locator('#flow-transfer')).toBeHidden();
-  await page.clock.runFor(1500);
+  await reachStep(page,3,6);
   await expect(page.locator('.edge[data-id=step-model]')).toHaveClass(/active/);
   await expect(page.locator('.flow-token')).toHaveCount(0);
   await expect(page.locator('#caption .pill')).toHaveClass(/uncertain/);
@@ -137,15 +142,68 @@ test('single-step playback finishes its transfer before stopping',async({page},i
   await expect(page.locator('#step-count')).toHaveText('01 / 01');
 });
 
-test('failed source locations never produce a moving confirmed connection',async({page},info)=>{
-  const target=variant(info,data=>{data.evidence.find(e=>e.id==='ev-run').contentHash='0'.repeat(64);});
+test('pause and resume retain transfer progress and the remaining time on the final step',async({page},info)=>{
+  const target=variant(info,data=>{data.scenarios=[{...data.scenarios[0],steps:[data.scenarios[0].steps[0]]}];});
+  await start(page,target);
+  await page.clock.runFor(450);
+  const before=await tokenProgress(page);
+  await page.locator('#play').click();
+  const fill=()=>page.locator('#playback-fill').evaluate(n=>n.style.transform);
+  const paused=await fill();
+  await page.clock.runFor(2500);
+  expect(await fill()).toBe(paused);
+  await expect(page.locator('#playback-status')).toHaveText('일시 정지');
+  await page.locator('#play').click();
+  await settleCamera(page);
+  await page.clock.runFor(250);
+  expect((await tokenProgress(page)).at).toBeGreaterThan(before.at+.15);
+  await page.clock.runFor(850);
+  await expect(page.locator('#play')).toHaveAttribute('aria-pressed','false');
+  await expect(page.locator('#playback-status')).toHaveText('설명 재생 완료');
+  await page.locator('#play').click();
+  await settleCamera(page);
+  await page.clock.runFor(100);
+  expect((await tokenProgress(page)).at).toBeLessThan(.2);
+});
+
+for(const execution of ['sequential','parallel'])test(execution+' steps with failed source locations never produce a moving confirmed connection',async({page},info)=>{
+  const target=variant(info,data=>{
+    data.evidence.find(e=>e.id==='ev-run').contentHash='0'.repeat(64);
+    data.scenarios[0].steps[0].execution=execution;
+  });
   await start(page,target);
   await page.clock.runFor(400);
   await expect(page.locator('.flow-token')).toHaveCount(0);
   await expect(page.locator('#flow-transfer .pill')).toHaveClass(/unverified/);
   await expect(page.locator('.edge[data-id=start-loop] .edge-path')).toHaveAttribute('marker-end','url(#arrow-uncertain)');
-  await page.clock.runFor(1300);
+  await reachStep(page,2,6);
+  await page.clock.runFor(200);
   await expect(page.locator('.edge[data-id=loop-step] .flow-token')).toHaveCount(1);
+});
+
+for(const execution of ['parallel','unordered'])test(execution+' node captions never infer entry, internal or exit transfers',async({page},info)=>{
+  const target=variant(info,data=>{
+    const steps=data.scenarios[0].steps;
+    data.scenarios[0].steps=['request','loop','step','model'].map((nodeId,i)=>{
+      const step={...steps[Math.max(0,i-1)],id:'boundary-step-'+i,nodeId,
+        execution:i===1||i===2?execution:'sequential',
+        evidenceIds:data.nodes.find(n=>n.id===nodeId).evidenceIds};
+      delete step.edgeId;
+      return step;
+    });
+  });
+  await start(page,target);
+  // All three adjacent pairs have an existing checked forward edge. Captions
+  // alone must not choose that edge across a group with unspecified order.
+  for(let i=0;i<4;i++){
+    await reachStep(page,i+1,4);
+    await page.clock.runFor(350);
+    await expect(page.locator('#step-count')).toHaveText(String(i+1).padStart(2,'0')+' / 04');
+    await expect(page.locator('.flow-token')).toHaveCount(0);
+    await expect(page.locator('#flow-transfer')).toBeHidden();
+    await expect(page.locator('.node.explaining')).toHaveCount(1);
+    if(i<3)await page.clock.runFor(1150);
+  }
 });
 
 test('reduced motion keeps direction and step information without moving markers',async({page})=>{
@@ -170,7 +228,8 @@ test('zoom, resize and self-loops keep markers on the routed SVG path',async({pa
   await page.locator('#workflow').click();
   await page.locator('#scenario').selectOption('1');
   await page.locator('#play').click();
-  await page.clock.runFor(1720);
+  await reachStep(page,2,3);
+  await page.clock.runFor(220);
   let p=await tokenProgress(page);
   expect(p.edge).toBe('repeat');
   await page.locator('#zoom-in').click();
