@@ -38,7 +38,7 @@
   const edgeMap = new Map(data.edges.map(e => [e.id, e]));
   const evidenceMap = new Map(data.evidence.map(e => [e.id, e]));
   let detail = false, scenarioIndex = 0, stepIndex = -1, timer = null, selected = null;
-  let returnFocus = null, announcementTimer = null;
+  let returnFocus = null, copyReturnFocus = null, announcementTimer = null;
   let view = 'structure', focusId = null, zoom = 1, graphWidth = 0, graphHeight = 0;
   let laidOut = false;
   const history = [];
@@ -50,8 +50,11 @@
   const isPlaying = () => playbackState === 'playing';
   const cameraDuration = 360;
   let cameraMotion = null, cameraFrame = null, preparingStep = false;
+  let playbackRate = 1, navigationReady = false, restoringLocation = false;
+  const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions].map(item=>[item.id,item]));
 
   async function copy(text) {
+    copyReturnFocus=document.activeElement;
     try {
       if (!navigator.clipboard) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(text);
@@ -60,9 +63,13 @@
       field.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01';
       document.body.append(field);
       field.select();
-      const ok = document.execCommand('copy');
+      let ok = false;
+      try {ok = document.execCommand('copy');} catch {/* Manual copying remains available. */}
       field.remove();
       if (!ok) {
+        $('copy-fallback').hidden=false;
+        $('copy-text').value=text;
+        $('copy-text').focus();$('copy-text').select();
         announce(t('자동 복사가 안 됩니다. 표시된 텍스트를 선택해 복사해 주세요.', 'Select the displayed text to copy it.'));
         return;
       }
@@ -182,9 +189,9 @@
       document.body.classList.add('panel-open');
       if (matchMedia('(max-width:900px)').matches) $('close-panel').focus({preventScroll:true});
       positionPanel();
-      if (nodeMap.has(item.id)) revealNode(item.id,true);
-      else if (edgeMap.has(item.id)) revealConnection(item,true);
-      else moveCamera({...readCamera(),pageTop:mapPageTop()},true);
+      if (nodeMap.has(item.id)) revealNode(item.id,!restoringLocation);
+      else if (edgeMap.has(item.id)) revealConnection(item,!restoringLocation);
+      else moveCamera({...readCamera(),pageTop:mapPageTop()},!restoringLocation);
     }
     updateNavigation();positionPanel();paint();
     // Reset after replacing content and sizing the flex body; otherwise the
@@ -196,7 +203,11 @@
     if (!panel.classList.contains('open')) return;
     // The mobile sheet uses its own dynamic-viewport limit. Clear desktop
     // coordinates when crossing the breakpoint with the inspector still open.
-    if (matchMedia('(max-width:900px)').matches) {
+    const mobile=matchMedia('(max-width:900px)').matches;
+    $('panel-size').hidden=!mobile;
+    $('panel-size').textContent=document.body.classList.contains('panel-expanded')?t('그림 더 보기','More map'):t('설명 확대','More explanation');
+    $('panel-size').setAttribute('aria-expanded',String(document.body.classList.contains('panel-expanded')));
+    if (mobile) {
       panel.style.removeProperty('top');
       panel.style.removeProperty('max-height');
       return;
@@ -218,6 +229,7 @@
     $('panel').inert = true;
     document.body.classList.remove('panel-open');
     if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
+    syncLocation();
   }
   function wrap(text, length = 13) {
     const characters = Array.from(text);
@@ -228,6 +240,7 @@
   function draw(anchorId) {
     clearTransfer();
     const canvas = $('canvas');
+    const focusedId=document.activeElement.closest?.('.node,.edge')?.dataset.id;
     const anchor = () => [...document.querySelectorAll('.node')].find(n => n.dataset.id === anchorId)?.getBoundingClientRect();
     const before = anchorId ? anchor() : null;
     const mobile = canvas.clientWidth < 600;
@@ -335,6 +348,7 @@
     }
     updateMini();
     paint();
+    if(focusedId) [...document.querySelectorAll('.node,.edge')].find(n=>n.dataset.id===focusedId)?.focus({preventScroll:true});
   }
   function currentStep() {
     return stepIndex >= 0 ? data.scenarios[scenarioIndex]?.steps[stepIndex] : null;
@@ -389,7 +403,7 @@
     group.append(token);
     transferToken = token;
     function frame(now) {
-      const progress = Math.max(0,Math.min(1,(now-stepStartedAt)/transferDuration));
+      const progress = Math.max(0,Math.min(1,elapsedStep(now)/transferDuration));
       const point = route.getPointAtLength(length*progress);
       token.setAttribute('transform','translate('+point.x+' '+point.y+')');
       token.style.opacity = String(Math.min(1,progress*12,(1-progress)*12));
@@ -466,6 +480,7 @@
     }
     syncTransfer(edge);
     syncPlayback();
+    syncLocation();
   }
   function setStep(index, preserveFocus = false) {
     const scenario = data.scenarios[scenarioIndex];
@@ -485,6 +500,12 @@
       detail = true; $('mode').value = 'detail'; draw(edge?.from);
     }
     $('step-count').textContent = String(stepIndex+1).padStart(2,'0')+' / '+String(scenario.steps.length).padStart(2,'0');
+    if($('step-picker').dataset.scenario!==scenario.id) {
+      $('step-picker').replaceChildren();
+      scenario.steps.forEach((item,i)=>{const option=element('option',(i+1)+'. '+item.caption);option.value=String(i);$('step-picker').append(option);});
+      $('step-picker').dataset.scenario=scenario.id;
+    }
+    $('step-picker').value=String(stepIndex);
     $('caption').replaceChildren(document.createTextNode(step.caption+' '),statusBadge(step));
     $('step-context').replaceChildren(element('span', scenarioLabels[scenario.kind], 'path-tag'));
     if (step.branch) $('step-context').append(element('span', branchLabels[step.branch], 'path-tag'));
@@ -497,18 +518,18 @@
     showItem(edge || nodeMap.get(step.nodeId));
     preparingStep = false;
     if (view === 'flow') {
-      revealStep(true,isPlaying() ? startStepClock : null);
+      revealStep(!restoringLocation,isPlaying() ? startStepClock : null);
     }
     paint();
   }
   function elapsedStep(now = performance.now()) {
-    return isPlaying() && !cameraMotion && !preparingStep ? Math.max(0,Math.min(stepDuration,now-stepStartedAt)) : stepElapsed;
+    return isPlaying() && !cameraMotion && !preparingStep ? Math.max(0,Math.min(stepDuration,stepElapsed+(now-stepStartedAt)*playbackRate)) : stepElapsed;
   }
   function startStepClock() {
     if (!isPlaying()) return;
-    stepStartedAt = performance.now()-stepElapsed;
+    stepStartedAt = performance.now();
     clearTimeout(timer);
-    timer = setTimeout(advancePlayback,stepDuration-stepElapsed);
+    timer = setTimeout(advancePlayback,(stepDuration-stepElapsed)/playbackRate);
     paint();
   }
   function stop(completed = false) {
@@ -528,6 +549,7 @@
     else setStep(stepIndex+1);
   }
   function togglePlayback() {
+    if(view!=='flow'||!data.scenarios[scenarioIndex])return;
     if (isPlaying()) {stop();return;}
     const steps=data.scenarios[scenarioIndex].steps;
     if (playbackState === 'complete' || stepIndex < 0 || (stepIndex === steps.length-1 && playbackState !== 'paused')) setStep(0);
@@ -536,6 +558,17 @@
     playbackState = 'playing';
     revealStep(true,startStepClock);
     paint();
+  }
+  function changeSpeed() {
+    const next=Number($('playback-speed').value);
+    if(![1,1.5,2].includes(next))return;
+    // Keep elapsed explanation time, including while paused or framing a node.
+    // Speed scales the reading clock and transfer together, never the camera.
+    stepElapsed=elapsedStep();
+    playbackRate=next;
+    document.documentElement.style.setProperty('--step-interval',(stepDuration/playbackRate)+'ms');
+    if(isPlaying()&&!cameraMotion&&!preparingStep)startStepClock();
+    else paint();
   }
   function revealStep(smooth, done) {
     const connection = stepConnection();
@@ -740,6 +773,127 @@
     if(view==='flow'&&stepIndex<0)setStep(0);
     updateNavigation();paint();
   }
+  function locationHash() {
+    const params=new URLSearchParams({s2s:'1',subject:data.subject.id,view,detail:detail?'detail':'core',speed:String(playbackRate)});
+    if(view==='flow'&&currentStep()) {
+      params.set('scenario',data.scenarios[scenarioIndex].id);
+      params.set('step',currentStep().id);
+    }
+    if(selected&&itemMap.has(selected))params.set(nodeMap.has(selected)?'node':edgeMap.has(selected)?'edge':'item',selected);
+    if(selected&&$('panel').classList.contains('open'))params.set('panel','1');
+    if(focusId)params.set('focus',focusId);
+    return '#'+params.toString();
+  }
+  function syncLocation() {
+    if(!navigationReady||restoringLocation||preparingStep||data.analysis.status==='insufficient')return;
+    const hash=locationHash();
+    if(location.hash===hash)return;
+    // replaceState avoids creating a browser Back entry for every autoplay step.
+    // Restricted file viewers can still copy a link from the current state.
+    try{window.history.replaceState(null,'',hash);}catch{/* Keep navigation usable when URL updates are denied. */}
+    $('navigation-notice').hidden=true;
+  }
+  function readLocation(hash) {
+    const params=new URLSearchParams(hash.slice(1));
+    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus']);
+    if([...params.keys()].some(key=>!allowed.has(key)||params.getAll(key).length!==1)||
+      params.get('s2s')!=='1'||params.get('subject')!==data.subject.id||
+      !['structure','flow'].includes(params.get('view'))||
+      (params.has('detail')&&!['core','detail'].includes(params.get('detail')))||
+      (params.has('speed')&&!['1','1.5','2'].includes(params.get('speed')))||
+      (params.has('panel')&&params.get('panel')!=='1'))throw new Error('Invalid location');
+    const result={view:params.get('view'),detail:params.get('detail')==='detail',rate:Number(params.get('speed')||1),scenario:0,step:-1,
+      item:null,panel:params.has('panel'),focus:params.get('focus')};
+    if(result.view==='flow') {
+      result.scenario=data.scenarios.findIndex(s=>s.id===params.get('scenario'));
+      if(result.scenario<0)throw new Error('Missing scenario');
+      result.step=params.has('step')?data.scenarios[result.scenario].steps.findIndex(s=>s.id===params.get('step')):0;
+      if(result.step<0)throw new Error('Missing step');
+    } else if(params.has('scenario')||params.has('step'))throw new Error('Unexpected scenario');
+    const selection=['node','edge','item'].filter(key=>params.has(key));
+    if(selection.length>1)throw new Error('Ambiguous selection');
+    if(selection.length) {
+      const key=selection[0],id=params.get(key);
+      if(!(key==='node'?nodeMap:key==='edge'?edgeMap:itemMap).has(id))throw new Error('Missing item');
+      result.item=id;
+    }
+    if(result.panel&&!result.item)throw new Error('Missing inspection');
+    if(result.focus&&(!nodeMap.has(result.focus)||result.focus!==result.item))throw new Error('Missing focus');
+    return result;
+  }
+  function restoreLocation(hash) {
+    if(hash&&hash!=='#'&&!hash.startsWith('#s2s='))return;
+    let restored={view:'structure',detail:false,rate:1,scenario:0,step:-1,item:null,panel:false,focus:null},invalid=false;
+    if(hash&&hash!=='#') {
+      try{restored=readLocation(hash);}catch{invalid=true;}
+    }
+    restoringLocation=true;
+    stop();history.length=0;closePanel(false);
+    selected=null;focusId=null;stepIndex=-1;stepElapsed=0;playbackState='idle';
+    view=restored.view;detail=restored.detail;scenarioIndex=restored.scenario;playbackRate=restored.rate;
+    if(data.analysis.status==='insufficient') {invalid=!!hash;view='structure';}
+    else {
+      const inspection=itemMap.get(restored.item),edge=edgeMap.get(restored.item);
+      const inspectedNodes=nodeMap.has(restored.item)?[restored.item]:edge?[edge.from,edge.to]:[];
+      if(inspectedNodes.some(id=>nodeMap.get(id).importance==='detail'))detail=true;
+      $('mode').value=detail?'detail':'core';$('scenario').value=String(scenarioIndex);
+      $('playback-speed').value=String(playbackRate);
+      document.documentElement.style.setProperty('--step-interval',(stepDuration/playbackRate)+'ms');
+      draw();
+      if(restored.step>=0)setStep(restored.step);
+      if(inspection) {
+        if(restored.panel)showItem(inspection,true);
+        else selected=inspection.id;
+      }
+      focusId=restored.focus;
+      if(nodeMap.has(selected))revealNode(selected);
+      else if(edgeMap.has(selected))revealConnection(edgeMap.get(selected));
+      else if(view==='flow')revealStep(false);
+      else fit();
+      $('player').hidden=view!=='flow'||!data.scenarios.length;
+      updateNavigation();paint();
+    }
+    restoringLocation=false;
+    syncLocation();
+    $('navigation-notice').textContent=invalid?t('현재 파일에서 링크의 위치를 찾을 수 없어 기본 화면으로 열었습니다.','This location is unavailable in the current file. The default view is shown.'):'';
+    $('navigation-notice').hidden=!invalid;
+  }
+  function keyboardNavigation(event) {
+    if(event.defaultPrevented||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||data.analysis.status==='insufficient')return;
+    const target=event.target;
+    if(!target.closest?.('#workspace')||target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),#panel'))return;
+    if(view==='flow'&&data.scenarios.length&&['[',']','p','P'].includes(event.key)) {
+      event.preventDefault();
+      if(event.key.toLowerCase()==='p'){if(!event.repeat)togglePlayback();}
+      else{stop();setStep(stepIndex+(event.key==='['?-1:1));}
+      return;
+    }
+    if(target===$('canvas')) {
+      if(event.key===' '&&view==='flow') {event.preventDefault();if(!event.repeat)togglePlayback();return;}
+      if(event.key==='Enter') {
+        const nodes=[...document.querySelectorAll('.node')];
+        const node=nodes.find(n=>n.dataset.id===selected)||nodes[0];
+        if(node){event.preventDefault();stop();node.focus({preventScroll:true});revealNode(node.dataset.id,true);}
+      }
+      return;
+    }
+    const current=target.closest('.node');
+    if(!current||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+    event.preventDefault();stop();
+    const nodes=[...document.querySelectorAll('.node')];
+    let next;
+    if(event.key==='Home')next=nodes[0];
+    else if(event.key==='End')next=nodes.at(-1);
+    else {
+      const horizontal=['ArrowLeft','ArrowRight'].includes(event.key),sign=['ArrowLeft','ArrowUp'].includes(event.key)?-1:1;
+      const x=current.offsetLeft+current.offsetWidth/2,y=current.offsetTop+current.offsetHeight/2;
+      next=nodes.filter(n=>n!==current).map(n=>{
+        const dx=n.offsetLeft+n.offsetWidth/2-x,dy=n.offsetTop+n.offsetHeight/2-y;
+        return {node:n,forward:sign*(horizontal?dx:dy),side:Math.abs(horizontal?dy:dx)};
+      }).filter(n=>n.forward>1).sort((a,b)=>(a.forward+a.side*2)-(b.forward+b.side*2))[0]?.node;
+    }
+    if(next){next.focus({preventScroll:true});revealNode(next.dataset.id,true);}
+  }
   function initializeCanvas() {
     const theme=$('theme-toggle');
     function paintTheme() {
@@ -774,13 +928,34 @@
     $('flow-transfer').setAttribute('aria-label',t('이번 단계의 연결 방향','Connection direction for this step'));
     $('playback-progress').setAttribute('aria-label',t('설명 재생 진행','Walkthrough progress'));
     $('scenario').setAttribute('aria-label',t('설명 흐름','Walkthrough'));
+    $('step-picker-label').textContent=t('단계 선택','Jump to step');
+    $('speed-label').textContent=t('설명 속도','Playback speed');
+    $('copy-position').textContent=t('현재 위치 링크 복사','Copy link to this view');
+    const copyPosition=()=>{stop();const url=new URL(location.href);url.hash=locationHash();copy(url.href);};
+    $('copy-position').addEventListener('click',copyPosition);
+    $('copy-inspection').textContent=t('링크','Link');
+    $('copy-inspection').setAttribute('aria-label',t('이 설명 링크 복사','Copy link to this explanation'));
+    $('copy-inspection').addEventListener('click',copyPosition);
+    $('keyboard-help-title').textContent=t('키보드 안내','Keyboard help');
+    $('keyboard-help-text').textContent=t('그림에서 Enter로 구성 요소 탐색을 시작합니다. 노드의 방향키로 옆 부분을 찾고 Enter로 설명을 엽니다. 빈 그림 영역에서는 방향키로 지도를 이동하고 + / −로 확대·축소합니다. 흐름 보기에서 [ / ]는 이전·다음 단계, P는 재생·정지입니다. 검색창과 선택 목록에서는 원래 키 동작을 유지합니다.',
+      'Enter on the map starts component navigation. Arrow keys on a node focus nearby parts; Enter opens the explanation. Arrow keys on the empty map pan; + / − zoom. In walkthrough view, [ / ] move between steps and P plays or pauses. Search and selection controls keep their native keys.');
+    $('copy-label').textContent=t('텍스트를 선택해 복사해 주세요.','Select this text to copy it.');
+    $('close-copy').textContent=t('닫기','Close');
+    $('close-copy').addEventListener('click',()=>{$('copy-fallback').hidden=true;(copyReturnFocus?.isConnected?copyReturnFocus:$('copy-position')).focus({preventScroll:true});});
+    $('step-picker').addEventListener('change',()=>{stop();setStep(Number($('step-picker').value));});
+    $('playback-speed').addEventListener('change',changeSpeed);
+    $('panel-size').addEventListener('click',()=>{
+      stop();document.body.classList.toggle('panel-expanded');positionPanel();
+      if(nodeMap.has(selected))revealNode(selected,true);
+      else if(edgeMap.has(selected))revealConnection(edgeMap.get(selected),true);
+    });
     $('back').textContent=t('← 돌아가기','← Back');
     $('zoom-out').setAttribute('aria-label',t('축소','Zoom out'));
     $('zoom-in').setAttribute('aria-label',t('확대','Zoom in'));
     $('fit').textContent=t('전체','Fit');
     $('fit').setAttribute('aria-label',t('지도를 화면에 맞추기','Fit map to view'));
-    $('canvas').setAttribute('aria-label',t('관계도. 드래그 또는 방향키로 이동, +와 -로 확대 축소, 0으로 전체 보기',
-      'Relationship map. Drag or use arrow keys to move, + and - to zoom, 0 to fit.'));
+    $('canvas').setAttribute('aria-label',t('관계도. Enter로 구성 요소 탐색, 방향키로 이동, +와 -로 확대 축소, 0으로 전체 보기',
+      'Relationship map. Enter to explore components, arrow keys to move, + and - to zoom, 0 to fit.'));
     $('connections').setAttribute('aria-label',t('구성 요소 사이의 관계','Relationships between components'));
     $('links').setAttribute('aria-label',t('관련 설명','Related explanations'));
     for(const node of data.nodes) {
@@ -840,7 +1015,7 @@
     function endDrag(){drag=null;$('canvas').classList.remove('dragging');}
     $('canvas').addEventListener('pointerup',endDrag);$('canvas').addEventListener('pointercancel',endDrag);
     $('canvas').addEventListener('keydown',event=>{
-      if(event.target!==$('canvas'))return;
+      if(event.target!==$('canvas')||event.defaultPrevented||event.isComposing||event.ctrlKey||event.metaKey||event.altKey)return;
       if(['+','=','-','0','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))event.preventDefault();
       if(event.key.startsWith('Arrow'))stop();
       if(['+','='].includes(event.key))setZoom(zoom*1.2);
@@ -962,8 +1137,17 @@
     addEventListener('wheel',()=>{if(cameraMotion || isPlaying())stop();},{passive:true});
     reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches)finishCamera(true);paint();});
     document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-    document.addEventListener('keydown',event=>{if(event.key==='Escape' && $('panel').classList.contains('open'))closePanel();});
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'&&!$('copy-fallback').hidden){$('close-copy').click();return;}
+      if(event.key==='Escape'&&$('panel').classList.contains('open'))closePanel();
+      else keyboardNavigation(event);
+    });
     initializeCanvas();
+    // Do not serialize intermediate initialization states over a supplied link.
+    navigationReady=true;
+    if(location.hash.startsWith('#s2s='))restoreLocation(location.hash);
+    addEventListener('hashchange',()=>restoreLocation(location.hash));
+    const notice=$('navigation-notice');$('workspace').before(notice);
     document.documentElement.dataset.ready='true';
   }
   initialize();

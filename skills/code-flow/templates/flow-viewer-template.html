@@ -47,7 +47,7 @@
           </div>
           <svg id="mini" class="mini" aria-hidden="true"></svg>
           <aside id="panel" class="panel" aria-labelledby="panel-title" inert>
-            <div class="panel-header"><div id="panel-status"></div><button id="close-panel" class="close-panel" type="button">×</button></div>
+            <div class="panel-header"><div id="panel-status"></div><div class="panel-actions"><button id="copy-inspection" type="button"></button><button id="panel-size" type="button" hidden></button><button id="close-panel" class="close-panel" type="button">×</button></div></div>
             <div id="panel-body" class="panel-body"></div>
             <button id="focus-related" class="focus-related" type="button" hidden></button>
           </aside>
@@ -55,10 +55,12 @@
         <div class="canvas-footer">
           <div id="legend" class="legend"></div>
           <div class="canvas-controls"><label class="mode-label"><span id="mode-label"></span><select id="mode"></select></label><div class="zoom"><button id="zoom-out" type="button">−</button><output id="zoom-level">100%</output><button id="zoom-in" type="button">+</button><button id="fit" type="button"></button></div></div>
+          <div class="navigation-tools"><details class="keyboard-help"><summary id="keyboard-help-title"></summary><p id="keyboard-help-text"></p></details><button id="copy-position" type="button"></button></div>
         </div>
         <section id="player" class="player" hidden>
           <p id="story-note" class="story-note"></p>
           <div class="player-controls"><select id="scenario" aria-label="Scenario"></select><div class="transport"><button id="previous" type="button">←</button><button id="play" type="button"></button><button id="next" type="button">→</button></div><span id="step-count"></span></div>
+          <div class="player-seek"><label class="step-picker"><span id="step-picker-label"></span><select id="step-picker"></select></label><label class="speed-picker"><span id="speed-label"></span><select id="playback-speed"><option value="1">1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label></div>
           <div class="playback-feedback"><span id="playback-status"></span><div id="playback-progress" class="playback-progress" role="progressbar" aria-valuemin="0"><span id="playback-fill"></span></div></div>
           <div id="step-context" class="step-context"></div>
           <p id="step-condition" class="step-condition" hidden></p>
@@ -74,6 +76,8 @@
     <section class="scope"><details><summary id="scope-title"></summary><div id="scope-body"></div></details></section>
     <footer><p id="offline-note"></p><details><summary>Open-source licenses</summary><pre class="license">__S2S_NOTICES__</pre></details></footer>
   </main>
+  <p id="navigation-notice" class="navigation-notice" role="status" hidden></p>
+  <div id="copy-fallback" class="copy-fallback" hidden><label for="copy-text" id="copy-label"></label><textarea id="copy-text" readonly></textarea><button id="close-copy" type="button"></button></div>
   <div id="announcement" class="announcement" role="status"></div>
   <noscript>This explanation needs JavaScript enabled. No server or network connection is required.</noscript>
   <script id="s2s-data" type="application/json">__S2S_DATA__</script>

@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 import s2s
 
 PROFILES = ("cli-utility", "library-sdk", "framework-plugin", "ai-agent", "data-event", "web")
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 
 def now():

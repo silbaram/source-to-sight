@@ -12,6 +12,8 @@ M2에서는 기존 18개를 보존하고 유형별 복합 사례를 추가해 [2
 
 M3에서는 `$code-flow --explain`으로 같은 대상의 **조건·결과·이유·예외·상태 변화**를 설명하는 `visual-primer` 페이지를 연결했습니다. 동작의 사실과 근거를 재사용하며, 조건을 선택해 결과를 비교하고 워크플로 화면으로 돌아갈 수 있습니다. 기존 동작 24개에 규칙 사례 6개를 추가했습니다. `npm run eval:rules -- --output build/eval/m3` 후 `build/eval/m3/agent-parallel-tools-rules.html`에서 확인합니다. [규칙 설명 생성 방법](skills/visual-primer/references/source-rules.md) · [M3 검증 기록](eval/reports/m3-verification.md). 프로젝트 전체 탐색은 M5이며 사람의 최종 검토는 남아 있습니다.
 
+M4에서는 **1×/1.5×/2× 재생, 단계 바로 선택, 키보드 탐색, 현재 노드·단계 링크**를 추가했습니다. 모바일 설명 패널은 설명을 넓게 읽거나 그림을 더 볼 수 있도록 크기를 바꿀 수 있습니다. `npm run eval:rules -- --output build/eval/m4` 후 `build/eval/m4/agent-parallel-tools.html`에서 확인합니다. [M4 검증 기록](eval/reports/m4-verification.md)에 확인 범위와 한계를 정리했습니다.
+
 `$visual-primer` 스킬은 실제 자료와 공식 출처를 확인한 뒤, 큰 그림과 적은 글로 설명하는 단일 HTML 페이지를 만듭니다. 결과물은 빌드 과정이나 별도 서버 없이 브라우저에서 바로 열 수 있습니다.
 
 ## 코드 동작 설명 예시

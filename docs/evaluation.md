@@ -8,11 +8,11 @@
 
 ~~~sh
 npm run m1:sources
-npm run eval:rules -- --output build/eval/m3
-S2S_EVAL_DIR=build/eval/m3 npx playwright test tests/evaluation.spec.cjs tests/m2.spec.cjs tests/m3.spec.cjs
+npm run eval:rules -- --output build/eval/m4
+S2S_EVAL_DIR=build/eval/m4 npx playwright test tests/evaluation.spec.cjs tests/m2.spec.cjs tests/m3.spec.cjs tests/m4.spec.cjs
 ~~~
 
-출력 디렉터리는 새 경로여야 합니다. 다시 실행할 때 `build/eval/m3-second`처럼 이름을 바꾸면 이전 결과와 답변이 보존됩니다. 저장소 소스는 실행하지 않으며 모델 API도 호출하지 않습니다. 고정된 소스를 읽어 현재 캔버스·규칙 템플릿으로 HTML을 만듭니다. 동작 24개만 실행할 때는 `npm run eval:run -- --output <새 경로>`를 사용합니다.
+출력 디렉터리는 새 경로여야 합니다. 다시 실행할 때 `build/eval/m4-second`처럼 이름을 바꾸면 이전 결과와 답변이 보존됩니다. 저장소 소스는 실행하지 않으며 모델 API도 호출하지 않습니다. 고정된 소스를 읽어 현재 캔버스·규칙 템플릿으로 HTML을 만듭니다. M4도 M3에서 구성한 30개 분석 후보를 그대로 사용하며 재생·탐색 UI를 검증합니다. 동작 24개만 실행할 때는 `npm run eval:run -- --output <새 경로>`를 사용합니다.
 
 | 출력 | 용도 |
 | --- | --- |

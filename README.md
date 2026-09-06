@@ -8,6 +8,8 @@ M2 expands the corpus to [24 evaluation candidates](eval/cases.md), preserving t
 
 M3 connects `$code-flow --explain` to source-backed `visual-primer` pages. They reuse the behavior's facts and compare conditions, outcomes, reasons, exceptions and state changes. Six paired rules cases extend the evaluation to **24 behavior + 6 rules pages**. Open `build/eval/m3/agent-parallel-tools-rules.html` after running `npm run eval:rules -- --output build/eval/m3`. See the [rules workflow](skills/visual-primer/references/source-rules.md) and [M3 verification](eval/reports/m3-verification.md). Whole-project discovery remains M5 work; independent human acceptance is still pending.
 
+M4 adds **1×/1.5×/2× playback, direct step selection, keyboard navigation and links to the current node or step**. Mobile evidence sheets can expand for reading or shrink to show more of the map. Generate the current examples with `npm run eval:rules -- --output build/eval/m4`, then open `build/eval/m4/agent-parallel-tools.html`. See [M4 verification](eval/reports/m4-verification.md) for coverage and limits.
+
 English | [한국어](README.ko.md)
 
 An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
