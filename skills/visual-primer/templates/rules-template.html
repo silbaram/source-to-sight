@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="__S2S_LANGUAGE__" data-viewer="primer">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('s2s-atlas-theme')==='dark'?'dark':'light';}catch{document.documentElement.dataset.theme='light';}</script>
+  <title>__S2S_TITLE__ · Source to Sight</title>
+  <style>__S2S_STYLE__</style>
+</head>
+<body class="primer">
+  <!-- s2s:regen — read subject, scope, language and command from s2s-data -->
+  <a class="skip" href="#explanation">__S2S_SKIP__</a>
+  <header class="masthead">
+    <a class="brand" href="#explanation" aria-label="Source to Sight"><span class="brand-mark" aria-hidden="true">◎</span> source to sight<span class="brand-dot">.</span></a>
+    <div class="header-actions"><span class="snapshot">__S2S_SNAPSHOT__</span><button id="theme-toggle" class="theme-toggle" type="button" role="switch" aria-checked="false"><svg class="theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z"/></svg><svg class="theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><span id="theme-label"></span></button></div>
+  </header>
+  <main id="explanation" class="primer-main">__S2S_MAIN__</main>
+  <footer><p id="offline-note"></p><details><summary>Open-source licenses</summary><pre class="license">__S2S_LICENSE__</pre></details></footer>
+  <div id="announcement" class="announcement" role="status"></div>
+  <script id="s2s-data" type="application/json">__S2S_DATA__</script>
+  <script id="s2s-rule-layout" type="application/json">__S2S_LAYOUT__</script>
+  <script>__S2S_SCRIPT__</script>
+</body>
+</html>

@@ -1,92 +1,40 @@
 # Source to Sight
 
-English | [한국어](./README.ko.md)
+Source to Sight is an Agent Skills package that turns source code into offline visual explanations. It supports project maps (`codebase-atlas`), behavior walkthroughs (`code-flow`), and rules explanations (`visual-primer`) for utilities, libraries, frameworks, AI agents, event systems, and web projects.
 
-An agent skill that turns complex topics into visual explanations for people seeing them for the first time.
+## Install
 
-The `$visual-primer` skill checks source material and authoritative references, then creates a self-contained HTML page that explains the topic with large visuals and few words. The output opens directly in a browser without a build step or separate server.
-
-## Example output
-
-The following prompt creates a beginner-friendly visual guide to OAuth:
+Follow the [Korean user quickstart](docs/quickstart.md) for setup and your first project explanation.
 
 ```text
+npx skills add silbaram/source-to-sight --skill code-flow
+npx skills add silbaram/source-to-sight --skill visual-primer
+npx skills add silbaram/source-to-sight --skill codebase-atlas
+```
+
+Install only the skills your host needs. Each skill directory must be copied or installed as a complete directory, including its references, templates, vendored assets, and licenses.
+
+## Use
+
+```text
+$code-flow Explain how this project's request lifecycle works.
+$code-flow --explain Explain the retry and failure rules for this operation.
+$codebase-atlas Explain this project's purpose, responsibilities and representative capabilities.
 $visual-primer Explain OAuth.
 ```
 
-[![OAuth visual-primer output preview](./assets/oauth-visual-primer-example-preview.png)](./assets/oauth-visual-primer-example.html)
+The host agent reads the target source and records evidence. The skills validate that evidence and generate a self-contained HTML page that opens directly in a browser. Generated pages use the maintained templates under each skill directory and do not require a server.
 
-[Open the OAuth visual-primer example HTML](./assets/oauth-visual-primer-example.html) · If GitHub does not display the interactive page, download the file and open it in a browser.
-
-This example includes:
-
-- Distinct connector shapes and clear arrowheads for different relationships
-- An animated Authorization Code + PKCE data flow
-- An interactive, step-by-step PKCE simulation
-- A decision structure that distinguishes OAuth from OpenID Connect
-- Desktop and mobile rendering QA for boxes, layers, and overflow
-
-## Installation
-
-Install `visual-primer` with the Agent Skills CLI:
-
-```bash
-npx skills add silbaram/source-to-sight --skill visual-primer
-```
-
-If the skill does not appear in the current session after installation, start a new conversation.
-
-## Usage
-
-Provide the skill name, the topic to explain, and an output path:
+## Repository layout
 
 ```text
-$visual-primer Explain OAuth. Save the result to docs/oauth-visual-primer-example.html.
+skills/code-flow/       Source-backed behavior walkthroughs and shared canvas renderer
+skills/visual-primer/   Concept and source-backed rules explanations
+skills/codebase-atlas/  Project maps and links to representative capabilities
+docs/                   Product guidance and distribution policy
+assets/                 A browsable visual-primer example
 ```
 
-You can change both the topic and the destination:
+See the [documentation index](docs/README.md) and [distribution file policy](docs/distribution.md). Development evaluation cases and temporary prototypes were removed from the product branch; test generated pages in a separate workspace when needed.
 
-```text
-$visual-primer Explain Kubernetes Pods. Save the result in the current project root.
-```
-
-Generated files follow these principles:
-
-- Assume no prior knowledge and introduce real terms in a useful order.
-- Show the central relationship with a large visual before using long prose.
-- Distinguish connector direction, shape, and color according to meaning.
-- Use animation or a small simulation only when time, movement, or state changes matter.
-- Record authoritative sources and important unverified areas at the end of the page.
-- Support UTF-8, responsive layouts, keyboard focus, and `prefers-reduced-motion`.
-
-## Updating
-
-Update the installed skill with:
-
-```bash
-npx skills update visual-primer
-```
-
-If the current session still has the previous version loaded, start a new conversation before using `$visual-primer` again.
-
-## Repository structure
-
-```text
-.
-├── README.md
-├── README.ko.md
-├── skills/visual-primer/
-│   ├── SKILL.md
-│   └── references/
-│       ├── diagram-patterns.md
-│       ├── qa.md
-│       └── visual-treatment.md
-└── assets/
-    ├── oauth-visual-primer-example.html
-    └── oauth-visual-primer-example-preview.png
-```
-
-- `SKILL.md` contains the core instructions used by `$visual-primer` to research and structure an explanation.
-- `references/` contains separate guidance for diagrams, visual treatment, and rendering QA.
-
-The repository uses the open [Agent Skills](https://agentskills.io/) format and can be installed with the [`skills` CLI](https://github.com/vercel-labs/skills).
+English | [한국어](README.ko.md)

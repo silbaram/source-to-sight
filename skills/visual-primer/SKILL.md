@@ -1,6 +1,6 @@
 ---
 name: visual-primer
-description: Create a source-grounded, self-contained HTML picture explainer for someone with no background knowledge, using large meaningful visuals and few words. Use when the user invokes $visual-primer, asks to "explain like I'm 5," or wants a dead-simple visual explainer; ordinary prose documentation is outside its scope.
+description: Create a source-grounded, self-contained HTML picture explainer for a newcomer, using meaningful visuals and few words. Use for concept explanations and the rules or reasons behind a scoped software capability. Repository maps and fixed workflow charts belong to codebase-atlas and code-flow; ordinary prose documentation is outside this skill's scope.
 metadata:
   short-description: Beginner-first visual explainer as offline HTML
 ---
@@ -24,9 +24,17 @@ Keep these four decisions stable; let everything else adapt to the topic:
 
 The page should feel simple through organization while retaining decision-relevant facts and comfortably readable type.
 
+Never include source-code bodies, snippets, original prompts, or extracted source lines in the output HTML, including hidden elements and embedded data. Use plain descriptions and diagrams. Real identifiers may accompany those descriptions; file paths and line ranges may identify evidence locations.
+
+Use the user's language unless they request specific languages. Produce separate files for multiple requested languages; preserve real identifiers in their original language.
+
 ## Ground the explanation
 
 Inspect the material that defines the topic before designing the page. For a repository or technical system, read the actual code and documentation and use its real names, flows, limits, and failure states. For a general topic, prefer authoritative sources. Mark meaningful uncertainty, inference, or disagreement.
+
+When explaining rules for an existing code-flow result, preserve its subject and scope. Re-read the source before adding rules: a previous verification badge does not verify a new claim. Confirm conditions, numerical values, units, configuration overrides, and exceptions. Omit numerical rules that cannot be verified and explain the gap.
+
+For a paired source-backed rules page, follow [source-rules.md](references/source-rules.md). It reuses the companion's internal behavior graph, validates rule additions and composes comparison, condition/result and state figures with the shared product styling. General concept explanations keep the free-form workflow below.
 
 Preserve facts that affect understanding or decisions. A metaphor may unlock the first idea, but state the literal truth first, map the metaphor once, and return to the real terms.
 
@@ -50,7 +58,7 @@ Choose each main visual because it answers a beginner's question faster than pro
 
 Use motion when time, direction, state change, or causality is part of the idea—for example, data moving through a real path. Consider a small simulation when changing an input or stepping through states explains cause and effect better than a static picture. Keep the essential meaning available in a static state, and encode only precision supported by the source.
 
-After the picture, add only the prose needed to name what happened, correct a likely misconception, or expose an important limit. Put dense tables, code, field catalogs, and secondary exceptions later or behind `<details>` when that keeps the first explanation clear.
+After the picture, add only the prose needed to name what happened, correct a likely misconception, or expose an important limit. Put dense tables, field catalogs, and secondary exceptions later or behind `<details>` when that keeps the first explanation clear. Explain code behavior through words and pictures, including in those secondary sections.
 
 Read [diagram patterns](references/diagram-patterns.md) when choosing or repairing a specialized visual, motion, or simulation. Use it as a toolbox.
 
