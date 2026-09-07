@@ -9,6 +9,7 @@ import sys
 import tempfile
 import unittest
 
+from locale_runner import cp949_file_defaults
 from validation_cases import atlas_graph, graph, layout, render_graph
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,7 +116,7 @@ class ValidationTests(unittest.TestCase):
             s2s.validate(data, "render")
 
     def test_layout_conditions_and_json_number_equality(self):
-        contract = json.loads((ROOT / "skills/visual-primer/references/rule-layout.schema.json").read_text())
+        contract = json.loads((ROOT / "skills/visual-primer/references/rule-layout.schema.json").read_text(encoding="utf-8"))
         for kind in ("conditions", "states", "comparison"):
             validation.validate(layout(kind), contract, "layout", formats=False)
         data = layout()
@@ -167,6 +168,29 @@ class ValidationTests(unittest.TestCase):
 
 class InstalledSkillTests(unittest.TestCase):
     def test_three_clis_without_site_packages(self):
+        self.check_three_clis()
+
+    def test_three_clis_with_cp949_file_defaults(self):
+        with cp949_file_defaults():
+            self.check_three_clis(cp949=True)
+
+    def test_cp949_harness_preserves_explicit_encodings_and_binary_io(self):
+        with tempfile.TemporaryDirectory(prefix="s2s-encoding-") as temporary:
+            path = Path(temporary) / "probe.txt"
+            with cp949_file_defaults():
+                # Intentionally omit encodings here to prove the harness works.
+                path.write_text("한글")
+                self.assertEqual(path.read_bytes(), "한글".encode("cp949"))
+                self.assertEqual(path.read_text(), "한글")
+                with open(path) as stream:
+                    self.assertEqual(stream.read(), "한글")
+                with self.assertRaises(UnicodeEncodeError):
+                    path.write_text("🧪")
+                path.write_text("한글 🧪", encoding="utf-8")
+                self.assertEqual(path.read_bytes(), "한글 🧪".encode("utf-8"))
+                self.assertEqual(path.read_text(encoding="utf-8"), "한글 🧪")
+
+    def check_three_clis(self, cp949=False):
         # Copy only the installable skills, with no repository development files.
         # -E -S prevents ambient PYTHONPATH and site-packages from supplying deps.
         with tempfile.TemporaryDirectory(prefix="s2s-runtime-") as temporary:
@@ -178,64 +202,90 @@ class InstalledSkillTests(unittest.TestCase):
                 shutil.copytree(ROOT / "skills", installed, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
             source = root / "source"
             source.mkdir()
-            (source / "example.py").write_text("def check(value):\n    return bool(value)\n")
+            (source / "example.py").write_text("def check(value):\n    return bool(value)\n", encoding="utf-8")
             flow = installed / "code-flow/scripts"
             atlas = installed / "codebase-atlas/scripts/atlas.py"
             rules = installed / "visual-primer/scripts/rules.py"
 
             def run(script, *args, success=True):
-                result = subprocess.run([sys.executable, "-E", "-S", "-B", str(script), *map(str, args)],
+                launcher = [str(ROOT / "tests/locale_runner.py")] if cp949 else []
+                result = subprocess.run([sys.executable, "-E", "-S", "-B", *launcher, str(script), *map(str, args)],
                                         cwd=source, text=True, capture_output=True, timeout=30)
                 self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
                 if not success:
                     self.assertNotIn("Traceback", result.stderr)
                 return result
 
+            def write_json(path, data):
+                path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+            def assert_utf8_json(path, expected):
+                raw = path.read_bytes()
+                self.assertIn(expected.encode("utf-8"), raw)
+                self.assertEqual(json.loads(raw.decode("utf-8"))["summary"]["title"], expected)
+
             run(flow / "author.py", "doctor")
             run(atlas, "doctor")
             data = graph()
+            title = "한글·日本語·中文 🧪"
+            data["summary"]["title"] = title
             internal = root / "behavior.json"
-            internal.write_text(json.dumps(data))
+            write_json(internal, data)
             behavior = root / "behavior.html"
-            run(flow / "author.py", "build", internal, "--source-root", source, "--output", behavior)
+            behavior_data = root / "behavior-render.json"
+            run(flow / "author.py", "build", internal, "--source-root", source, "--output", behavior,
+                "--data-output", behavior_data)
             embedded = s2s.read_embedded(behavior)
             self.assertEqual(embedded["nodes"][0]["displayStatus"], "confirmed")
+            self.assertEqual(embedded["summary"]["title"], title)
+            assert_utf8_json(behavior_data, title)
             run(flow / "s2s.py", "inspect", behavior)
 
+            # Cover the separate s2s --data-output writer as well as author.py.
+            run(flow / "s2s.py", "render", internal, "--source-root", source,
+                "--output", behavior, "--data-output", behavior_data)
+            assert_utf8_json(behavior_data, title)
+
             map_input = root / "atlas.json"
-            map_input.write_text(json.dumps(atlas_graph()))
+            map_data = atlas_graph()
+            map_data["summary"]["title"] = title
+            write_json(map_input, map_data)
             map_output = root / "atlas.html"
             run(atlas, "build", map_input, "--source-root", source, "--output", map_output)
             self.assertEqual(s2s.read_embedded(map_output)["layer"], "atlas")
+            self.assertEqual(s2s.read_embedded(map_output)["summary"]["title"], title)
 
             logic_input = root / "logic.json"
             run(flow / "author.py", "explain", internal, "--source-root", source, "--output", logic_input)
-            logic = json.loads(logic_input.read_text())
+            logic = json.loads(logic_input.read_text(encoding="utf-8"))
             # Simulate the host's required review after explain creates a draft.
             logic["rules"] = deepcopy(data["rules"])
-            logic_input.write_text(json.dumps(logic))
+            write_json(logic_input, logic)
             layout_input = root / "layout.json"
-            layout_input.write_text(json.dumps(layout()))
+            write_json(layout_input, layout())
             logic_output = root / "rules.html"
+            logic_data = root / "rules-render.json"
             run(rules, "build-pair", "--behavior-input", internal, "--input", logic_input,
                 "--layout", layout_input, "--source-root", source,
-                "--behavior-output", behavior, "--output", logic_output)
+                "--behavior-output", behavior, "--output", logic_output, "--data-output", logic_data)
             self.assertEqual(s2s.read_embedded(logic_output)["layer"], "logic")
+            self.assertEqual(s2s.read_embedded(logic_output)["summary"]["title"], title)
+            assert_utf8_json(logic_data, title)
             self.assertTrue(s2s.read_embedded(behavior)["links"]["logic"]["generated"])
             self.assertTrue(s2s.read_embedded(logic_output)["links"]["behavior"]["generated"])
 
             # Schema failures through each public CLI remain concise diagnostics.
             data["snapshot"]["generatedAt"] = "invalid"
-            internal.write_text(json.dumps(data))
+            write_json(internal, data)
             result = run(flow / "author.py", "build", internal, "--source-root", source,
                          "--output", behavior, success=False)
             self.assertIn("/snapshot/generatedAt", result.stderr)
             map_data = atlas_graph()
             del map_data["subject"]
-            map_input.write_text(json.dumps(map_data))
+            write_json(map_input, map_data)
             run(atlas, "build", map_input, "--source-root", source, "--output", map_output, success=False)
-            internal.write_text(json.dumps(graph()))
-            layout_input.write_text(json.dumps({"version": True, "sections": []}))
+            write_json(internal, graph())
+            write_json(layout_input, {"version": True, "sections": []})
             result = run(rules, "build-pair", "--behavior-input", internal, "--input", logic_input,
                          "--layout", layout_input, "--source-root", source,
                          "--behavior-output", behavior, "--output", logic_output, success=False)

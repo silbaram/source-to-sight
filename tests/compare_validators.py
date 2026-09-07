@@ -35,7 +35,7 @@ def main():
     totals, differences, intentional = Counter(), Counter(), Counter()
     examples = []
     for stage, path, original in cases:
-        contract = json.loads(path.read_text())
+        contract = json.loads(path.read_text(encoding="utf-8"))
         reference = Draft202012Validator(contract, format_checker=FormatChecker())
         reference.validate(original)
         candidate = fastjsonschema.compile(contract, use_default=False, fast_fail=False) if args.upstream else None

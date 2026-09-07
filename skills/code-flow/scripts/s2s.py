@@ -25,7 +25,7 @@ class InvalidGraph(ValueError):
 
 
 def schema(stage):
-    return json.loads((SCHEMA_DIR / f"ir-{stage}-v0.1.0.schema.json").read_text())
+    return json.loads((SCHEMA_DIR / f"ir-{stage}-v0.1.0.schema.json").read_text(encoding="utf-8"))
 
 
 def claims(data):
@@ -407,20 +407,20 @@ def render(data):
     for character, escaped in [("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026"),
                                ("\u2028", "\\u2028"), ("\u2029", "\\u2029")]:
         encoded = encoded.replace(character, escaped)
-    vendor = (SKILL / "templates/vendor/dagre.min.js").read_text()
-    notices = (SKILL / "templates/vendor/dagre.NOTICES").read_text()
-    notices += "\n\n" + (SKILL / "templates/vendor/dagre.LICENSE").read_text()
-    notices += "\n\n" + (SKILL / "templates/vendor/NotoSansKR.LICENSE").read_text()
+    vendor = (SKILL / "templates/vendor/dagre.min.js").read_text(encoding="utf-8")
+    notices = (SKILL / "templates/vendor/dagre.NOTICES").read_text(encoding="utf-8")
+    notices += "\n\n" + (SKILL / "templates/vendor/dagre.LICENSE").read_text(encoding="utf-8")
+    notices += "\n\n" + (SKILL / "templates/vendor/NotoSansKR.LICENSE").read_text(encoding="utf-8")
     font = base64.b64encode((SKILL / "templates/vendor/NotoSansKR.woff2").read_bytes()).decode("ascii")
     font_css = '@font-face{font-family:S2S;src:url(data:font/woff2;base64,' + font + ') format("woff2");font-style:normal;font-weight:400 700;font-display:swap}'
-    content = TEMPLATE.read_text()
+    content = TEMPLATE.read_text(encoding="utf-8")
     replacements = {
         "__S2S_DATA__": encoded, "__S2S_LAYOUT__": vendor,
         "__S2S_NOTICES__": html.escape(notices),
         "__S2S_TITLE__": html.escape(data["summary"]["title"]),
         "__S2S_LANGUAGE__": html.escape(data["language"], quote=True),
-        "__S2S_STYLE__": font_css + "\n" + (SKILL / "templates/viewer.css").read_text(),
-        "__S2S_VIEWER__": (SKILL / "templates/viewer.js").read_text(),
+        "__S2S_STYLE__": font_css + "\n" + (SKILL / "templates/viewer.css").read_text(encoding="utf-8"),
+        "__S2S_VIEWER__": (SKILL / "templates/viewer.js").read_text(encoding="utf-8"),
     }
     # One pass: data containing a marker must never be interpreted as a template.
     return re.sub("|".join(map(re.escape, replacements)), lambda m: replacements[m.group()], content)
@@ -480,7 +480,7 @@ def main(argv=None):
                 args.output.write_text(output, encoding="utf-8")
                 if args.data_output:
                     args.data_output.parent.mkdir(parents=True, exist_ok=True)
-                    args.data_output.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+                    args.data_output.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
                 print(f"{args.output} ({data['analysis']['status']}; {len(data['warnings'])} warnings)")
     except (OSError, ValueError) as error:
         parser.exit(1, f"s2s: {error}\n")
