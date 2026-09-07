@@ -164,13 +164,16 @@ def render_rules(data, layout, s2s, original=None):
             links.append(f'<button type="button" class="copy-command" data-command="{escaped(link["command"])}">{label} · {t("생성 명령 복사", "copy generation command")}</button>')
     notices = ''.join('<li>' + escaped(w["message"]) + '</li>' for w in data["warnings"])
     scope = ''
+    scope_seen = set()
     for title, values in ((t("포함한 범위", "Included"), data["subject"]["scope"]["includes"]),
                           (t("제외한 범위", "Excluded"), data["subject"]["scope"]["excludes"]),
                           (t("확인하지 못한 내용", "Unresolved"), data["analysis"]["unresolved"]),
                           (t("한계", "Limitations"), data["summary"]["limitations"]),
                           (t("탐색한 위치", "Searched"), data["analysis"]["searched"]),
                           (t("다음 시도", "Next attempts"), data["analysis"]["nextAttempts"])):
+        values = [value for value in values if value not in scope_seen]
         if values:
+            scope_seen.update(values)
             scope += '<div><h3>' + title + '</h3><ul>' + ''.join('<li>' + escaped(v) + '</li>' for v in values) + '</ul></div>'
     snapshot = data["snapshot"]
     status = {"complete": t("지정 범위 확인", "Scoped analysis"), "partial": t("일부 미확인", "Partial analysis"), "insufficient": t("근거 부족", "Insufficient evidence")}[data["analysis"]["status"]]

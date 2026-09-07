@@ -17,6 +17,8 @@
 | [M3 규칙과 이유](m3-verification.md) | 동작 사실 재사용, 조건·이유·예외·상태 그림, 양방향 연결과 30개 평가 |
 | [M4 재생·탐색 개선](m4-verification.md) | 배속·단계 선택·키보드·모바일 패널·노드/단계 링크와 회귀 검사 |
 | [M5 프로젝트 지도](m5-verification.md) | 책임 구역·범위가 있는 기능 목록·세 계층 이동·36개 평가 |
+| [M5 코드리뷰 수정](m5-review-fixes.md) | 입력 파일 보호·전체 상세 복귀 링크·화면 크기 변경 후 복원·평가 저장 실패 처리 |
+| [M5 설명 내용 정리](m5-content-fix.md) | 설명 범위의 중복 문장 제거와 HTML 재생성 |
 | [공통 캔버스 검증](canvas-viewer-verification.md) | 실제 생성 템플릿의 UI 적용·회귀 검사 |
 | [상세 패널 영역 수정](panel-bounds-verification.md) | 긴 설명·낮은 창에서 패널 이탈과 조작 버튼 가림 수정 |
 | [연결 이동 애니메이션](flow-animation-verification.md) | 자동재생의 이동 표시·도착 강조·방향 이름·모션 설정 검사 |

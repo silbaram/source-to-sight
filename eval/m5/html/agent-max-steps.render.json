@@ -12,7 +12,7 @@
     "branch": null,
     "commit": "30bb1161095dbae2271e6bc3cc4c219cc3897a57",
     "workingTreeClean": true,
-    "generatedAt": "2026-09-06T23:17:06Z",
+    "generatedAt": "2026-09-07T01:15:50Z",
     "skillVersion": "0.6.0",
     "model": null
   },
@@ -66,7 +66,13 @@
       "정적 소스로 실제 대체 답변 내용이나 올바른 답변 성공을 확정할 수 없습니다."
     ]
   },
-  "links": {},
+  "links": {
+    "atlas": {
+      "url": "agent-project.html",
+      "generated": true,
+      "command": "$codebase-atlas smolagents · 모델과 도구가 협력하는 에이전트의 주요 구성과 기능을 설명해 줘 | subject=smolagents-smolagents-9c9cc82170d5 | language=ko"
+    }
+  },
   "regeneration": {
     "subjectId": "smolagents-multistepagent-run-stream-max-steps-fallback-8282c38e313a",
     "question": "에이전트가 단계 한계까지 최종 답을 얻지 못하면 어떻게 마무리하나요?",

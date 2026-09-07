@@ -12,7 +12,7 @@
     "branch": null,
     "commit": "c3364059663df1ddce32799d6b1922af89a345f6",
     "workingTreeClean": true,
-    "generatedAt": "2026-09-06T23:17:04Z",
+    "generatedAt": "2026-09-07T01:15:55Z",
     "skillVersion": "0.6.0",
     "model": null
   },
@@ -80,7 +80,13 @@
       "등록된 수신자 집합과 수신자 내부의 실제 결과는 애플리케이션에 달려 있습니다."
     ]
   },
-  "links": {},
+  "links": {
+    "atlas": {
+      "url": "event-project.html",
+      "generated": true,
+      "command": "$codebase-atlas Blinker · 신호와 수신자를 연결하는 구조의 주요 구성과 기능을 설명해 줘 | subject=blinker-blinker-e4e020d8d495 | language=ko"
+    }
+  },
   "regeneration": {
     "subjectId": "blinker-signal-connect-signal-send-b79308fa099f",
     "question": "Blinker에서 수신자를 연결한 뒤 send하면 누가 호출되고 어떤 결과가 돌아오나요?",

@@ -162,14 +162,8 @@ def prepare_build(data, source_root, output, data_output=None, linked_pages=None
     if result["snapshot"]["commit"] != current["commit"]:
         raise ValueError("The source commit changed or cannot be verified. Rerun discovery and semantic review.")
     destination = Path(output).resolve()
-    if data_output and Path(data_output).resolve() == destination:
-        raise ValueError("HTML and render JSON must use different paths.")
-    if destination.exists():
-        previous = s2s.validate(s2s.read_embedded(destination), "render")
-        identity = lambda graph: (graph["snapshot"]["repository"], graph["layer"],
-                                  graph["subject"]["id"], graph["subject"]["scope"], graph["language"])
-        if identity(previous) != identity(result):
-            raise ValueError("The output belongs to another subject, scope, language, or repository. Choose another path.")
+    s2s.check_output_paths(destination, data_output)
+    s2s.check_output_identity(result, destination)
     result["snapshot"] = current
     return s2s.prepare(result, source_root, destination, linked_pages=linked_pages)
 
@@ -264,8 +258,7 @@ def main(argv=None):
             print("Rules draft created; reread source and use visual-primer to build the paired pages.")
         else:
             path = args.pop("input")
-            if path.resolve() in {Path(args["output"]).resolve(), Path(args["data_output"]).resolve() if args["data_output"] else None}:
-                raise ValueError("Keep the internal evidence file separate from generated outputs.")
+            s2s.check_output_paths(args["output"], args["data_output"], inputs=[path])
             data = build(json.loads(path.read_text(encoding="utf-8")), **args)
             print(f"{args['output']} ({data['analysis']['status']}; {len(data['warnings'])} warnings)")
     except (OSError, ValueError) as error:

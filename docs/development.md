@@ -49,7 +49,7 @@ The source caches, generated output, browser reports, and dependencies are ignor
 
 Keep project explanations and development guides in `docs/`. Store retained verification/review records, human review worksheets, and their selected screenshots under `eval/reports/`; UI proposals and prototypes belong in `plans/design/`. The [verification index](../eval/reports/README.md) links the existing records.
 
-Project maps are in `build/eval/m5/agent-project.html`, `framework-project.html`, `utility-project.html`, `library-project.html`, `event-project.html` and `web-project.html`. See [project maps](project-maps.md) for region entry, capability scope, ungenerated requests and return navigation. The evaluation explicitly supplies one behavior/rules pair per map; the utility adds an input-contract rules companion inside its map case. There are 37 unique HTML files, including existing cases. A normal atlas build creates only the map and details explicitly supplied in its pages manifest.
+Project maps are in `build/eval/m5/agent-project.html`, `framework-project.html`, `utility-project.html`, `library-project.html`, `event-project.html` and `web-project.html`. See [project maps](project-maps.md) for region entry, capability scope, ungenerated requests and return navigation. The evaluation explicitly supplies one behavior/rules pair per map and six existing behavior inputs through `additionalBehaviors`, so every available capability has a return link. The utility adds an input-contract rules companion inside its map case. There are 37 unique HTML files, including existing cases. A normal atlas build creates only the map and details explicitly supplied in its pages manifest.
 
 ## Change the contract or renderer
 

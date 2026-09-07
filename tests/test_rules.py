@@ -105,6 +105,16 @@ class RulePageTests(unittest.TestCase):
         self.assertEqual(result['logic']['rules'][0]['displayStatus'],'unverified')
         self.assertTrue(any(w['kind']=='snapshot-mismatch' for w in result['logic']['warnings']))
 
+    def test_scope_does_not_repeat_the_same_unresolved_limit(self):
+        graph=copy.deepcopy(self.logic)
+        message='The callback order remains outside this explanation.'
+        graph['analysis']['unresolved']=[message]
+        graph['analysis']['status']='partial'
+        graph['summary']['limitations']=[message]
+        result=self.build(graph)
+        html=result['logic'].get('_rendered', '') if False else self.child.read_text()
+        self.assertEqual(html.count('<li>'+message+'</li>'), 1)
+
     def test_layout_references_reasons_and_source_body_guard(self):
         self.build();before=self.child.read_bytes()
         for mutate in (lambda l:l['sections'][0].update(ruleIds=['missing']),

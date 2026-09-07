@@ -12,7 +12,7 @@
     "branch": null,
     "commit": "4821148db2f4c6daa62ad8bdcae2918ecf27a731",
     "workingTreeClean": true,
-    "generatedAt": "2026-09-06T23:17:03Z",
+    "generatedAt": "2026-09-07T01:15:48Z",
     "skillVersion": "0.6.0",
     "model": null
   },
@@ -75,7 +75,13 @@
       "구체적 플러그인과 그 반환값은 실제 등록 구성에 따라 결정됩니다."
     ]
   },
-  "links": {},
+  "links": {
+    "atlas": {
+      "url": "framework-project.html",
+      "generated": true,
+      "command": "$codebase-atlas pluggy · 등록된 확장을 호출하는 구조의 주요 구성과 기능을 설명해 줘 | subject=pluggy-pluggy-c12ee97e197d | language=ko"
+    }
+  },
   "regeneration": {
     "subjectId": "pluggy-pluginmanager-register-hookcaller-call-07af1588c6a1",
     "question": "pluggy에서 플러그인 등록과 이후 일반 훅 호출은 어떻게 연결되나요?",

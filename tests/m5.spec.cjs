@@ -135,6 +135,48 @@ for(const name of maps)test(name+' connects map, behavior and rules and returns 
   expect(after.zoom).toBe(camera.zoom);expect(Math.abs(after.left-camera.left)).toBeLessThan(2);expect(Math.abs(after.top-camera.top)).toBeLessThan(2);
 });
 
+for(const name of maps)test(name+' returns from every available capability, including existing detail pages',async({page})=>{
+  await open(page,name);const data=await graph(page);
+  expect(data.subjects.filter(s=>s.link.generated)).toHaveLength({utility:1,framework:3,agent:2,library:2,event:2,web:2}[name]);
+  for(const subject of data.subjects.filter(s=>s.link.generated)) {
+    await page.locator('#capabilities [data-capability-id]').nth(data.subjects.indexOf(subject)).click();
+    await page.locator('#panel .capability-action a').click();
+    const child=await graph(page);
+    expect(child.subject.id).toBe(subject.id);
+    expect(child.links.atlas.generated).toBe(true);
+    expect(JSON.parse(fs.readFileSync(path.join(run,subject.link.url.replace(/\.html$/,'.render.json')),'utf8'))).toEqual(child);
+    await page.getByRole('link',{name:'프로젝트 지도 ↗'}).click();
+    await expect(page.locator('#panel-title')).toHaveText(subject.label);
+    await expect(page.locator('.node.selected')).toHaveAttribute('data-id',subject.nodeId);
+  }
+});
+
+for(const mode of ['resize','legacy'])test('map return reframes its selected node after '+mode,async({page},info)=>{
+  await open(page);const data=await graph(page),subject=data.subjects.find(s=>s.link.generated);
+  const region=data.regions.find(r=>r.nodeIds.includes(subject.nodeId));
+  await page.locator('#atlas-regions button').filter({hasText:region.label}).click();
+  await page.locator('#capabilities [data-capability-id]').nth(data.subjects.indexOf(subject)).click();
+  await page.locator('#panel .capability-action a').click();
+  if(mode==='resize')await page.setViewportSize(info.project.name==='desktop'?{width:390,height:844}:{width:844,height:390});
+  else await page.getByRole('link',{name:'프로젝트 지도 ↗'}).evaluate(link=>{
+    const url=new URL(link.href),params=new URLSearchParams(url.hash.slice(1));
+    params.delete('layout');params.set('camera','[2,50000,50000,50000]');
+    url.hash='#'+params;link.href=url.href;
+  });
+  await page.getByRole('link',{name:'프로젝트 지도 ↗'}).click();
+  await expect(page.locator('#panel-title')).toHaveText(subject.label);
+  await expect(page.locator('#crumb')).toHaveText(region.label);
+  await expect(page.locator('.node.selected')).toHaveAttribute('data-id',subject.nodeId);
+  await expect(page.locator('#navigation-notice')).toBeHidden();
+  await expect.poll(()=>page.locator('.node.selected').evaluate(node=>{
+    const box=node.getBoundingClientRect(),canvas=document.querySelector('#canvas').getBoundingClientRect(),panel=document.querySelector('#panel').getBoundingClientRect();
+    const right=Math.min(innerWidth,canvas.right,innerWidth>900?panel.left:Infinity);
+    const bottom=Math.min(innerHeight,canvas.bottom,innerWidth<=900?panel.top:Infinity);
+    return box.left>=Math.max(0,canvas.left)&&box.right<=right&&box.top>=Math.max(0,canvas.top)&&box.bottom<=bottom;
+  })).toBe(true);
+  if(mode==='resize')await page.screenshot({path:path.join(root,'build/qa/m5',info.project.name+'-return-after-resize.png')});
+});
+
 test('region evidence remains separate from node certainty and region labels are clickable',async({page})=>{
   await open(page);
   const region=page.locator('.map-region').first();
@@ -149,7 +191,7 @@ test('region evidence remains separate from node certainty and region labels are
 test('an invalid region or camera falls back with a visible explanation',async({page})=>{
   await open(page);await page.locator('#atlas-regions button').first().click();
   const valid=new URLSearchParams(new URL(page.url()).hash.slice(1));
-  for(const [key,value] of [['region','gone'],['camera','[0,1,2,3]'],['camera','{"x":1}'],['camera','[1,1e99,2,3]']]){
+  for(const [key,value] of [['region','gone'],['camera','[0,1,2,3]'],['camera','{"x":1}'],['camera','[1,1e99,2,3]'],['layout','[1,2]']]){
     const broken=new URLSearchParams(valid);broken.set(key,value);
     await page.evaluate(hash=>{location.hash=hash;},'#'+broken);
     await expect(page.locator('#navigation-notice')).toBeVisible();await expect(page.locator('#crumb')).toHaveText('프로젝트 / 전체 구성');

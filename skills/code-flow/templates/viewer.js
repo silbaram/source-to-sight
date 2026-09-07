@@ -92,11 +92,13 @@
   function statusBadge(item) {
     return element('span', labels[item.displayStatus], 'pill ' + item.displayStatus);
   }
-  function list(parent, title, items) {
-    if (!items.length) return;
+  function list(parent, title, items, seen) {
+    const values=seen ? items.filter(value=>!seen.has(value)) : items;
+    if (!values.length) return;
+    if (seen) values.forEach(value=>seen.add(value));
     parent.append(element('h3', title));
     const ul = element('ul');
-    items.forEach(text => ul.append(element('li', text)));
+    values.forEach(text => ul.append(element('li', text)));
     parent.append(ul);
   }
   function linkControl(kind, link, title) {
@@ -846,7 +848,11 @@
     const params=new URLSearchParams(locationHash().slice(1));
     const camera=readCamera();
     params.set('camera',JSON.stringify([camera.zoom,...[camera.left,camera.top,camera.pageTop].map(n=>Math.round(n*1000)/1000)]));
+    params.set('layout',JSON.stringify(cameraLayout()));
     return '#'+params.toString();
+  }
+  function cameraLayout() {
+    return [innerWidth,innerHeight,$('canvas').clientWidth,$('canvas').clientHeight,graphWidth,graphHeight];
   }
   function syncLocation() {
     if(!navigationReady||restoringLocation||preparingStep||data.analysis.status==='insufficient')return;
@@ -859,7 +865,7 @@
   }
   function readLocation(hash) {
     const params=new URLSearchParams(hash.slice(1));
-    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera']);
+    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera','layout']);
     if([...params.keys()].some(key=>!allowed.has(key)||params.getAll(key).length!==1)||
       params.get('s2s')!=='1'||params.get('subject')!==data.subject.id||
       !['structure','flow'].includes(params.get('view'))||
@@ -867,11 +873,15 @@
       (params.has('speed')&&!['1','1.5','2'].includes(params.get('speed')))||
       (params.has('panel')&&params.get('panel')!=='1'))throw new Error('Invalid location');
     const result={view:params.get('view'),detail:params.get('detail')==='detail',rate:Number(params.get('speed')||1),scenario:0,step:-1,
-      item:null,panel:params.has('panel'),focus:params.get('focus'),region:params.get('region'),camera:null};
+      item:null,panel:params.has('panel'),focus:params.get('focus'),region:params.get('region'),camera:null,layout:null};
     if(result.region&&(!isAtlas||!regionMap.has(result.region)||result.view!=='structure'))throw new Error('Missing region');
     if(params.has('camera')) {
       result.camera=JSON.parse(params.get('camera'));
       if(!isAtlas||!Array.isArray(result.camera)||result.camera.length!==4||result.camera.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<0||n>1e7)||result.camera[0]<.2||result.camera[0]>2)throw new Error('Invalid camera');
+    }
+    if(params.has('layout')) {
+      result.layout=JSON.parse(params.get('layout'));
+      if(!result.camera||!Array.isArray(result.layout)||result.layout.length!==6||result.layout.some(n=>typeof n!=='number'||!Number.isFinite(n)||n<=0||n>1e7))throw new Error('Invalid camera layout');
     }
     if(result.view==='flow') {
       result.scenario=data.scenarios.findIndex(s=>s.id===params.get('scenario'));
@@ -923,7 +933,11 @@
       else fit();
       $('player').hidden=view!=='flow'||!data.scenarios.length;
       updateNavigation();paint();
-      if(restored.camera){const [zoom,left,top,pageTop]=restored.camera;applyCamera({zoom,left,top,pageTop});updateMini();}
+      // Coordinates belong to the layout they were captured in. After a resize
+      // (or for an older link without dimensions), keep the selection framed above.
+      if(restored.camera&&restored.layout?.every((n,i)=>n===cameraLayout()[i])) {
+        const [zoom,left,top,pageTop]=restored.camera;applyCamera({zoom,left,top,pageTop});updateMini();
+      }
     }
     restoringLocation=false;
     syncLocation();
@@ -1214,7 +1228,7 @@
     $('scope-title').textContent=t('설명 범위와 한계','Scope and limitations');
     const scope=element('div',undefined,'scope-body-grid');
     const included=element('div');list(included,t('포함한 범위','Included'),data.subject.scope.includes);list(included,t('제외한 범위','Excluded'),data.subject.scope.excludes);
-    const limitations=element('div');list(limitations,t('확인하지 못한 내용','Unresolved'),data.analysis.unresolved);list(limitations,t('탐색한 위치','Searched'),data.analysis.searched);list(limitations,t('한계','Limitations'),data.summary.limitations);list(limitations,t('다음 시도','Next attempts'),data.analysis.nextAttempts);
+    const limitations=element('div'),scopeSeen=new Set();list(limitations,t('확인하지 못한 내용','Unresolved'),data.analysis.unresolved,scopeSeen);list(limitations,t('탐색한 위치','Searched'),data.analysis.searched,scopeSeen);list(limitations,t('한계','Limitations'),data.summary.limitations,scopeSeen);list(limitations,t('다음 시도','Next attempts'),data.analysis.nextAttempts,scopeSeen);
     scope.append(included,limitations);$('scope-body').append(scope);
     $('offline-note').textContent=t('오프라인 설명서 · 하위 페이지를 만든 뒤 상위 페이지를 새로 생성하면 링크가 갱신됩니다.','Offline explanation · regenerate the parent page after creating a child to update its links.');
     if(data.analysis.status==='insufficient') {

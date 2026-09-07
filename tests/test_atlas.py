@@ -1,11 +1,15 @@
 import copy
+import contextlib
+import io
 import json
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'skills/codebase-atlas/scripts'))
@@ -58,6 +62,25 @@ class AtlasTests(unittest.TestCase):
         for path in result:
             html=path.read_text();self.assertNotIn('def convert(value):',html)
             self.assertNotIn('anchorText',s2s.read_embedded(path)['evidence'][0])
+
+    def test_existing_detail_without_a_matching_active_return_stays_pending(self):
+        self.build()
+        for parent in (None,dict(url='../other-map.html',generated=True),dict(url='../project.html',generated=False)):
+            with self.subTest(parent=parent):
+                child=s2s.prepare(self.behavior,self.source)
+                if parent:child['links']['atlas']={**parent,'command':'$codebase-atlas Explain the package'}
+                self.child.parent.mkdir(parents=True,exist_ok=True)
+                self.child.write_text(s2s.render(child))
+                before=self.child.read_bytes()
+                result=self.build()[self.output]
+                self.assertFalse(result['subjects'][0]['link']['generated'])
+                self.assertEqual(self.child.read_bytes(),before)
+        self.build(pages=[dict(behavior=self.behavior,output=self.child)])
+        before=self.child.read_bytes()
+        result=self.build()[self.output]
+        self.assertTrue(result['subjects'][0]['link']['generated'])
+        self.assertTrue(s2s.read_embedded(self.child)['links']['atlas']['generated'])
+        self.assertEqual(self.child.read_bytes(),before)
 
     def test_three_layers_build_from_explicit_pages_without_fabricating_new_rules(self):
         logic=copy.deepcopy(self.behavior);logic['layer']='logic'
@@ -142,6 +165,27 @@ class AtlasTests(unittest.TestCase):
 
 
 class AtlasEvaluationTests(unittest.TestCase):
+    def test_late_review_template_write_failure_fails_the_case_and_run(self):
+        write_json=author.write_json
+        def fail_review_template(path,data,**kwargs):
+            if Path(path).name=='agent-project.review-template.json':
+                raise OSError('simulated review-template write failure')
+            return write_json(path,data,**kwargs)
+        with tempfile.TemporaryDirectory() as directory:
+            output=Path(directory)/'evaluation'
+            args=SimpleNamespace(manifest=str(ROOT/'eval/atlas-cases.json'),source_cache=str(ROOT/'.cache/m1-sources'),
+                                 output=str(output),reviews=None,strict=False)
+            with patch.object(author,'write_json',side_effect=fail_review_template),contextlib.redirect_stdout(io.StringIO()):
+                exit_code=evaluate_atlas.run(args)
+            report=evaluate.read(output/'results.json')
+            result=next(r for r in report['results'] if r['id']=='agent-project')
+            self.assertIn('evaluation-error:simulated review-template write failure',result['errors'])
+            self.assertEqual(result['autoStatus'],'failed')
+            self.assertEqual(result['status'],'failed')
+            self.assertEqual(report['status'],'failed')
+            self.assertEqual(exit_code,1)
+            self.assertEqual(sum(r['autoStatus']=='passed' for r in report['results']),35)
+
     def prepared(self):
         graph=evaluate.read(ROOT/'eval/m5/graphs/agent-project.json')
         ref=evaluate.read(ROOT/'eval/m5/expectations/agent-project.json')

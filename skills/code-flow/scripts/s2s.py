@@ -333,6 +333,14 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
                     raise InvalidGraph("The atlas does not contain this explanation's subject and scope.")
                 if other["language"] != data["language"]:
                     raise InvalidGraph("Wrong target language.")
+                if data["layer"] == "atlas" and kind == "behavior":
+                    parent = other["links"].get("atlas")
+                    if not parent or (path.parent / unquote(urlsplit(parent["url"]).path)).resolve() != Path(output_path).resolve():
+                        raise InvalidGraph("The detail needs a return link to this project map.")
+                    # Pages in this build resolve both directions in a second
+                    # pass. Existing HTML must already expose an active return.
+                    if path.resolve() not in (linked_pages or {}) and not parent["generated"]:
+                        raise InvalidGraph("The detail's project map return link is inactive.")
                 link["generated"] = True
                 if not source_matches(data, other, source_root):
                     warn("snapshot-mismatch", (
@@ -412,6 +420,28 @@ def render(data):
     return re.sub("|".join(map(re.escape, replacements)), lambda m: replacements[m.group()], content)
 
 
+def check_output_paths(output, data_output=None, inputs=()):
+    outputs = [Path(p).resolve() for p in (output, data_output) if p is not None]
+
+    def same_file(left, right):
+        return left == right or (left.exists() and right.exists() and left.samefile(right))
+
+    if len(outputs) == 2 and same_file(*outputs):
+        raise ValueError("HTML and render JSON must use different paths.")
+    if any(same_file(Path(source).resolve(), target) for source in inputs for target in outputs):
+        raise ValueError("Keep the internal evidence file separate from generated outputs.")
+
+
+def check_output_identity(data, output):
+    destination = Path(output).resolve()
+    if destination.exists():
+        previous = validate(read_embedded(destination), "render")
+        identity = lambda graph: (graph["snapshot"]["repository"], graph["layer"],
+                                  graph["subject"]["id"], graph["subject"]["scope"], graph["language"])
+        if identity(previous) != identity(data):
+            raise ValueError("The output belongs to another subject, scope, language, or repository. Choose another path.")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
@@ -436,7 +466,9 @@ def main(argv=None):
                 validate(original, args.stage)
                 print(f"Valid {args.stage} graph: {args.input}")
             else:
+                check_output_paths(args.output, args.data_output, inputs=[args.input])
                 data = prepare(original, args.source_root, args.output)
+                check_output_identity(data, args.output)
                 output = render(data)
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 args.output.write_text(output, encoding="utf-8")

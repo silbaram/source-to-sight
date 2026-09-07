@@ -60,9 +60,13 @@ def run(args):
         behavior=evaluate.read(evaluate.within(root,case['behaviorInput']))
         logic=evaluate.read(evaluate.within(root,case['logicInput']))
         layout=evaluate.read(evaluate.within(root,case['layout']))
+        additional=[dict(id=item['id'],graph=evaluate.read(evaluate.within(root,item['input'])))
+                    for item in case.get('additionalBehaviors',[])]
         reference=evaluate.read(evaluate.within(root,case['expectation']))
         evaluate.validate_reference(reference,case['id'])
         bundle=dict(atlas=graph,behavior=behavior,logic=logic,layout=layout)
+        if additional:
+            bundle['additionalBehaviors']=additional
         result=dict(id=case['id'],profile=case['profile'],variant='atlas',candidateHash=evaluate.digest(bundle),expectationHash=evaluate.digest(reference),
                     autoStatus='failed',status='failed',reviewStatus='pending',errors=[],criticalErrors=[],requiredNodes=len(reference['nodes']),matchedNodes=0,
                     requiredEdges=len(reference['edges']),matchedEdges=0,requiredBehaviors=0,matchedBehaviors=0,requiredPaths=0,matchedPaths=0,
@@ -78,11 +82,12 @@ def run(args):
                 raise ValueError('source-checkout-must-be-clean-at-pin')
             target=output/(case['id']+'.html')
             page=dict(behavior=behavior,output=output/(case['behaviorId']+'.html'),logic=logic,layout=layout,logicOutput=output/(case['behaviorId']+'-rules.html'))
-            built=atlas.build_site(graph,source_root,target,pages=[page],data_output=output/(case['id']+'.render.json'))
+            pages=[page]+[dict(behavior=item['graph'],output=evaluate.within(output,item['id']+'.html')) for item in additional]
+            built=atlas.build_site(graph,source_root,target,pages=pages,data_output=output/(case['id']+'.render.json'))
             prepared=built[target]
             result.update(check_atlas(prepared,reference))
             result['analysisStatus']=prepared['analysis']['status']
-            if not any(s['id']==behavior['subject']['id'] and s['link']['generated'] for s in prepared['subjects']):
+            if any(not any(s['id']==item['behavior']['subject']['id'] and s['link']['generated'] for s in prepared['subjects']) for item in pages):
                 result['errors'].append('missing-child-link')
             for path,data in built.items():
                 # Adding a parent link changes the child's render data too.
@@ -110,6 +115,7 @@ def run(args):
             evaluate.author.write_json(output/(case['id']+'.review-template.json'),evaluate.review_template(bundle,reference,fingerprint),exclusive=True)
         except (OSError,ValueError,KeyError,TypeError,ValidationError) as error:
             result['errors'].append('evaluation-error:'+str(error))
+            result['autoStatus']=result['status']='failed'
         result['metrics']['evaluationSeconds']=round(time.perf_counter()-started,4)
         report['results'].append(result)
         print(f"{case['id']}: automatic={result['autoStatus']}; {result['errors']}")
@@ -120,7 +126,7 @@ def run(args):
     detail='\n## Project maps\n\n| Map | Regions | Capabilities | Generated / pending details |\n| --- | ---: | ---: | --- |\n'
     for row in report['results'][-6:]:
         detail+=f"| {row['id']} | {row.get('matchedRegions',0)}/{row.get('requiredRegions',0)} | {row.get('matchedCapabilities',0)}/{row.get('requiredCapabilities',0)} | {row.get('availableCapabilities',0)} / {row.get('pendingCapabilities',0)} |\n"
-    detail+='\nSix maps each connect to one explicitly supplied behavior/rules pair. The utility companion adds an input-contract explanation inside the utility map case; it is not an independent-generation sample.\n'
+    detail+='\nSix maps connect to explicitly supplied detail inputs, including one behavior/rules pair per map. Additional behavior pages retain their original evaluation cases. The utility rules companion belongs to the utility map case; it is not an independent-generation sample.\n'
     (output/'report.md').write_text(evaluate.markdown(report)+detail,encoding='utf-8')
     return 1 if report['status']=='failed' or (args.strict and report['status']!='passed') else 0
 

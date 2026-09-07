@@ -22,6 +22,10 @@
       "candidate": "m5/graphs/framework-project.json",
       "expectation": "m5/expectations/framework-project.json",
       "behaviorId": "plugin-wrapper-unwind",
+      "additionalBehaviors": [
+        {"id": "plugin-hooks", "input": "m15/graphs/plugin-hooks.json"},
+        {"id": "plugin-blocked-registration", "input": "m15/graphs/plugin-blocked-registration.json"}
+      ],
       "behaviorInput": "m2/graphs/plugin-wrapper-unwind.json",
       "logicInput": "m3/graphs/plugin-wrapper-unwind-rules.json",
       "layout": "m3/layouts/plugin-wrapper-unwind-rules.json"
@@ -34,6 +38,9 @@
       "candidate": "m5/graphs/agent-project.json",
       "expectation": "m5/expectations/agent-project.json",
       "behaviorId": "agent-parallel-tools",
+      "additionalBehaviors": [
+        {"id": "agent-max-steps", "input": "m15/graphs/agent-max-steps.json"}
+      ],
       "behaviorInput": "m2/graphs/agent-parallel-tools.json",
       "logicInput": "m3/graphs/agent-parallel-tools-rules.json",
       "layout": "m3/layouts/agent-parallel-tools-rules.json"
@@ -46,6 +53,9 @@
       "candidate": "m5/graphs/library-project.json",
       "expectation": "m5/expectations/library-project.json",
       "behaviorId": "library-resize-callbacks",
+      "additionalBehaviors": [
+        {"id": "library-eviction", "input": "m15/graphs/library-eviction.json"}
+      ],
       "behaviorInput": "m2/graphs/library-resize-callbacks.json",
       "logicInput": "m3/graphs/library-resize-callbacks-rules.json",
       "layout": "m3/layouts/library-resize-callbacks-rules.json"
@@ -58,6 +68,9 @@
       "candidate": "m5/graphs/event-project.json",
       "expectation": "m5/expectations/event-project.json",
       "behaviorId": "event-async-lifecycle",
+      "additionalBehaviors": [
+        {"id": "event-receivers", "input": "m15/graphs/event-receivers.json"}
+      ],
       "behaviorInput": "m2/graphs/event-async-lifecycle.json",
       "logicInput": "m3/graphs/event-async-lifecycle-rules.json",
       "layout": "m3/layouts/event-async-lifecycle-rules.json"
@@ -70,6 +83,9 @@
       "candidate": "m5/graphs/web-project.json",
       "expectation": "m5/expectations/web-project.json",
       "behaviorId": "web-routing-fallbacks",
+      "additionalBehaviors": [
+        {"id": "web-dispatch", "input": "m15/graphs/web-dispatch.json"}
+      ],
       "behaviorInput": "m2/graphs/web-routing-fallbacks.json",
       "logicInput": "m3/graphs/web-routing-fallbacks-rules.json",
       "layout": "m3/layouts/web-routing-fallbacks-rules.json"

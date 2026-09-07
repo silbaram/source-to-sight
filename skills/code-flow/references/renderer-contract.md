@@ -13,7 +13,7 @@ python3 skills/code-flow/scripts/s2s.py render fixtures/cli-transform.json \
 python3 skills/code-flow/scripts/s2s.py inspect build/cli-transform.html
 ~~~
 
-`render` always re-reads the referenced source files before writing a page. Use the actual source checkout as `--source-root`. For pinned M0 sources, use `.cache/sources/<repository-id>`; see the repository's development instructions.
+`render` always re-reads the referenced source files before writing a page. Use the actual source checkout as `--source-root`. Input, HTML and optional `--data-output` render JSON must use separate files, including symlink/hardlink aliases. Existing HTML must belong to the same repository, layer, subject, scope and language. These guards are shared with `author.py build` and run before output writes. For pinned M0 sources, use `.cache/sources/<repository-id>`; see the repository's development instructions.
 
 `inspect` extracts the subject/language/command needed for future agent-driven refresh. It does not perform discovery or execute the command.
 
@@ -107,6 +107,6 @@ M5 adds scoped `subjects` entries for representative capabilities. Each has its 
 
 Atlas regions have disjoint node membership. Compound layout groups actual nodes without inventing aggregate invocation edges. Their labels show the group's own status and open its evidence; entering a region shows all members and their immediate neighbors through actual edges. Region navigation and capability search preserve detail reveal, selection, zoom, mobile inspection and Back. Single-node maps need no region or scenario. A catalog is not a playback scenario.
 
-The atlas builder checks supplied behavior identity against the catalog and checks the parent's catalog on return. Only explicitly supplied details are built; other compatible existing files may be linked but are not rewritten. Missing, stale or incompatible files remain precise generation requests. Requested pages are all validated/rendered before any destination replacement. Replacements are individually atomic; a filesystem failure may require rerunning the build.
+The atlas builder checks supplied behavior identity against the catalog and checks the parent's catalog on return. Only explicitly supplied details are built; other compatible existing files may be linked when they already expose an active return link to this map, but are not rewritten. Missing, stale, incompatible or one-way files remain precise generation requests. Requested pages are all validated/rendered before any destination replacement. Replacements are individually atomic; a filesystem failure may require rerunning the build.
 
 Atlas detail links carry a `s2s-atlas` query parameter containing the parent's versioned hash state. Region, selected item, core/detail mode and finite bounded camera coordinates return through behavior and rules pages without browser storage. The destination always comes from the detail's own validated atlas URL. Incoming state cannot supply a destination or request autoplay; invalid IDs or camera values use the default view and a notice. Ordinary current-view copy links capture IDs and region, while camera coordinates are added only for map/detail round trips.

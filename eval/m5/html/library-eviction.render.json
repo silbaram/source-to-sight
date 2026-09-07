@@ -12,7 +12,7 @@
     "branch": null,
     "commit": "9c13c57de0bedd6b3e21183b34072e417ffa69d1",
     "workingTreeClean": true,
-    "generatedAt": "2026-09-06T23:17:03Z",
+    "generatedAt": "2026-09-07T01:15:53Z",
     "skillVersion": "0.6.0",
     "model": null
   },
@@ -75,7 +75,13 @@
       "사용자가 제공하는 퇴출 콜백의 내부 동작은 미확인입니다."
     ]
   },
-  "links": {},
+  "links": {
+    "atlas": {
+      "url": "library-project.html",
+      "generated": true,
+      "command": "$codebase-atlas golang-lru · 캐시 정책과 공통 저장 구조의 주요 구성과 기능을 설명해 줘 | subject=golang-lru-golang-lru-c03e7757a0a8 | language=ko"
+    }
+  },
   "regeneration": {
     "subjectId": "golang-lru-cache-add-2a8c32889414",
     "question": "Cache.Add는 용량이 찼을 때 무엇을 제거하고 사용자 콜백을 언제 호출하나요?",

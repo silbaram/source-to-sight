@@ -12,7 +12,7 @@
     "branch": null,
     "commit": "4821148db2f4c6daa62ad8bdcae2918ecf27a731",
     "workingTreeClean": true,
-    "generatedAt": "2026-09-06T23:17:04Z",
+    "generatedAt": "2026-09-07T01:15:48Z",
     "skillVersion": "0.6.0",
     "model": null
   },
@@ -63,7 +63,13 @@
       "차단과 나중의 등록은 호출자가 각각 요청합니다. 두 메서드가 서로 자동 호출되지는 않습니다."
     ]
   },
-  "links": {},
+  "links": {
+    "atlas": {
+      "url": "framework-project.html",
+      "generated": true,
+      "command": "$codebase-atlas pluggy · 등록된 확장을 호출하는 구조의 주요 구성과 기능을 설명해 줘 | subject=pluggy-pluggy-c12ee97e197d | language=ko"
+    }
+  },
   "regeneration": {
     "subjectId": "pluggy-pluginmanager-set-blocked-register-618003be16bb",
     "question": "차단한 플러그인 이름을 다시 등록하면 어떻게 되나요?",

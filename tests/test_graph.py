@@ -1,7 +1,9 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -16,6 +18,50 @@ def fixture(name="cli-transform"):
 
 
 class GraphContractTests(unittest.TestCase):
+    def render_cli(self, source, output, data_output=None):
+        command = [sys.executable, str(ROOT/'skills/code-flow/scripts/s2s.py'), 'render', str(source),
+                   '--source-root', str(ROOT), '--output', str(output)]
+        if data_output is not None:
+            command += ['--data-output', str(data_output)]
+        return subprocess.run(command, capture_output=True, text=True)
+
+    def test_render_cli_preserves_internal_input_and_outputs_on_path_collisions(self):
+        for mode in ('input-html', 'input-json', 'same-outputs', 'symlink', 'hardlink'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root=Path(directory);source=root/'internal.json';output=root/'flow.html';data_output=root/'flow.json'
+                source.write_text(json.dumps(fixture()))
+                output.write_text('Keep the previous HTML.')
+                data_output.write_text('Keep the previous render JSON.')
+                before={p:p.read_bytes() for p in (source,output,data_output)}
+                if mode=='input-html':output=source
+                elif mode=='input-json':data_output=source
+                elif mode=='same-outputs':data_output=output
+                else:
+                    data_output=root/'alias.json'
+                    if mode=='symlink':data_output.symlink_to(source)
+                    else:os.link(source,data_output)
+                result=self.render_cli(source,output,data_output)
+                self.assertNotEqual(result.returncode,0,result.stdout)
+                self.assertRegex(result.stderr,'separate|different paths')
+                for path,content in before.items():self.assertEqual(path.read_bytes(),content)
+
+    def test_render_cli_refreshes_matching_html_but_preserves_another_subject(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'internal.json';output=root/'flow.html';data_output=root/'flow.json'
+            data=fixture();source.write_text(json.dumps(data));original=source.read_bytes()
+            for _ in range(2):
+                result=self.render_cli(source,output,data_output)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertEqual(s2s.read_embedded(output),json.loads(data_output.read_text()))
+                self.assertEqual(source.read_bytes(),original)
+            before={p:p.read_bytes() for p in (output,data_output)}
+            data['subject']['scope']['includes']=['Another explanation scope.']
+            source.write_text(json.dumps(data))
+            result=self.render_cli(source,output,data_output)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('another subject',result.stderr)
+            for path,content in before.items():self.assertEqual(path.read_bytes(),content)
+
     def test_all_fixture_contracts_and_render_boundary(self):
         repos={r["repository"]:r["id"] for r in json.loads((ROOT/"fixtures/source-repositories.json").read_text())}
         for path in (ROOT/"fixtures").glob("*.json"):

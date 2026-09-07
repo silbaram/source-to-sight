@@ -12,7 +12,7 @@
     "branch": null,
     "commit": "484018016424d215c0b87c42f4c9b57d980fbd00",
     "workingTreeClean": true,
-    "generatedAt": "2026-09-06T23:17:04Z",
+    "generatedAt": "2026-09-07T01:15:57Z",
     "skillVersion": "0.6.0",
     "model": null
   },
@@ -81,7 +81,13 @@
       "실제 요청 처리 함수가 만드는 응답은 이 라우터 패키지만으로 알 수 없습니다."
     ]
   },
-  "links": {},
+  "links": {
+    "atlas": {
+      "url": "web-project.html",
+      "generated": true,
+      "command": "$codebase-atlas HttpRouter · 요청을 처리 함수에 연결하는 구조의 주요 구성과 기능을 설명해 줘 | subject=httprouter-httprouter-4e74e76b9d48 | language=ko"
+    }
+  },
   "regeneration": {
     "subjectId": "httprouter-router-handle-router-servehttp-1e9c974d54f9",
     "question": "httprouter에 등록한 경로가 일치할 때 요청은 어떤 핸들러로 전달되나요?",
