@@ -12,6 +12,8 @@ npx skills add silbaram/source-to-sight --global --skill '*'
 
 This installs all skills for use across projects. To install only the skills your host needs, replace `--skill '*'` with specific names such as `--skill code-flow`. Each skill directory must be copied or installed as a complete directory, including its references, templates, vendored assets, and licenses.
 
+Source-backed generation requires Python 3.10+; the validator is included, so no additional Python packages or virtual environment are needed.
+
 ## Use
 
 ```text

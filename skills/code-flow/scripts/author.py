@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 import s2s
 
 PROFILES = ("cli-utility", "library-sdk", "framework-plugin", "ai-agent", "data-event", "web")
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 
 def now():
@@ -188,13 +188,18 @@ def write_json(path, data, exclusive=False):
 
 def doctor():
     for stage in ("internal", "render"):
-        s2s.Draft202012Validator.check_schema(s2s.schema(stage))
+        s2s.check_schema(s2s.schema(stage))
     required = ["SKILL.md", "references/discovery-protocol.md", "references/explainer-guide.md", "references/complex-behavior.md", "references/rule-checklist.md",
                 "references/assembly-protocol.md", "references/renderer-contract.md",
                 "templates/flow-viewer-template.html", "templates/viewer.js", "templates/viewer.css",
                 "templates/vendor/dagre.min.js", "templates/vendor/dagre.LICENSE",
                 "templates/vendor/dagre.NOTICES", "templates/vendor/NotoSansKR.woff2", "templates/vendor/NotoSansKR.LICENSE"]
     required += [f"references/profiles/{profile}.md" for profile in PROFILES]
+    required += ["scripts/schema_validation.py", "scripts/vendor/__init__.py",
+                 "scripts/vendor/fastjsonschema.LICENSE", "scripts/vendor/PROVENANCE.md"]
+    required += [f"scripts/vendor/fastjsonschema/{name}.py" for name in
+                 ("__init__", "__main__", "draft04", "draft06", "draft07", "draft2019",
+                  "exceptions", "generator", "indent", "ref_resolver", "version")]
     for name in required:
         if not (s2s.SKILL / name).is_file():
             raise ValueError(f"Installed skill resource is missing: {name}")

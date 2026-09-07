@@ -14,8 +14,6 @@ import sys
 import tempfile
 from urllib.parse import quote
 
-from jsonschema import Draft202012Validator, ValidationError
-
 SKILL = Path(__file__).resolve().parents[1]
 
 
@@ -56,7 +54,7 @@ def validate_shared(behavior, logic, s2s):
 
 def validate_layout(layout, graph, s2s):
     schema = json.loads((SKILL / "references/rule-layout.schema.json").read_text())
-    Draft202012Validator(schema).validate(layout)
+    s2s.validate_schema(layout, schema, "layout", formats=False)
     ids = [s["id"] for s in layout["sections"]]
     if len(ids) != len(set(ids)):
         raise ValueError("Figure IDs must be unique.")
@@ -264,7 +262,7 @@ def main(argv=None):
         result = build_pair(read(args.behavior_input), read(args.input), read(args.layout), args.source_root,
                             args.behavior_output, args.output, args.data_output, args.code_flow_root)
         print(f"{args.output}: {len(result['logic']['rules'])} rules; {len(result['omittedSections'])} withheld figures; {result['logic']['analysis']['status']}")
-    except (OSError, ValueError, ValidationError) as error:
+    except (OSError, ValueError) as error:
         parser.exit(1, f"rules: {error}\n")
 
 

@@ -11,7 +11,6 @@ from pathlib import Path
 import sys
 import tempfile
 from urllib.parse import quote, unquote, urlsplit
-from jsonschema import ValidationError
 
 SKILL = Path(__file__).resolve().parents[1]
 
@@ -239,7 +238,7 @@ def main(argv=None):
                 raise ValueError("Keep internal evidence, layout and page manifests separate from outputs.")
             result = build_site(json.loads(input_path.read_text(encoding="utf-8")), pages=pages, **args)
             print(f"{args['output']}: {len(result)} requested pages; {len(result[args['output'].resolve()]['subjects'])} catalog capabilities")
-    except (OSError, ValueError, KeyError, TypeError, ValidationError) as error:
+    except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(1, f"atlas: {error}\n")
 
 
