@@ -10,6 +10,8 @@ fixtures/ export-ignore
 plans/ export-ignore
 tests/ export-ignore
 scripts/ export-ignore
+docs/development.md export-ignore
+docs/evaluation.md export-ignore
 package.json export-ignore
 package-lock.json export-ignore
 playwright.config.cjs export-ignore
