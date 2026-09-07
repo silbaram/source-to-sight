@@ -4,6 +4,8 @@ Source to Sight는 소스 코드를 오프라인 시각적 설명으로 바꾸�
 
 ## 설치
 
+처음 사용한다면 [사용자 퀵스타터](docs/quickstart.md)를 따라 설치부터 첫 HTML 생성까지 진행하세요.
+
 ```text
 npx skills add silbaram/source-to-sight --skill code-flow
 npx skills add silbaram/source-to-sight --skill visual-primer

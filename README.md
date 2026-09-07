@@ -4,6 +4,8 @@ Source to Sight is an Agent Skills package that turns source code into offline v
 
 ## Install
 
+Follow the [Korean user quickstart](docs/quickstart.md) for setup and your first project explanation.
+
 ```text
 npx skills add silbaram/source-to-sight --skill code-flow
 npx skills add silbaram/source-to-sight --skill visual-primer
