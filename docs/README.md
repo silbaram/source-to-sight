@@ -14,6 +14,7 @@ M4의 동작 화면에서는 배속·단계 선택·키보드 탐색과 모바�
 | [개발 가이드](development.md) | 개발 환경, 예제 재현, 템플릿 변경과 검사 방법 |
 | [평가 가이드](evaluation.md) | 동작 24개·규칙 6개·지도 6개 실행, 결과 비교와 사람 검토 반영 |
 | [프로젝트 지도](project-maps.md) | 책임 구역, 기능 선택과 지도↔동작↔규칙 이동 |
+| [배포 파일 기준](distribution.md) | 제품 스킬·안내와 개발·검증 보관물의 구분 |
 | [code-flow](../skills/code-flow/SKILL.md) | 동작 설명 스킬의 입력·출력과 사용 계약 |
 | [규칙 설명 생성](../skills/visual-primer/references/source-rules.md) | 같은 대상의 조건 비교·이유·예외와 짝 페이지 연결 |
 | [렌더러 계약](../skills/code-flow/references/renderer-contract.md) | 데이터·근거·오프라인 화면의 동작 기준 |

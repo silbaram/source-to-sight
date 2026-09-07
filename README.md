@@ -2,7 +2,7 @@
 
 Source to Sight connects **project maps (`codebase-atlas`), behavior walkthroughs (`code-flow`), and rules explanations (`visual-primer`)** in offline HTML. The host reads source and records evidence across utilities, libraries, frameworks, agents, event tools and web projects. Six pinned repositories across JavaScript, Python and Go exercise the common model. Independent human fact and comprehension review remains pending.
 
-[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [M1 cases and provenance](eval/m1/README.md) · [M1 status](eval/reports/m1-verification.md)
+[Development plan](plans/source-to-sight-evolution-plan.md) · [Run the examples and checks](docs/development.md) · [Distribution file policy](docs/distribution.md) · [M1 cases and provenance](eval/m1/README.md) · [M1 status](eval/reports/m1-verification.md)
 
 M2 expands the corpus to [24 evaluation candidates](eval/cases.md), preserving the original 18 and adding one complex case per profile. It adds retry, exception, wrapper, concurrency and resource guidance, visible path conditions/order metadata, and required behavior/path checks in the [rubric](eval/rubric.md) and [comparison/review tools](docs/evaluation.md). The recorded-candidate baseline is provisional: independent human fact and comprehension review remains pending.
 

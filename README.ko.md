@@ -6,7 +6,7 @@
 
 **프로젝트 지도(`codebase-atlas`) → 동작 설명(`code-flow`) → 규칙과 이유(`visual-primer`)**를 연결하는 오프라인 HTML을 만듭니다. 호스트가 소스와 근거를 읽어 유틸리티·라이브러리·프레임워크·AI 에이전트·이벤트·웹을 공통 방식으로 설명합니다. JavaScript·Python·Go의 공개 저장소 여섯 곳으로 구현을 검증했으며, 독립적인 사람의 사실·이해도 검토는 남아 있습니다.
 
-[고도화 계획](plans/source-to-sight-evolution-plan.md) · [개발 및 예시 실행 방법](docs/development.md) · [M1 사례와 출처](eval/m1/README.md) · [M1 구현 상태](eval/reports/m1-verification.md)
+[고도화 계획](plans/source-to-sight-evolution-plan.md) · [개발 및 예시 실행 방법](docs/development.md) · [배포 파일 기준](docs/distribution.md) · [M1 사례와 출처](eval/m1/README.md) · [M1 구현 상태](eval/reports/m1-verification.md)
 
 M2에서는 기존 18개를 보존하고 유형별 복합 사례를 추가해 [24개 평가 후보](eval/cases.md)로 확대했습니다. 재시도·예외·래퍼·병렬·상태·자원 경계의 탐색 지침과 화면의 분기 조건·실행 방식 표시를 보완했습니다. [평가 기준](eval/rubric.md)과 [비교·검토 도구](docs/evaluation.md)는 필수 행동 주장·경로도 검사합니다. 저장된 후보를 재검증한 임시 기준이며, 독립적인 사람의 사실·이해도 검토는 대기 중입니다.
 
