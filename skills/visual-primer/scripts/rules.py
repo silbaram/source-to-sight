@@ -53,7 +53,7 @@ def validate_shared(behavior, logic, s2s):
 
 
 def validate_layout(layout, graph, s2s):
-    schema = json.loads((SKILL / "references/rule-layout.schema.json").read_text())
+    schema = json.loads((SKILL / "references/rule-layout.schema.json").read_text(encoding="utf-8"))
     s2s.validate_schema(layout, schema, "layout", formats=False)
     ids = [s["id"] for s in layout["sections"]]
     if len(ids) != len(set(ids)):
@@ -188,13 +188,14 @@ def render_rules(data, layout, s2s, original=None):
         '__S2S_LANGUAGE__': escaped(data["language"]), '__S2S_TITLE__': escaped(data["summary"]["title"]),
         '__S2S_MAIN__': main, '__S2S_DATA__': encoded(data), '__S2S_LAYOUT__': encoded(layout),
         '__S2S_SNAPSHOT__': escaped(snapshot["repository"] + ' · ' + (snapshot["commit"] or '')[:8] + ' · ' + snapshot["generatedAt"]),
-        '__S2S_STYLE__': font_css + (s2s.SKILL / "templates/viewer.css").read_text() + (SKILL / "templates/rules.css").read_text(),
-        '__S2S_SCRIPT__': (SKILL / "templates/rules.js").read_text(),
-        '__S2S_LICENSE__': escaped((s2s.SKILL / "templates/vendor/NotoSansKR.LICENSE").read_text()),
+        '__S2S_STYLE__': (font_css + (s2s.SKILL / "templates/viewer.css").read_text(encoding="utf-8")
+                          + (SKILL / "templates/rules.css").read_text(encoding="utf-8")),
+        '__S2S_SCRIPT__': (SKILL / "templates/rules.js").read_text(encoding="utf-8"),
+        '__S2S_LICENSE__': escaped((s2s.SKILL / "templates/vendor/NotoSansKR.LICENSE").read_text(encoding="utf-8")),
         '__S2S_SKIP__': t("설명으로 바로 이동", "Skip to explanation"),
     }
     content = re.sub('|'.join(map(re.escape, replacements)), lambda m: replacements[m.group()],
-                     (SKILL / "templates/rules-template.html").read_text())
+                     (SKILL / "templates/rules-template.html").read_text(encoding="utf-8"))
     return content, omitted
 
 
