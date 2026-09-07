@@ -1,17 +1,3 @@
 # Preserve upstream license text and the reproducible vendor bundle formatting.
 skills/code-flow/templates/vendor/NotoSansKR.LICENSE -whitespace
 skills/code-flow/templates/vendor/dagre.min.js -whitespace
-
-# Product source archives contain the installable skills and user guidance.
-# Evaluation inputs, generated review artifacts, tests, and maintainer tools
-# remain available in the repository but are not part of a release archive.
-eval/ export-ignore
-fixtures/ export-ignore
-plans/ export-ignore
-tests/ export-ignore
-scripts/ export-ignore
-docs/development.md export-ignore
-docs/evaluation.md export-ignore
-package.json export-ignore
-package-lock.json export-ignore
-playwright.config.cjs export-ignore

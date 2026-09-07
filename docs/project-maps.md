@@ -4,12 +4,10 @@
 
 ## 설치와 요청
 
-이번 구현이 있는 체크아웃에서 `codebase-atlas`와 `code-flow`를 함께 설치합니다. 규칙 설명까지 만들 때는 `visual-primer`도 설치합니다.
+GitHub 저장소에서 모든 스킬을 함께 설치합니다. 프로젝트 지도에는 `codebase-atlas`와 `code-flow`가 필요하며, 규칙 설명까지 만들 때는 `visual-primer`도 사용합니다.
 
 ~~~sh
-npx skills add . --skill code-flow
-npx skills add . --skill codebase-atlas
-npx skills add . --skill visual-primer
+npx skills add silbaram/source-to-sight --global --skill '*'
 ~~~
 
 폴더를 복사해 설치할 때는 각 스킬의 스크립트·참조 문서·템플릿·라이선스를 함께 보존합니다. Atlas는 실제 설치된 code-flow의 경로를 사용하며, 별도 위치는 `--code-flow-root`로 지정합니다. Python 의존성은 code-flow의 `scripts/requirements.txt`를 따릅니다. 상세 조립 명령은 [스킬의 조립 안내](../skills/codebase-atlas/references/assembly.md)에 있습니다.

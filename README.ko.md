@@ -7,12 +7,10 @@ Source to Sight는 소스 코드를 오프라인 시각적 설명으로 바꾸�
 처음 사용한다면 [사용자 퀵스타터](docs/quickstart.md)를 따라 설치부터 첫 HTML 생성까지 진행하세요.
 
 ```text
-npx skills add silbaram/source-to-sight --skill code-flow
-npx skills add silbaram/source-to-sight --skill visual-primer
-npx skills add silbaram/source-to-sight --skill codebase-atlas
+npx skills add silbaram/source-to-sight --global --skill '*'
 ```
 
-필요한 스킬만 설치할 수 있습니다. 각 스킬은 참고자료·템플릿·벤더 파일·라이선스를 포함한 디렉터리 전체를 설치해야 합니다.
+위 명령은 모든 스킬을 여러 프로젝트에서 사용할 수 있도록 설치합니다. 필요한 스킬만 설치하려면 `--skill '*'`를 `--skill code-flow`처럼 원하는 이름으로 바꿉니다. 각 스킬은 참고자료·템플릿·벤더 파일·라이선스를 포함한 디렉터리 전체를 설치해야 합니다.
 
 ## 사용
 

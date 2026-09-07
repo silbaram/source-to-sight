@@ -7,12 +7,10 @@ Source to Sight is an Agent Skills package that turns source code into offline v
 Follow the [Korean user quickstart](docs/quickstart.md) for setup and your first project explanation.
 
 ```text
-npx skills add silbaram/source-to-sight --skill code-flow
-npx skills add silbaram/source-to-sight --skill visual-primer
-npx skills add silbaram/source-to-sight --skill codebase-atlas
+npx skills add silbaram/source-to-sight --global --skill '*'
 ```
 
-Install only the skills your host needs. Each skill directory must be copied or installed as a complete directory, including its references, templates, vendored assets, and licenses.
+This installs all skills for use across projects. To install only the skills your host needs, replace `--skill '*'` with specific names such as `--skill code-flow`. Each skill directory must be copied or installed as a complete directory, including its references, templates, vendored assets, and licenses.
 
 ## Use
 

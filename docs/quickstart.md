@@ -15,17 +15,19 @@ Source to Sight로 실제 프로젝트를 읽고, **프로젝트 지도 → 기�
 
 ## 2. 스킬 설치하기
 
-Source to Sight를 보관할 폴더에서 실행합니다. 현재 구현이 있는 `silbaram/ghostshark` 브랜치를 명시해 설치 버전을 맞춥니다. 이미 이 브랜치를 받아 두었다면 해당 저장소 폴더에서 `S2S_SOURCE`를 설정하는 줄부터 진행합니다.
+터미널에서 GitHub 저장소의 모든 스킬을 직접 설치합니다.
 
 ```bash
-git clone --branch silbaram/ghostshark --single-branch https://github.com/silbaram/source-to-sight.git
-cd source-to-sight
-S2S_SOURCE="$PWD"
-
-npx skills add "$S2S_SOURCE" --global --skill code-flow --skill codebase-atlas --skill visual-primer
+npx skills add silbaram/source-to-sight --global --skill '*'
 ```
 
-설치 화면에서 사용할 에이전트를 선택합니다. `--global`은 여러 프로젝트에서 사용할 수 있도록 사용자 범위에 설치합니다. 로컬 경로 설치와 스킬 선택 옵션은 [Skills CLI 공식 안내](https://github.com/vercel-labs/skills#source-formats)를 따릅니다.
+설치 화면에서 사용할 에이전트를 선택합니다. `--global`은 여러 프로젝트에서 사용할 수 있도록 사용자 범위에 설치하며, `--skill '*'`는 저장소의 모든 스킬을 선택합니다. GitHub 직접 설치와 스킬 선택 옵션은 [Skills CLI 공식 안내](https://github.com/vercel-labs/skills#source-formats)를 따릅니다.
+
+다음 단계에서 사용할 `S2S_SOURCE`는 설치된 `skills/` 폴더의 상위 경로입니다. 기본 Symlink 방식의 전역 설치는 `~/.agents/skills/`에 공통 사본을 두므로 아래처럼 설정합니다([설치 경로 구현](https://github.com/vercel-labs/skills/blob/main/src/installer.ts)). Copy 방식이나 다른 설치 경로를 사용했다면 설치 화면에 표시된 실제 경로에 맞춥니다. `$S2S_SOURCE/skills/` 아래에 `code-flow`와 `codebase-atlas`가 있어야 합니다.
+
+```bash
+S2S_SOURCE="$HOME/.agents"
+```
 
 | 만들 결과 | 필요한 스킬 |
 | --- | --- |
@@ -34,7 +36,7 @@ npx skills add "$S2S_SOURCE" --global --skill code-flow --skill codebase-atlas -
 | 동작과 연결된 규칙·이유·예외 | `code-flow` + `visual-primer` |
 | OAuth 같은 일반 개념 설명 | `visual-primer` |
 
-처음에는 위 명령으로 세 스킬을 함께 설치하면 모든 흐름을 사용할 수 있습니다. 수동 설치 시에도 각 스킬의 `SKILL.md`뿐 아니라 스크립트·템플릿·참고자료·라이선스를 포함한 폴더 전체를 복사해야 합니다.
+처음에는 위 명령으로 모든 스킬을 함께 설치하면 모든 흐름을 사용할 수 있습니다. 수동 설치 시에도 각 스킬의 `SKILL.md`뿐 아니라 스크립트·템플릿·참고자료·라이선스를 포함한 폴더 전체를 복사해야 합니다.
 
 ## 3. 생성 도구 준비하기
 
