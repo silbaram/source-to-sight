@@ -1,6 +1,6 @@
 # Renderer contract
 
-This directory contains the shared renderer and validation foundation, used by code-flow and the codebase-atlas companion. The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` 0.7.0 helpers; the graph schema remains the unfrozen 0.1.0 draft.
+This directory contains the shared renderer and validation foundation, used by code-flow and the codebase-atlas companion. The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` 0.8.0 helpers; the graph schema remains the unfrozen 0.1.0 draft.
 
 ## Run
 
@@ -57,9 +57,9 @@ Snapshot comparison rejects failed locations, missing captured hashes, and confl
 
 Create a child page, then regenerate the parent to bake in its new link state. The renderer cannot generate another explanation by clicking in an offline page. Generation commands are copied for the user to run in the host.
 
-The `visual-primer` pair builder can supply both newly prepared render graphs to the same link checks before writing the files. The rules graph retains the behavior's subject, scope, language, nodes, edges, scenarios and state transitions, preserves its evidence and rule meaning, and adds reviewed rules/reasons/exceptions. The presentation layout only selects rules and existing transitions. It cannot silently change the behavior. Both destinations are checked before replacement; each individual replacement is atomic, and a write failure may require rerunning the pair.
+The `visual-primer` pair builder can supply both newly prepared render graphs to the same link checks before writing the files. The rules graph retains the behavior's subject, scope, language, nodes, edges, scenarios and state transitions, preserves its evidence and rule meaning, and adds reviewed rules/reasons/exceptions. Presentation binds to reviewed rules and behavior claims; it cannot change the behavior graph. Both destinations are checked before replacement; each individual replacement is atomic, and a write failure may require rerunning the pair.
 
-The source-backed rules page uses `data-viewer="primer"`, the same output IR, regeneration metadata, semantic palette and theme preference. Its topic-specific composition selects comparison, condition/result and state figures without inventing execution edges. All explanations are readable without JavaScript; scripts add condition selection. If verification removes a selected claim, its entire figure is withheld. Small logic graphs remain valid in the canvas renderer; general visual-primer concepts retain their authored HTML workflow.
+The source-backed rules page uses `data-viewer="primer"`, the same output IR, regeneration metadata, semantic palette and theme preference. Its default version 2 layout contains authored HTML/SVG scenes with scoped CSS and optional reader interactions, bound to reviewed rules and additional node/action/edge/step/state claims. Transitive targets/owners are checked too. Unconfirmed dependencies withhold the whole scene, title and assets; private authored layouts are not duplicated in output metadata. The host reviews meaning, static accessibility and interaction outcomes: automatic guards are not a semantic verifier or an untrusted-code sandbox. Legacy version 1 comparison/condition/state figures remain supported. Small logic graphs remain valid in the canvas renderer; general concepts retain their standalone authored HTML workflow.
 
 ## Layout and interaction
 

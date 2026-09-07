@@ -3,11 +3,13 @@
   const data=JSON.parse(document.getElementById('s2s-data').textContent);
   const ko=data.language.toLowerCase().startsWith('ko');
   const t=(kr,en)=>ko?kr:en;
+  // Shared navigation/copy handlers do not own links or controls inside scenes.
+  const navigationSelector='#explanation > .primer-intro > .links';
   // The return value contains only map state. The destination remains the
   // identity-checked relative atlas link from the page's own metadata.
   const returnAtlas=new URLSearchParams(location.search).get('s2s-atlas');
   if(returnAtlas?.startsWith('#s2s=1&')&&returnAtlas.length<16000) {
-    for(const link of document.querySelectorAll('a[data-layer]')) {
+    for(const link of document.querySelectorAll(navigationSelector+' > a[data-layer]')) {
       const target=new URL(link.getAttribute('href'),location.href);
       if(link.dataset.layer==='atlas')target.hash=returnAtlas;
       else target.searchParams.set('s2s-atlas',returnAtlas);
@@ -29,10 +31,14 @@
     paintTheme();
   });
   paintTheme();
-  for(const figure of document.querySelectorAll('.rule-figure.comparison')){
-    const controls=figure.querySelector('.case-controls');
+  // Only the builder's top-level legacy figures own these controls. Authored
+  // scenes may use the same class names without opting into this behavior.
+  for(const figure of document.querySelectorAll('#explanation > .rule-figure[data-kind="comparison"]')){
+    const controls=figure.querySelector(':scope > .case-controls');
     const cases=[...figure.children].filter(n=>n.classList.contains('rule-case'));
-    const buttons=[...controls.querySelectorAll('button')];
+    if(!controls||cases.length<2)continue;
+    const buttons=[...controls.children].filter(n=>n.matches('button[data-case]'));
+    if(buttons.length!==cases.length)continue;
     function select(index){
       cases.forEach((item,i)=>{item.hidden=i!==index;});
       buttons.forEach((button,i)=>button.setAttribute('aria-pressed',String(i===index)));
@@ -42,11 +48,13 @@
     select(0);
   }
   let noticeTimer;
-  for(const button of document.querySelectorAll('.copy-command'))button.addEventListener('click',async()=>{
+  for(const button of document.querySelectorAll(navigationSelector+' > button.copy-command[data-command]'))button.addEventListener('click',async()=>{
+    const command=button.dataset.command;
+    if(!command?.trim())return;
     let message=t('복사했습니다.','Copied.');
-    try{await navigator.clipboard.writeText(button.dataset.command);}
+    try{await navigator.clipboard.writeText(command);}
     catch{
-      const field=document.createElement('textarea');field.value=button.dataset.command;button.after(field);field.select();
+      const field=document.createElement('textarea');field.value=command;button.after(field);field.select();
       let copied=false;
       try{copied=document.execCommand('copy');}catch{/* Keep the command available for manual copying. */}
       if(copied)field.remove();

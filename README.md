@@ -4,7 +4,9 @@ Source to Sight is an Agent Skills package that turns source code into offline v
 
 ## Install
 
-Follow the [Korean user quickstart](docs/quickstart.md) for setup and your first project explanation.
+New here? Follow the [step-by-step quickstart](docs/quickstart.en.md) for tool checks, installation, copyable agent requests, opening your first HTML, and troubleshooting. [한국어 안내](docs/quickstart.md) is also available.
+
+Installation needs Git and Node.js 22.20.0+ with npm/npx, following the current [Skills CLI requirement](https://github.com/vercel-labs/skills/blob/main/package.json).
 
 ```text
 npx skills add silbaram/source-to-sight --global --skill '*'
@@ -23,7 +25,9 @@ $codebase-atlas Explain this project's purpose, responsibilities and representat
 $visual-primer Explain OAuth.
 ```
 
-The host agent reads the target source and records evidence. The skills validate that evidence and generate a self-contained HTML page that opens directly in a browser. Generated pages use the maintained templates under each skill directory and do not require a server.
+Explore **project map → capability/behavior → a picture-first explanation of the important business rules**. The last page uses topic-specific diagrams and meaningful interactions, with the teaching approach illustrated by the [OAuth example](assets/oauth-visual-primer-example.html), rather than requiring another fixed flowchart or rule-card layout.
+
+The host agent reads the target source, records evidence and authors the visual lesson. The builders check evidence locations, identity and links, and package offline HTML that opens directly in a browser. Maps and walkthroughs use the maintained canvas; business-rule lessons use authored visuals inside the shared navigation/evidence shell. No server is required. Request the details you need; clicking an ungenerated item copies a request rather than running analysis in the browser.
 
 ## Repository layout
 

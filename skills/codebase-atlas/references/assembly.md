@@ -22,7 +22,7 @@ Every `subjects` entry is a scoped capability with these fields:
 - `confidence`, `supportStatus`, `verificationNote`, `evidenceIds`: independently review the capability's presence/ownership. Evidence IDs refer to the map's evidence set.
 - `link`: relative future behavior HTML URL and `generated: false` with a draft `command`. The builder replaces the command with the precise subject/target/scope request and determines availability from current files. Never mark a file generated based only on its existence.
 
-Older minimal catalog entries remain readable by the shared renderer; new atlas authoring requires scoped entries. The schema remains the unfrozen 0.1.0 draft, and the common authoring bundle is 0.7.0.
+Older minimal catalog entries remain readable by the shared renderer; new atlas authoring requires scoped entries. The schema remains the unfrozen 0.1.0 draft, and the common authoring bundle is 0.8.0.
 
 ~~~sh
 python3 "$ATLAS_ROOT/scripts/atlas.py" --code-flow-root "$FLOW_ROOT" build \
@@ -44,7 +44,7 @@ This creates the map only. Missing pages have copyable host requests; the browse
 ]
 ~~~
 
-Input paths are relative to the manifest. Output paths are relative to the atlas HTML's directory. Omit all three logic fields when only behavior is requested. The behavior output must match its catalog URL; different folders and URL-encoded filenames are supported.
+Input paths are relative to the manifest. Output paths are relative to the atlas HTML's directory. Omit all three logic fields when only behavior is requested. The behavior output must match its catalog URL; different folders and URL-encoded filenames are supported. For the final business-logic drill-down, `layout` should use visual-primer's authored version 2: topic-specific HTML/SVG and optional interactions bound to reviewed rules/claims. The same manifest/build connects this picture lesson to the map and behavior. Existing version 1 compact rule layouts remain compatible.
 
 ~~~sh
 python3 "$ATLAS_ROOT/scripts/atlas.py" --code-flow-root "$FLOW_ROOT" build \

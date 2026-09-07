@@ -25,7 +25,7 @@ Follow [assembly.md](references/assembly.md) to create an internal atlas draft, 
 
 Each representative capability needs a resolved target, module, explicit scope, supporting locations and the responsible node. Include commands, public functions, hooks, agent workflows and data jobs when present. A catalog item is not an execution scenario. Trace a representative scenario separately before assigning an order.
 
-Generate only the detail pages the user requests. The atlas can contain ungenerated capabilities with precise copyable requests. To create a detail, follow `code-flow` for that exact subject/scope, then rebuild the atlas with that explicit internal graph in its pages manifest. For rules, follow the companion's `--explain` workflow and include the reviewed logic/layout. The builder checks both directions and the source snapshot before enabling navigation. Do not regenerate every listed capability.
+Generate only the detail pages the user requests. The atlas can contain ungenerated capabilities with precise copyable requests. To create a detail, follow `code-flow` for that exact subject/scope, then rebuild the atlas with that explicit internal graph in its pages manifest. The intended drill-down is **project map → capability/behavior → picture-first explanation of its important business rules**. For that final page, follow the companion's `--explain` workflow and include the reviewed logic and visual-primer's authored layout (version 2), preserving any requested visual reference. The builder checks both directions and the source snapshot before enabling navigation. Do not regenerate every listed capability.
 
 ## Verify and deliver
 

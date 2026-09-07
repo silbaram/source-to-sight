@@ -1,4 +1,4 @@
-# Validator regression checks
+# Regression checks
 
 Run the maintained regression suite with Python 3.10+ and no installed packages:
 
@@ -14,6 +14,52 @@ error paths, regex and calendar boundaries. It copies the installable skill fold
 to a temporary directory and runs behavior, atlas and paired rules generation using
 `-E -S` to exclude ambient Python paths and site packages. Generated inputs and HTML
 are synthetic test artifacts, not source-tracing evaluations or product templates.
+
+`test_authored_rules.py` additionally checks version 2 picture lessons: authored
+SVG and interaction packaging, transitive claim bindings, withholding all scene
+assets after uncertainty/source drift, source-excerpt and fragment guards,
+unchanged pair identity checks, and installed map/behavior/lesson round trips in
+Korean and English under emulated cp949 file defaults. `authored_cases.py` supplies
+a small explicitly synthetic cancellation policy for these tests and local visual
+QA; it is not an application policy recommendation. Version 1 layouts remain
+covered by the original suite. Executable presentation code still requires review;
+these authoring checks do not establish a JavaScript sandbox or semantic accuracy.
+Fragment regressions reject non-void HTML self-closing tags and unfinished markup
+before existing pair outputs can be replaced, while retaining SVG/MathML geometry,
+HTML integration points and complete comments.
+
+## Optional picture-lesson browser QA
+
+Create the synthetic bilingual demo in a **new** directory (an existing directory
+is rejected to protect its contents):
+
+```sh
+python3 -E -S -B tests/render_story_demo.py --output build/business-logic-demo
+```
+
+Open `ko/project.html` or `en/project.html` under that directory and follow the
+capability to its behavior and picture lesson. For automated browser checks, use an
+existing development installation of Playwright with Chromium available:
+
+```sh
+node tests/check_story_browser.cjs build/business-logic-demo /absolute/path/to/playwright
+```
+
+The final argument is optional if Node can already resolve `playwright`. This
+optional test does not install packages. It exercises both languages, desktop and
+narrow-screen navigation, keyboard-operated condition controls, reset, evidence
+disclosure, both themes, reduced motion, no-network rendering, JavaScript-disabled
+static content, and return to the selected map/camera. Separate `runtime-*.html`
+fixtures check that authored comparison classes cannot hijack shared initialization
+and that legacy condition selection, theme and command-copy controls still work.
+A scene with SVG/HTML `data-layer` links checks that map return state leaves local
+links untouched. Scene-owned `copy-command` buttons must copy exactly once without
+triggering shared announcements; missing or blank shared commands must not copy.
+A deliberately incomplete legacy fixture checks that missing comparison controls
+leave static cases readable and do not stop shared initialization. Screenshots go
+into the demo directory for visual inspection; they are not committed. Browser
+launch may need additional permission in a sandbox. Runtime generation still only
+requires Python.
 
 The same CLI checks also run with omitted text-file encodings forced to cp949 in
 both the test process and every child CLI. The test-only `locale_runner.py` patches

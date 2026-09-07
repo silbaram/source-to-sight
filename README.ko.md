@@ -4,7 +4,9 @@ Source to Sight는 소스 코드를 오프라인 시각적 설명으로 바꾸�
 
 ## 설치
 
-처음 사용한다면 [사용자 퀵스타터](docs/quickstart.md)를 따라 설치부터 첫 HTML 생성까지 진행하세요.
+처음 사용한다면 [단계별 퀵스타터](docs/quickstart.md)를 따라 도구 확인 → 설치 → 요청 복사 → 첫 HTML 열기까지 진행하세요. 단계별 완료 기준과 문제 해결도 포함하며, [English guide](docs/quickstart.en.md)도 제공합니다.
+
+설치에는 Git과 npm/npx를 포함한 Node.js 22.20.0 이상이 필요합니다([현재 Skills CLI 요구사항](https://github.com/vercel-labs/skills/blob/main/package.json)).
 
 ```text
 npx skills add silbaram/source-to-sight --global --skill '*'
@@ -23,7 +25,9 @@ $codebase-atlas 이 프로젝트의 목적·책임·대표 기능을 설명해�
 $visual-primer OAuth를 설명해줘.
 ```
 
-호스트 에이전트가 대상 소스를 읽고 근거를 기록하면, 스킬이 근거를 검증하고 브라우저에서 바로 열 수 있는 단일 HTML을 생성합니다. 생성 화면은 각 스킬의 유지되는 템플릿을 사용하며 별도 서버가 필요하지 않습니다.
+**프로젝트 맵 → 기능·상세 흐름 → 핵심 비즈니스 로직의 그림 설명**으로 탐색합니다. 마지막 페이지는 [OAuth 예시](assets/oauth-visual-primer-example.html)처럼 주제에 맞는 큰 그림과 의미 있는 인터랙션으로 설명하며, 고정 흐름도나 규칙 카드만으로 제한하지 않습니다.
+
+호스트 에이전트가 실제 소스를 읽고 근거와 시각적 설명을 작성하면, 생성 도구가 근거 위치·대상·페이지 연결을 확인해 오프라인 HTML로 묶습니다. 지도·동작은 공통 캔버스를 사용하고, 비즈니스 로직은 공통 탐색·근거 화면 안에 맞춤형 그림을 구성합니다. 별도 서버는 필요하지 않습니다. 필요한 상세만 요청하며, 미생성 항목의 버튼은 분석을 실행하지 않고 요청을 복사합니다.
 
 ## 저장소 구성
 

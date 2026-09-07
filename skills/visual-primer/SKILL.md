@@ -34,7 +34,7 @@ Inspect the material that defines the topic before designing the page. For a rep
 
 When explaining rules for an existing code-flow result, preserve its subject and scope. Re-read the source before adding rules: a previous verification badge does not verify a new claim. Confirm conditions, numerical values, units, configuration overrides, and exceptions. Omit numerical rules that cannot be verified and explain the gap.
 
-For a paired source-backed rules page, follow [source-rules.md](references/source-rules.md). It reuses the companion's internal behavior graph, validates rule additions and composes comparison, condition/result and state figures with the shared product styling. General concept explanations keep the free-form workflow below.
+For a paired source-backed rules page, follow [source-rules.md](references/source-rules.md), then apply the visual-story workflow below. The default is an authored, picture-first lesson: compose topic-specific HTML/SVG, CSS and meaningful interactions, bound to reviewed rules and behavior claims. The builder preserves evidence, identity and navigation; it does not prescribe the diagrams. The older comparison/condition/state layout remains available for existing inputs or an explicitly requested compact rules reference, not as the default replacement for a visual lesson. General concepts still use a standalone authored HTML document.
 
 Preserve facts that affect understanding or decisions. A metaphor may unlock the first idea, but state the literal truth first, map the metaphor once, and return to the real terms.
 
