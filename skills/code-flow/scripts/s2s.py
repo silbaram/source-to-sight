@@ -13,7 +13,7 @@ import re
 import sys
 from urllib.parse import unquote, urlsplit
 
-from jsonschema import Draft202012Validator, FormatChecker
+import schema_validation
 
 SKILL = Path(__file__).resolve().parents[1]
 SCHEMA_DIR = SKILL / "references"
@@ -80,12 +80,7 @@ def numerical_rule(rule):
 
 def validate(data, stage="internal"):
     contract = schema(stage)
-    Draft202012Validator.check_schema(contract)
-    errors = sorted(Draft202012Validator(contract, format_checker=FormatChecker())
-                    .iter_errors(data), key=lambda e: str(list(e.path)))
-    if errors:
-        error = errors[0]
-        raise InvalidGraph(f"{stage} schema at /{'/'.join(map(str, error.path))}: {error.message}")
+    validate_schema(data, contract, stage)
     objects = list(all_objects(data))
     ids = [item["id"] for item in objects]
     if len(ids) != len(set(ids)):
@@ -156,6 +151,17 @@ def validate(data, stage="internal"):
             if numerical_rule(rule) and not confirmed(rule, evidence):
                 raise InvalidGraph(f"{rule['id']}: unverified numerical rule reached the output.")
     return data
+
+
+def validate_schema(data, contract, stage="internal", *, formats=True):
+    try:
+        return schema_validation.validate(data, contract, stage, formats=formats)
+    except schema_validation.InvalidSchemaData as error:
+        raise InvalidGraph(str(error)) from None
+
+
+def check_schema(contract):
+    schema_validation.check_schema(contract)
 
 
 def verify_locations(data, source_root):

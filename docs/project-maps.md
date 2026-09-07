@@ -10,7 +10,7 @@ GitHub 저장소에서 모든 스킬을 함께 설치합니다. 프로젝트 지
 npx skills add silbaram/source-to-sight --global --skill '*'
 ~~~
 
-폴더를 복사해 설치할 때는 각 스킬의 스크립트·참조 문서·템플릿·라이선스를 함께 보존합니다. Atlas는 실제 설치된 code-flow의 경로를 사용하며, 별도 위치는 `--code-flow-root`로 지정합니다. Python 의존성은 code-flow의 `scripts/requirements.txt`를 따릅니다. 상세 조립 명령은 [스킬의 조립 안내](../skills/codebase-atlas/references/assembly.md)에 있습니다.
+폴더를 복사해 설치할 때는 각 스킬의 스크립트·참조 문서·템플릿·라이선스를 함께 보존합니다. Atlas는 실제 설치된 code-flow의 경로를 사용하며, 별도 위치는 `--code-flow-root`로 지정합니다. 검증기가 포함되어 있어 Python 3.10 이상만 있으면 실행할 수 있습니다. 상세 조립 명령은 [스킬의 조립 안내](../skills/codebase-atlas/references/assembly.md)에 있습니다.
 
 ~~~text
 $codebase-atlas 이 프로젝트의 목적과 주요 구성, 대표 기능을 설명해 줘.

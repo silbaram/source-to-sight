@@ -3,11 +3,10 @@
 The installed `code-flow` folder contains all rendering resources. Set the examples' `SKILL_ROOT` and `SOURCE_ROOT` to the actual paths; they are ordinary shell variables, not host-specific configuration.
 
 ```sh
-python3 -m pip install -r "$SKILL_ROOT/scripts/requirements.txt"
 python3 "$SKILL_ROOT/scripts/author.py" doctor
 ```
 
-Python 3.10+ and the declared `jsonschema` dependency are required. Rendering needs no Node, CDN, sibling skill, or target-project dependency. Install dependencies in an appropriate existing environment; the rendering commands make no network requests.
+Python 3.10+ is the only Python runtime requirement. The validator is bundled under `scripts/vendor/`; preserve that directory and its license when installing the skill. Rendering needs no Node, CDN, sibling skill, or target-project dependency. The rendering commands make no network requests.
 
 ## Draft and evidence
 

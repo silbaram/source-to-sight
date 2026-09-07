@@ -1,10 +1,10 @@
 # Renderer contract
 
-This directory contains the shared renderer and validation foundation, used by code-flow and the codebase-atlas companion. The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` 0.6.0 helpers; the graph schema remains the unfrozen 0.1.0 draft.
+This directory contains the shared renderer and validation foundation, used by code-flow and the codebase-atlas companion. The host agent performs source discovery and semantic review; scripts capture evidence, validate, and render. The [assembly protocol](assembly-protocol.md) documents the installed `author.py` 0.7.0 helpers; the graph schema remains the unfrozen 0.1.0 draft.
 
 ## Run
 
-Python 3.10+ and `jsonschema>=4.19,<5` are required. Install the dependency from `../scripts/requirements.txt`. Node is only needed for development, browser tests, and updating the vendored layout engine.
+Python 3.10+ is required; the Python validator is bundled with its [license and provenance](../scripts/vendor/PROVENANCE.md). No Python package installation is needed. Node is only needed for development, browser tests, and updating the vendored layout engine.
 
 Set `SKILL_ROOT` to the installed code-flow directory and `SOURCE_ROOT` to the project being explained. The following commands use an internal graph prepared at `$SOURCE_ROOT/work/graph.json` through the [assembly protocol](assembly-protocol.md).
 
@@ -25,6 +25,8 @@ python3 "$SKILL_ROOT/scripts/s2s.py" inspect "$SOURCE_ROOT/build/behavior.html"
 - [Render schema](ir-render-v0.1.0.schema.json): no anchors or source-body fields; claims additionally have a computed `displayStatus`.
 - `contentHash` preserves the source revision used for the review. Each reread sets `observedContentHash` to the current file's SHA-256, or null if the file could not be read. A failed comparison does not replace the reviewed hash. The new field is optional when reading older 0.1.0 pages.
 - Keep shared fields consistent across both schemas while preserving each contract's evidence and display differences.
+- The bundled validator supports the keywords currently used by these Draft 2020-12 schemas through a checked Draft 7-compatible subset. Unsupported schema extensions are rejected until their compatibility is reviewed. Validation does not insert defaults or mutate input data. Graph errors retain their previous path ordering; layout errors now use that same deterministic ordering. Diagnostic wording can differ.
+- `snapshot.generatedAt` is always checked as an RFC 3339 date-time, including calendar dates and UTC offsets. Lowercase `t`/`z` and fractional seconds are supported; leap-second spelling is rejected. Older installations could skip this check when the optional format checker was absent; malformed timestamps must be corrected before rebuilding.
 - Root fields include the subject/scope, snapshot, provenance, language, analysis status, summary, nodes, edges, optional scenario contents, rules, evidence, warnings, links, and regeneration metadata. Collections may be empty; fields are still explicit.
 - Profiles are discovery metadata. The renderer only branches on graph semantics, analysis state, layer, viewport size, and language.
 

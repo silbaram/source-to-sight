@@ -1,6 +1,6 @@
 # Atlas assembly and lazy detail pages
 
-Run paths relative to the actual installed skills. `atlas.py` uses code-flow's maintained IR and canvas renderer; it does not require repository development scripts. Install its shared Python requirements from the companion when absent.
+Run paths relative to the actual installed skills. `atlas.py` uses code-flow's maintained IR, bundled validator and canvas renderer. Python 3.10+ is sufficient; no additional Python packages or repository development scripts are required.
 
 ~~~sh
 python3 "$ATLAS_ROOT/scripts/atlas.py" --code-flow-root "$FLOW_ROOT" doctor
@@ -22,7 +22,7 @@ Every `subjects` entry is a scoped capability with these fields:
 - `confidence`, `supportStatus`, `verificationNote`, `evidenceIds`: independently review the capability's presence/ownership. Evidence IDs refer to the map's evidence set.
 - `link`: relative future behavior HTML URL and `generated: false` with a draft `command`. The builder replaces the command with the precise subject/target/scope request and determines availability from current files. Never mark a file generated based only on its existence.
 
-Older minimal catalog entries remain readable by the shared renderer; new atlas authoring requires scoped entries. The schema remains the unfrozen 0.1.0 draft, and the common authoring bundle is 0.6.0.
+Older minimal catalog entries remain readable by the shared renderer; new atlas authoring requires scoped entries. The schema remains the unfrozen 0.1.0 draft, and the common authoring bundle is 0.7.0.
 
 ~~~sh
 python3 "$ATLAS_ROOT/scripts/atlas.py" --code-flow-root "$FLOW_ROOT" build \
