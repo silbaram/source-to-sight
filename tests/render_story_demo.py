@@ -1,10 +1,41 @@
 #!/usr/bin/env python3
 """Render the synthetic bilingual map → behavior → picture-lesson QA fixture."""
 import argparse
+from copy import deepcopy
 import importlib.util
 from pathlib import Path
 
 from authored_cases import SOURCE, story_case
+
+
+def render_structure_fixtures(s2s, project, source, folder):
+    """Verify literal ancestry independently of path length and input order."""
+    fixture = deepcopy(project)
+    directory_template, file_template = deepcopy(fixture["structureEntries"])
+    for index, directory in enumerate(("R", "_", "가", "R/skipped/nested", "Rextra")):
+        relative_file = directory + "/example.py"
+        target = source / relative_file
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(SOURCE, encoding="utf-8")
+        evidence = deepcopy(fixture["evidence"][0])
+        evidence.update({"id": f"evidence-tree-{index}", "file": relative_file})
+        fixture["evidence"].append(evidence)
+        for kind, path, template in (("directory", directory, directory_template),
+                                     ("file", relative_file, file_template)):
+            entry = deepcopy(template)
+            entry.update({"id": f"structure-tree-{index}-{kind}", "path": path,
+                          "label": path, "evidenceIds": [evidence["id"]]})
+            fixture["structureEntries"].append(entry)
+    # Children precede parents in authored input. No entry is recorded for
+    # R/skipped; its descendant must use the closest *recorded* ancestor R.
+    fixture["structureEntries"].reverse()
+    for variant in ("rooted", "rootless"):
+        data = deepcopy(fixture)
+        if variant == "rootless":
+            data["structureEntries"] = [entry for entry in data["structureEntries"] if entry["path"] != "."]
+        prepared = s2s.prepare(data, source)
+        assert all(entry["displayStatus"] == "confirmed" for entry in prepared["structureEntries"])
+        (folder / f"entry-tree-{variant}.html").write_text(s2s.render(prepared), encoding="utf-8")
 
 
 def render_runtime_fixtures(atlas, source, folder, language):
@@ -61,11 +92,35 @@ def main():
     for language in ("ko", "en"):
         project, behavior, logic, layout = story_case(language)
         folder = root / language
-        atlas.build_site(project, source, folder / "project.html", pages=[{
+        rendered = atlas.build_site(project, source, folder / "project.html", pages=[{
             "behavior": behavior, "output": folder / "behavior.html", "logic": logic,
             "layout": layout, "logicOutput": folder / "logic.html",
         }])
+        s2s, _ = atlas.companion()
+        for variant in ("legacy", "missing", "empty", "uncertain", "ungrouped"):
+            fixture = deepcopy(rendered[(folder / "project.html").resolve()])
+            if variant == "legacy":
+                fixture.pop("structureEntries")
+            if variant == "missing":
+                for subject in fixture["subjects"]:
+                    subject["link"]["generated"] = False
+            if variant == "empty":
+                fixture["subjects"] = []
+            if variant == "uncertain":
+                fixture["structureEntries"][0].update({"confidence": "inferred", "supportStatus": "uncertain", "displayStatus": "uncertain"})
+            if variant == "ungrouped":
+                fixture["regions"] = []
+            (folder / f"entry-{variant}.html").write_text(s2s.render(fixture), encoding="utf-8")
+        render_structure_fixtures(s2s, project, source, folder)
         render_runtime_fixtures(atlas, source, folder, language)
+        if language == "en":
+            # These tags satisfy the IR contract, but some are rejected by
+            # browser Intl implementations. Keep the original language data.
+            for locale in ("en-GB-oed", "en-foo", "ko-foo", "en-US", "ko-KR"):
+                fixture = deepcopy(project)
+                fixture["language"] = fixture["regeneration"]["language"] = locale
+                page = s2s.render(s2s.prepare(fixture, source))
+                (folder / f"entry-locale-{locale}.html").write_text(page, encoding="utf-8")
         print(folder / "project.html")
 
 

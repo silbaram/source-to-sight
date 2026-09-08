@@ -21,6 +21,7 @@ const {chromium} = require(process.argv[3] || 'playwright');
         const url = pathToFileURL(path.join(root, language, 'project.html')).href;
         await page.goto(url);
         await page.waitForSelector('html[data-ready="true"]');
+        await page.locator('#entry-diagram').click();
         await page.locator('#capabilities [data-capability-id="subject-main"]').click();
         await page.waitForFunction(() => !document.querySelector('.camera-moving'));
         await page.locator('.capability-action a').click();

@@ -57,6 +57,18 @@ def story_case(language="en"):
     entry.update({"label": behavior["subject"]["title"], "summary": behavior["summary"]["purpose"],
                   "link": {"url": "behavior.html", "generated": False, "command": "$code-flow " + behavior["subject"]["question"]}})
     atlas["subjects"] = [entry]
+    atlas["structureEntries"] = [
+        {"id": "structure-root", "path": ".", "kind": "directory",
+         "label": t("예제 소스", "Example source"),
+         "summary": t("취소 판단을 담은 작은 합성 예제입니다.", "A small synthetic cancellation example."),
+         "nodeIds": ["node-main"],
+         **{key: deepcopy(entry[key]) for key in ("confidence", "supportStatus", "verificationNote", "evidenceIds")}},
+        {"id": "structure-check", "path": "example.py", "kind": "file",
+         "label": t("취소 판단", "Cancellation decision"),
+         "summary": t("출고 상태에 따라 취소 결과를 고릅니다.", "Chooses a cancellation outcome from shipment state."),
+         "nodeIds": ["node-main"],
+         **{key: deepcopy(entry[key]) for key in ("confidence", "supportStatus", "verificationNote", "evidenceIds")}},
+    ]
     markup = '''<div class="lesson-hero">
 <div class="lesson-copy"><p class="lesson-kicker">CANCELLATION / SHIPMENT GATE</p>
 <h3>__HEADLINE__</h3><p>__PURPOSE__</p><p class="lesson-limit">__LIMIT__</p></div>

@@ -12,6 +12,7 @@ import sys
 
 from jsonschema import Draft202012Validator, FormatChecker
 from validation_cases import atlas_graph, graph, layout, mutations, render_graph
+from authored_cases import story_case
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "skills/code-flow/scripts"))
@@ -30,6 +31,16 @@ def main():
     cases = [("internal", ROOT / "skills/code-flow/references/ir-internal-v0.1.0.schema.json", graph()),
              ("atlas", ROOT / "skills/code-flow/references/ir-internal-v0.1.0.schema.json", atlas_graph()),
              ("render", ROOT / "skills/code-flow/references/ir-render-v0.1.0.schema.json", render_graph())]
+    structure = atlas_graph()
+    structure["structureEntries"] = story_case()[0]["structureEntries"]
+    structure_render = render_graph()
+    structure_render["layer"] = "atlas"
+    structure_render["structureEntries"] = [
+        {**deepcopy(entry), "displayStatus": "confirmed"} for entry in structure["structureEntries"]]
+    cases += [
+        ("atlas-structure", ROOT / "skills/code-flow/references/ir-internal-v0.1.0.schema.json", structure),
+        ("atlas-structure-render", ROOT / "skills/code-flow/references/ir-render-v0.1.0.schema.json", structure_render),
+    ]
     cases += [("layout-" + kind, ROOT / "skills/visual-primer/references/rule-layout.schema.json", layout(kind))
               for kind in ("conditions", "comparison", "states")]
     totals, differences, intentional = Counter(), Counter(), Counter()

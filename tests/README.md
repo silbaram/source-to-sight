@@ -36,6 +36,12 @@ immutability, source commit/evidence checks, nested Unicode filenames and instal
 CLI reuse in Korean/English under emulated cp949 file defaults. Private bundles are
 authoring inputs and must be excluded from shared HTML packages and web publishing.
 
+`test_atlas_structure.py` covers the optional reviewed package/folder entries:
+legacy input compatibility, Unicode containment, canonical path and reference
+guards, local code/config evidence, source drift/deletion/external symlinks,
+unsupported claims/owners, input immutability, and render-status integrity.
+Existing installed CLI/storage checks also retain and rebuild these entries.
+
 ## Optional picture-lesson browser QA
 
 Create the synthetic bilingual demo in a **new** directory (an existing directory
@@ -51,6 +57,7 @@ existing development installation of Playwright with Chromium available:
 
 ```sh
 node tests/check_story_browser.cjs build/business-logic-demo /absolute/path/to/playwright
+node tests/check_atlas_entry_browser.cjs build/business-logic-demo /absolute/path/to/playwright
 ```
 
 The final argument is optional if Node can already resolve `playwright`. This
@@ -87,6 +94,23 @@ python3 -E -S -B tests/locale_runner.py tests/test_validation.py -v
 To exercise a separate Skills CLI installation, set `S2S_INSTALLED_SKILLS` to its
 absolute `skills` directory when running the suite. The CLI smoke test uses that
 installation directly; generated artifacts still stay in its temporary workspace.
+
+The separate entry browser check covers Korean/English at 1440, 768, 390 and
+320 pixels: default overview, role/folder toggle, tree/evidence disclosure,
+capability search and filters, missing-detail request copying, entry → behavior →
+rules → entry state, original diagram deep links, invalid-link fallback, empty
+and legacy catalogs, ungrouped components, both themes and no network requests.
+The demo renderer also creates explicitly synthetic `entry-*.html` variants.
+Return checks assert that the selected card is focused and inside the viewport,
+both directly from behavior and through rules. Separate locale fixtures exercise
+schema-accepted tags rejected by browser Intl (`en-GB-oed`, `en-foo`, `ko-foo`)
+and ordinary regional tags (`en-US`, `ko-KR`) on desktop/mobile. They check that
+the entry, folder tree and diagram still open without changing the IR language.
+Ancestry fixtures verify actual DOM parents and expand/collapse behavior on
+desktop/mobile in both languages: one-character `R`, `_` and `가` folders,
+root present/omitted, children recorded before parents, an omitted intermediate
+folder, and a sibling sharing a prefix (`Rextra`). Only recorded entries appear.
+Use a fresh demo directory after changing templates; old HTML embeds old assets.
 
 ## Optional differential audit
 

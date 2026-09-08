@@ -26,8 +26,23 @@
       <nav id="links" class="links" aria-label="Related explanations"></nav>
     </section>
     <section id="insufficient" class="empty" hidden></section>
+    <section id="atlas-entry" class="atlas-entry" aria-labelledby="entry-title" hidden>
+      <div class="entry-heading"><div><p id="entry-route" class="entry-kicker"></p><h2 id="entry-title" tabindex="-1"></h2><p id="entry-note" class="entry-note"></p></div><button id="entry-diagram" type="button" class="entry-primary"></button></div>
+      <section aria-labelledby="entry-structure-title">
+        <div class="entry-heading"><h2 id="entry-structure-title"></h2><div id="entry-tabs" class="view-switch" role="group"><button id="entry-roles-tab" type="button" aria-pressed="true" aria-controls="entry-roles"></button><button id="entry-files-tab" type="button" aria-pressed="false" aria-controls="entry-files"></button></div></div>
+        <p id="entry-structure-note" class="entry-note"></p>
+        <div id="entry-roles" class="entry-grid"></div>
+        <div id="entry-files" hidden></div>
+      </section>
+      <section aria-labelledby="entry-features-title">
+        <div class="entry-heading"><div><p class="entry-kicker" id="entry-features-kicker"></p><h2 id="entry-features-title" tabindex="-1"></h2></div><p id="entry-count" class="entry-note" role="status"></p></div>
+        <div class="entry-filters"><label><span id="entry-search-label"></span><input id="entry-search" type="search" maxlength="240" autocomplete="off"></label><label><span id="entry-group-label"></span><select id="entry-group"></select></label><label><span id="entry-availability-label"></span><select id="entry-availability"></select></label><button id="entry-reset" type="button"></button></div>
+        <div id="entry-features" class="entry-grid"></div>
+      </section>
+    </section>
     <section id="workspace" class="workspace">
       <nav id="rail" class="rail">
+        <button id="entry-home" type="button" hidden></button>
         <p id="rail-label" class="rail-label"></p>
         <input id="search" class="search" type="search" autocomplete="off">
         <div id="results" class="results" hidden></div>
