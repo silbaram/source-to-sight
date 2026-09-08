@@ -50,6 +50,7 @@ def draft(source_root, code_flow_root=None, **options):
     s2s, author = companion(code_flow_root)
     result = author.draft(source_root, kind="project", **options)
     result["layer"] = "atlas"
+    result["structureEntries"] = []
     result["regeneration"]["command"] = result["regeneration"]["command"].replace("$code-flow ", "$codebase-atlas ", 1)
     return validate_atlas(result, s2s)
 

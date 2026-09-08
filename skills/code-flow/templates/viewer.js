@@ -52,10 +52,12 @@
   let cameraMotion = null, cameraFrame = null, preparingStep = false;
   let playbackRate = 1, navigationReady = false, restoringLocation = false;
   const isAtlas=data.layer==='atlas';
+  if(isAtlas)view='overview';
   const regionMap=new Map(data.regions.map(r=>[r.id,r]));
   const subjectMap=new Map(data.subjects.map(s=>[s.id,s.scope?s:{...nodeMap.get(s.nodeId),...s}]));
   const selectedNodeId=()=>nodeMap.has(selected)?selected:subjectMap.get(selected)?.nodeId;
   let regionId=null;
+  let entryTab='roles', entryQuery='', entryGroup='', entryAvailability='', entrySelected=null;
   const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions,...subjectMap.values()].map(item=>[item.id,item]));
   const incomingAtlas=new URLSearchParams(location.search).get('s2s-atlas');
   const returnAtlas=incomingAtlas?.startsWith('#s2s=1&')&&incomingAtlas.length<16000?incomingAtlas:null;
@@ -316,7 +318,7 @@
     connections.setAttribute('width', width);
     connections.setAttribute('height', height);
     const defs = svg('defs');
-    for (const [name,color] of [['normal','var(--blue)'],['uncertain','var(--amber)'],['structural','var(--violet)'],['data','var(--teal)'],['active','var(--teal)']]) {
+    for (const [name,color] of [['normal','var(--blue)'],['uncertain','var(--amber)'],['structural','var(--violet)'],['data','var(--data)'],['active','var(--accent)']]) {
       const marker = svg('marker', {id:'arrow-'+name, markerWidth:10, markerHeight:8, refX:9, refY:4,
         orient:'auto', markerUnits:'userSpaceOnUse', viewBox:'0 0 10 8'});
       marker.append(svg('path', {d:'M 0 0 L 10 4 L 0 8 Z', fill:color}));
@@ -834,6 +836,14 @@
   }
   function locationHash() {
     const params=new URLSearchParams({s2s:'1',subject:data.subject.id,view,detail:detail?'detail':'core',speed:String(playbackRate)});
+    if(isAtlas&&view==='overview') {
+      params.set('tab',entryTab);
+      if(entryQuery)params.set('q',entryQuery);
+      if(entryGroup)params.set('group',entryGroup);
+      if(entryAvailability)params.set('available',entryAvailability);
+      if(entrySelected)params.set('feature',entrySelected);
+      return '#'+params.toString();
+    }
     if(view==='flow'&&currentStep()) {
       params.set('scenario',data.scenarios[scenarioIndex].id);
       params.set('step',currentStep().id);
@@ -845,6 +855,7 @@
     return '#'+params.toString();
   }
   function savedAtlasLocation() {
+    if(view==='overview')return locationHash();
     const params=new URLSearchParams(locationHash().slice(1));
     const camera=readCamera();
     params.set('camera',JSON.stringify([camera.zoom,...[camera.left,camera.top,camera.pageTop].map(n=>Math.round(n*1000)/1000)]));
@@ -865,15 +876,27 @@
   }
   function readLocation(hash) {
     const params=new URLSearchParams(hash.slice(1));
-    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera','layout']);
+    const entryKeys=['tab','q','group','available','feature'];
+    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera','layout',...entryKeys]);
     if([...params.keys()].some(key=>!allowed.has(key)||params.getAll(key).length!==1)||
       params.get('s2s')!=='1'||params.get('subject')!==data.subject.id||
-      !['structure','flow'].includes(params.get('view'))||
+      !(isAtlas?['overview','structure','flow']:['structure','flow']).includes(params.get('view'))||
       (params.has('detail')&&!['core','detail'].includes(params.get('detail')))||
       (params.has('speed')&&!['1','1.5','2'].includes(params.get('speed')))||
       (params.has('panel')&&params.get('panel')!=='1'))throw new Error('Invalid location');
     const result={view:params.get('view'),detail:params.get('detail')==='detail',rate:Number(params.get('speed')||1),scenario:0,step:-1,
       item:null,panel:params.has('panel'),focus:params.get('focus'),region:params.get('region'),camera:null,layout:null};
+    if(result.view==='overview') {
+      if(['scenario','step','node','edge','item','panel','focus','region','camera','layout'].some(k=>params.has(k))||
+        (params.has('tab')&&!['roles','files'].includes(params.get('tab')))||
+        (params.get('q')||'').length>240||
+        (params.has('group')&&!regionMap.has(params.get('group')))||
+        (params.has('available')&&!['ready','missing'].includes(params.get('available')))||
+        (params.has('feature')&&!subjectMap.has(params.get('feature'))))throw new Error('Invalid overview');
+      return {...result,tab:params.get('tab')||'roles',query:params.get('q')||'',group:params.get('group')||'',
+        availability:params.get('available')||'',feature:params.get('feature')};
+    }
+    if(entryKeys.some(k=>params.has(k)))throw new Error('Unexpected overview state');
     if(result.region&&(!isAtlas||!regionMap.has(result.region)||result.view!=='structure'))throw new Error('Missing region');
     if(params.has('camera')) {
       result.camera=JSON.parse(params.get('camera'));
@@ -902,7 +925,7 @@
   }
   function restoreLocation(hash) {
     if(hash&&hash!=='#'&&!hash.startsWith('#s2s='))return;
-    let restored={view:'structure',detail:false,rate:1,scenario:0,step:-1,item:null,panel:false,focus:null},invalid=false;
+    let restored={view:isAtlas?'overview':'structure',detail:false,rate:1,scenario:0,step:-1,item:null,panel:false,focus:null},invalid=false;
     if(hash&&hash!=='#') {
       try{restored=readLocation(hash);}catch{invalid=true;}
     }
@@ -910,8 +933,16 @@
     stop();history.length=0;closePanel(false);
     selected=null;focusId=null;stepIndex=-1;stepElapsed=0;playbackState='idle';
     view=restored.view;detail=restored.detail;scenarioIndex=restored.scenario;playbackRate=restored.rate;regionId=restored.region||null;
+    if(isAtlas) {
+      if(view==='overview') {
+        entryTab=restored.tab||'roles';entryQuery=restored.query||'';entryGroup=restored.group||'';
+        entryAvailability=restored.availability||'';entrySelected=restored.feature||null;
+        renderEntryFilters();
+      }
+      applyAtlasView();
+    }
     if(data.analysis.status==='insufficient') {invalid=!!hash;view='structure';}
-    else {
+    else if(view!=='overview') {
       const inspection=itemMap.get(restored.item),edge=edgeMap.get(restored.item);
       const inspectedNodes=nodeMap.has(restored.item)?[restored.item]:subjectMap.has(restored.item)?[subjectMap.get(restored.item).nodeId]:edge?[edge.from,edge.to]:[];
       if(regionId&&inspectedNodes.some(id=>!visibleNodes().some(n=>n.id===id)))regionId=null;
@@ -938,6 +969,13 @@
       if(restored.camera&&restored.layout?.every((n,i)=>n===cameraLayout()[i])) {
         const [zoom,left,top,pageTop]=restored.camera;applyCamera({zoom,left,top,pageTop});updateMini();
       }
+    }
+    if(isAtlas&&view==='overview'&&entrySelected) {
+      const card=Array.from($('entry-features').children).find(el=>el.dataset.featureId===entrySelected);
+      card?.focus({preventScroll:true});
+      // Returning to a capability restores its visible location as well as
+      // its selection. Apply immediately, including under reduced motion.
+      card?.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});
     }
     restoringLocation=false;
     syncLocation();
@@ -979,8 +1017,161 @@
     $('diagram-title').textContent=t('프로젝트를 한눈에','Explore the project');
     $('diagram-hint').textContent=t('구역을 펼치거나 주요 기능을 선택해 동작 설명으로 이동하세요.','Explore a responsibility region or choose a capability to open its explanation.');
     if(data.subjects.every(s=>s.scope))$('regions').hidden=true;
+    initializeEntry();
+  }
+  function applyAtlasView() {
+    const home=view==='overview', usable=data.analysis.status!=='insufficient';
+    $('atlas-entry').hidden=!home||!usable;
+    $('workspace').hidden=home||!usable;
+    document.body.classList.toggle('atlas-overview',home);
+    const skip=document.querySelector('.skip');
+    skip.href=home?'#entry-title':'#canvas';
+    skip.textContent=home?t('프로젝트 소개로 건너뛰기','Skip to project overview'):t('다이어그램으로 건너뛰기','Skip to diagram');
+  }
+  function openEntryDiagram(action) {
+    restoreLocation('#'+new URLSearchParams({s2s:'1',subject:data.subject.id,view:'structure',detail:'core',speed:'1'}));
+    $('canvas').scrollIntoView({block:'center'});
+    $('canvas').focus({preventScroll:true});
+    if(action)action();
+  }
+  function entryButton(label, handler, className) {
+    const button=element('button',label,className);button.type='button';
+    button.addEventListener('click',handler);return button;
+  }
+  function entryEvidence(item) {
+    const details=element('details',undefined,'entry-evidence');
+    details.append(element('summary',t('근거와 확인 메모','Evidence and review note')));
+    details.append(element('p',item.verificationNote));
+    evidenceSection(details,item.evidenceIds);
+    return details;
+  }
+  function renderEntryFilters() {
+    $('entry-search').value=entryQuery;$('entry-group').value=entryGroup;$('entry-availability').value=entryAvailability;
+    $('entry-roles-tab').setAttribute('aria-pressed',String(entryTab==='roles'));
+    $('entry-files-tab').setAttribute('aria-pressed',String(entryTab==='files'));
+    $('entry-roles').hidden=entryTab!=='roles';$('entry-files').hidden=entryTab!=='files';
+    $('entry-structure-note').textContent=entryTab==='roles'?
+      t('같은 일을 맡는 부분을 묶었습니다. 카드를 누르면 기존 관계도로 이동합니다.','Parts are grouped by responsibility. Open a card to explore the relationship diagram.'):
+      t('분석한 실제 경로만 표시합니다. 들여쓰기는 폴더 포함 관계이며 호출·의존 관계가 아닙니다.','Only reviewed paths are shown. Indentation means folder containment, not calls or dependencies.');
+    const query=entryQuery.trim().toLocaleLowerCase();
+    const matches=data.subjects.filter(s=>{
+      const owner=nodeMap.get(s.nodeId);
+      const paths=(data.structureEntries||[]).filter(e=>e.nodeIds.includes(s.nodeId)).map(e=>e.path);
+      return (!entryGroup||regionMap.get(entryGroup).nodeIds.includes(s.nodeId))&&
+        (!entryAvailability||(entryAvailability==='ready')===s.link.generated)&&
+        [s.label,s.summary,s.question,s.module,owner.label,owner.codeName,...paths,
+          ...(s.targets||[]).flatMap(target=>[target.file,target.symbol,target.label])]
+          .some(v=>v?.toLocaleLowerCase().includes(query));
+    });
+    $('entry-count').textContent=t('기록된 기능 ','Recorded capabilities: ')+matches.length+' / '+data.subjects.length;
+    $('entry-features').replaceChildren();
+    for(const subject of matches) {
+      const item=subjectMap.get(subject.id),owner=nodeMap.get(subject.nodeId);
+      const card=element('article',undefined,'entry-card feature-card');card.dataset.featureId=subject.id;card.tabIndex=-1;
+      card.classList.toggle('entry-selected',entrySelected===subject.id);
+      card.append(statusBadge(item),element('h3',subject.label),element('p',subject.summary||owner.summary));
+      const group=data.regions.find(r=>r.nodeIds.includes(subject.nodeId));
+      card.append(element('p',t('담당: ','Owner: ')+(group?group.label+' / ':'')+owner.label,'entry-meta'));
+      card.append(element('p',subject.link.generated?t('상세 설명 준비됨','Detail available'):t('상세 설명 미생성 · 기능이 없다는 뜻은 아닙니다','Detail not generated · the capability is still recorded'),'entry-meta'));
+      const actions=element('div',undefined,'entry-actions');
+      // Capture before linkControl's click/auxclick listeners serialize return
+      // state; also supports opening a detail in a new tab.
+      const control=linkControl('behavior',subject.link,subject.link.generated?t('상세 흐름 보기 →','Open detailed flow →'):t('상세 생성 요청 복사','Copy detail request'));
+      control.textContent=subject.link.generated?t('상세 흐름 보기 →','Open detailed flow →'):t('상세 생성 요청 복사','Copy detail request');
+      const select=()=>{entrySelected=subject.id;for(const other of $('entry-features').children)other.classList.toggle('entry-selected',other===card);syncLocation();};
+      for(const event of ['click','auxclick'])control.addEventListener(event,select,{capture:true});
+      actions.append(control,entryButton(t('구조에서 위치 보기','Locate in diagram'),()=>{entrySelected=subject.id;openEntryDiagram(()=>chooseNode(owner,item));}));
+      card.append(actions);$('entry-features').append(card);
+    }
+    if(!matches.length)$('entry-features').append(element('p',data.subjects.length?
+      t('일치하는 기능이 없습니다. 검색이나 필터를 초기화해 보세요.','No matching capabilities. Clear the search or filters.'):
+      t('이 분석에는 기능 목록이 아직 기록되지 않았습니다. 전체 구조와 분석 범위를 확인해 주세요.','No capabilities were cataloged in this analysis. Explore the diagram and analysis scope.'),'entry-empty'));
+  }
+  function initializeEntry() {
+    const texts={
+      'entry-route':t('입구 → 상세 흐름 → 핵심 규칙 그림','OVERVIEW → DETAILED FLOW → RULE PICTURES'),
+      'entry-title':t('무엇을 하는 프로젝트인가요?','What does this project do?'),
+      'entry-note':t('위에서 목적을 확인하고, 아래에서 구조와 관심 있는 기능을 찾아보세요. 이 목록은 분석 범위 안의 대표 기능입니다.','Start with the purpose above, then explore the structure and a capability. This catalog covers representative capabilities within the analysis scope.'),
+      'entry-diagram':t('전체 구조 다이어그램 ↗','Full structure diagram ↗'),
+      'entry-structure-title':t('어떻게 구성되어 있나요?','How is it organized?'),
+      'entry-tabs':t('프로젝트 구조 보기','Project structure views'),
+      'entry-roles-tab':t('역할별 보기','By responsibility'),
+      'entry-files-tab':t('패키지·폴더 보기','Packages & folders'),
+      'entry-features-kicker':t('관심 있는 기능부터','START WITH A CAPABILITY'),
+      'entry-features-title':t('어떤 기능이 있나요?','What can it do?'),
+      'entry-search-label':t('기능·이름·경로 검색','Search capabilities, names or paths'),
+      'entry-group-label':t('담당 구역','Responsibility'),
+      'entry-availability-label':t('상세 설명','Detail availability'),
+      'entry-reset':t('초기화','Clear filters'),
+      'entry-home':t('← 프로젝트 입구','← Project overview')
+    };
+    for(const [id,value] of Object.entries(texts)) {
+      if(id==='entry-tabs')$(id).setAttribute('aria-label',value);else $(id).textContent=value;
+    }
+    $('entry-home').hidden=false;
+    $('entry-home').addEventListener('click',()=>{
+      stop();closePanel(false);history.length=0;view='overview';selected=null;focusId=null;regionId=null;
+      applyAtlasView();renderEntryFilters();syncLocation();$('entry-title').focus();$('entry-title').scrollIntoView({block:'start'});
+    });
+    $('entry-diagram').addEventListener('click',()=>openEntryDiagram());
+    for(const tab of ['roles','files'])$('entry-'+tab+'-tab').addEventListener('click',()=>{
+      entryTab=tab;renderEntryFilters();syncLocation();
+    });
+    for(const [id,values] of [
+      ['entry-group',[['',t('모든 구역','All responsibilities')],...data.regions.map(r=>[r.id,r.label])]],
+      ['entry-availability',[['',t('모든 상태','Any availability')],['ready',t('준비됨','Available')],['missing',t('미생성','Not generated')]]]
+    ])for(const [value,label] of values){const option=element('option',label);option.value=value;$(id).append(option);}
+    const filter=()=>{entryQuery=$('entry-search').value;entryGroup=$('entry-group').value;entryAvailability=$('entry-availability').value;renderEntryFilters();syncLocation();};
+    $('entry-search').addEventListener('input',filter);
+    $('entry-group').addEventListener('change',filter);$('entry-availability').addEventListener('change',filter);
+    $('entry-reset').addEventListener('click',()=>{entryQuery='';entryGroup='';entryAvailability='';entrySelected=null;renderEntryFilters();syncLocation();});
+    const grouped=new Set(data.regions.flatMap(r=>r.nodeIds));
+    const groups=[...data.regions,...data.nodes.filter(n=>!n.contextOnly&&!grouped.has(n.id))];
+    for(const group of groups) {
+      const card=element('article',undefined,'entry-card role-card');
+      card.append(statusBadge(group),element('h3',group.label),element('p',group.summary));
+      const members=(group.nodeIds||[group.id]).map(id=>nodeMap.get(id));
+      const chips=element('div',undefined,'entry-parts');
+      for(const member of members)chips.append(element('span',member.label));
+      card.append(chips,entryButton(t('관계도 펼쳐 보기 →','Explore relationships →'),()=>openEntryDiagram(()=>{
+        if(regionMap.has(group.id))enterRegion(group.id);else chooseNode(group);
+      })));$('entry-roles').append(card);
+    }
+    if(!groups.length)$('entry-roles').append(element('p',t('확인된 역할 구역이 없습니다.','No reviewed responsibility groups.'),'entry-empty'));
+    // The IR accepts language tags that a browser's Intl may reject. Sorting
+    // must not stop initialization or change the recorded explanation language.
+    let comparePaths=(left,right)=>left<right?-1:left>right?1:0;
+    try{comparePaths=new Intl.Collator(data.language).compare;}catch{/* Use deterministic string order. */}
+    const entries=[...(data.structureEntries||[])].sort((a,b)=>comparePaths(a.path,b.path));
+    if(!entries.length)$('entry-files').append(element('p',t('이 JSON에는 패키지·폴더 구조가 기록되지 않았습니다. 기존 관계도는 계속 사용할 수 있습니다. 구조를 추가하려면 원본 경로와 근거를 검토해 JSON을 갱신해 주세요.','This JSON has no package/folder entries. The existing diagram is still available. Review the source paths and evidence before adding structure entries.'),'entry-empty'));
+    const tree=element('div',undefined,'entry-tree');$('entry-files').append(tree);
+    const containers=new Map();
+    const pathDepth=path=>path==='.'?0:path.split('/').length;
+    // Root depth is zero, even beside one-character folders. Attach recorded
+    // ancestors first; never invent entries for omitted intermediate folders.
+    for(const entry of [...entries].sort((a,b)=>pathDepth(a.path)-pathDepth(b.path))) {
+      const ancestors=entries.filter(e=>e!==entry&&e.kind!=='file'&&(e.path==='.'||entry.path.startsWith(e.path+'/')));
+      const parent=ancestors.sort((a,b)=>pathDepth(b.path)-pathDepth(a.path))[0];
+      const details=element('details',undefined,'entry-tree-item');details.dataset.structureId=entry.id;
+      const title=element('summary');
+      const kind={package:t('패키지','Package'),directory:t('폴더','Folder'),file:t('파일','File')}[entry.kind];
+      title.append(element('span',kind,'entry-kind'),element('code',entry.path),element('span',entry.label),statusBadge(entry));
+      details.append(title);
+      const body=element('div',undefined,'entry-tree-body');body.append(element('p',entry.summary));
+      const actions=element('div',undefined,'entry-actions');
+      for(const id of entry.nodeIds)actions.append(entryButton(nodeMap.get(id).label+' ↗',()=>openEntryDiagram(()=>chooseNode(nodeMap.get(id)))));
+      const capabilities=data.subjects.filter(s=>entry.nodeIds.includes(s.nodeId));
+      for(const subject of capabilities)actions.append(entryButton(t('기능: ','Capability: ')+subject.label,()=>{
+        entryQuery='';entryGroup='';entryAvailability='';entrySelected=subject.id;renderEntryFilters();syncLocation();
+        const card=Array.from($('entry-features').children).find(el=>el.dataset.featureId===subject.id);card?.focus();card?.scrollIntoView({block:'center'});
+      }));
+      body.append(actions,entryEvidence(entry));details.append(body);
+      (containers.get(parent?.id)||tree).append(details);containers.set(entry.id,body);
+    }
+    renderEntryFilters();
   }
   function keyboardNavigation(event) {
+    if(isAtlas&&view==='overview')return;
     if(event.defaultPrevented||event.isComposing||event.ctrlKey||event.metaKey||event.altKey||data.analysis.status==='insufficient')return;
     const target=event.target;
     if(!target.closest?.('#workspace')||target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),#panel'))return;
@@ -1230,6 +1421,12 @@
     const included=element('div');list(included,t('포함한 범위','Included'),data.subject.scope.includes);list(included,t('제외한 범위','Excluded'),data.subject.scope.excludes);
     const limitations=element('div'),scopeSeen=new Set();list(limitations,t('확인하지 못한 내용','Unresolved'),data.analysis.unresolved,scopeSeen);list(limitations,t('탐색한 위치','Searched'),data.analysis.searched,scopeSeen);list(limitations,t('한계','Limitations'),data.summary.limitations,scopeSeen);list(limitations,t('다음 시도','Next attempts'),data.analysis.nextAttempts,scopeSeen);
     scope.append(included,limitations);$('scope-body').append(scope);
+    if(isAtlas) {
+      // Header metadata is hidden on narrow screens; keep an accessible copy
+      // in the scope disclosure without calling a captured snapshot "current".
+      list($('scope-body'),t('분석 기준 · 현재 소스와 다를 수 있음','Analysis snapshot · may differ from current source'),
+        [$('snapshot').textContent]);
+    }
     $('offline-note').textContent=t('오프라인 설명서 · 하위 페이지를 만든 뒤 상위 페이지를 새로 생성하면 링크가 갱신됩니다.','Offline explanation · regenerate the parent page after creating a child to update its links.');
     if(data.analysis.status==='insufficient') {
       $('workspace').hidden=true;$('insufficient').hidden=false;
@@ -1237,7 +1434,9 @@
       list($('insufficient'),t('확인하지 못한 이유','Why'),data.analysis.unresolved);
       list($('insufficient'),t('살펴본 범위','Searched'),data.analysis.searched);
       list($('insufficient'),t('다음에 시도할 것','Next attempts'),data.analysis.nextAttempts);
-    } else {
+    } else if(!isAtlas) {
+      // Atlas layout is deferred until the reader opens a diagram (or restores
+      // a diagram deep link). The entry does not need a hidden graph layout.
       draw();
       if(data.scenarios.length) setStep(0);
       selected=null;
@@ -1246,7 +1445,7 @@
     }
     let resizeTimer;
     addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
-      if(data.analysis.status!=='insufficient') {
+      if(data.analysis.status!=='insufficient'&&view!=='overview') {
         finishCamera();
         draw();
         positionPanel();
@@ -1275,6 +1474,10 @@
     // Do not serialize intermediate initialization states over a supplied link.
     navigationReady=true;
     if(location.hash.startsWith('#s2s='))restoreLocation(location.hash);
+    else if(isAtlas) {
+      if(location.hash&&location.hash!=='#'){view='overview';applyAtlasView();}
+      else restoreLocation('');
+    }
     addEventListener('hashchange',()=>restoreLocation(location.hash));
     const notice=$('navigation-notice');$('workspace').before(notice);
     document.documentElement.dataset.ready='true';

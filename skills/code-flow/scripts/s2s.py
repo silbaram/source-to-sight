@@ -37,6 +37,7 @@ def claims(data):
     for scenario in data["scenarios"]:
         yield from scenario["steps"]
     yield from (s for s in data["subjects"] if "scope" in s)
+    yield from data.get("structureEntries", [])
 
 
 def all_objects(data):
@@ -119,6 +120,28 @@ def validate(data, stage="internal"):
         check([item["subjectNodeId"]], nodes, item["id"])
     for item in data["subjects"]:
         check([item["nodeId"]], nodes, item["id"])
+    entries = data.get("structureEntries", [])
+    if entries and data["layer"] != "atlas":
+        raise InvalidGraph("Structure entries belong only to a project atlas.")
+    paths = set()
+    for item in entries:
+        path = item["path"]
+        # Canonical, literal repository paths, not URLs. Containment only:
+        # package membership must never create graph edges.
+        if (not relative_path(path) or unquote(path) != path
+                or ".." in PurePosixPath(path).parts or str(PurePosixPath(path)) != path):
+            raise InvalidGraph(f"{item['id']}: structure path must be canonical and inside the source root.")
+        if path in paths:
+            raise InvalidGraph("Structure paths must be unique.")
+        paths.add(path)
+        local = [evidence[eid] for eid in item["evidenceIds"]
+                 if evidence[eid]["kind"] in ("code", "config")]
+        if not any(e["file"] == path if item["kind"] == "file" else
+                   (path == "." or e["file"].startswith(path + "/")) for e in local):
+            raise InvalidGraph(f"{item['id']}: structure needs code/config evidence at or inside its path.")
+    for item in entries:
+        if item["kind"] == "file" and any(p.startswith(item["path"] + "/") for p in paths):
+            raise InvalidGraph(f"{item['id']}: a file cannot contain structure entries.")
     if data["layer"] == "atlas":
         memberships = [n for r in data["regions"] for n in r["nodeIds"]]
         if len(memberships) != len(set(memberships)):
@@ -298,6 +321,12 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
                        if supported(r) and set(r["nodeIds"]) <= node_ids]
     data["subjects"] = [s for s in data["subjects"] if s["nodeId"] in node_ids
                         and ("scope" not in s or supported(s))]
+    if "structureEntries" in data:
+        data["structureEntries"] = [s for s in data["structureEntries"] if supported(s)]
+        for item in data["structureEntries"]:
+            # A directory may remain documented after an unrelated owner was
+            # omitted. Drop only the invalid navigation references.
+            item["nodeIds"] = [n for n in item["nodeIds"] if n in node_ids]
     rules = []
     for rule in data["rules"]:
         if not supported(rule) or not set(rule["nodeIds"]) <= node_ids:

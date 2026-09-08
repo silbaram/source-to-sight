@@ -307,6 +307,11 @@
       },
       "minItems": 0
     },
+    "structureEntries": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/structureEntry"},
+      "minItems": 0
+    },
     "subjects": {
       "type": "array",
       "items": {
@@ -1332,6 +1337,39 @@
         "supportStatus",
         "verificationNote"
       ],
+      "additionalProperties": false
+    },
+    "structureEntry": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"},
+        "path": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["package", "directory", "file"]},
+        "label": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "nodeIds": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"},
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "confidence": {"enum": ["exact", "resolved", "inferred"]},
+        "supportStatus": {"enum": ["supported", "uncertain", "unsupported"]},
+        "verificationNote": {"type": "string", "minLength": 1},
+        "evidenceIds": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"},
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": ["id", "path", "kind", "label", "summary", "nodeIds", "confidence", "supportStatus", "verificationNote", "evidenceIds"],
       "additionalProperties": false
     },
     "target": {

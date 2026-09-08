@@ -30,6 +30,42 @@ Every `subjects` entry is a scoped capability with these fields:
 
 Older minimal catalog entries remain readable by the shared renderer; new atlas authoring requires scoped entries. The schema remains the unfrozen 0.1.0 draft, and the common authoring bundle is 0.8.0.
 
+## Entry overview and package landmarks
+
+Atlas HTML opens on an entry overview by default: the existing project title/purpose and scope, responsibility cards, a package/folder view, and a searchable representative capability catalog. `regions` supply role groups; when absent, factual nodes supply individual role cards. `subjects` supply feature cards and verified detail availability. A full-diagram button bypasses the catalog. Existing `view=structure` and `view=flow` links still open the detailed canvas directly; behavior and picture-rule templates keep their existing roles.
+
+The optional atlas-only `structureEntries` array records reviewed physical landmarks:
+
+- `id`: globally unique claim ID.
+- `path`: canonical, literal source-root-relative path using forward slashes; `.` means the project root. No absolute paths, traversal, URL encoding, redundant slashes or trailing slash.
+- `kind`: `package`, `directory`, or `file`. A package needs source-reviewed manifest/build semantics, not just a directory name.
+- `label`, `summary`: short plain-language role/name and explanation; the real path is displayed separately.
+- `nodeIds`: reviewed owner components (may be empty). These enable diagram/capability navigation; they create no edges.
+- `confidence`, `supportStatus`, `verificationNote`, `evidenceIds` and optional `sourceIds`: the same reviewed-claim contract as regions. At least one code/config evidence location must be at the file path, or inside the directory/package. Root entries may cite any local code/config file.
+
+For example, after reviewing a real `src/orders` directory and its local evidence:
+
+~~~json
+{
+  "id": "structure-orders",
+  "path": "src/orders",
+  "kind": "directory",
+  "label": "Order handling",
+  "summary": "Accepts order requests and chooses their processing path.",
+  "nodeIds": ["node-orders"],
+  "confidence": "resolved",
+  "supportStatus": "supported",
+  "verificationNote": "Checked request handlers and their implementation.",
+  "evidenceIds": ["ev-order-handler"]
+}
+~~~
+
+This is a field example, not a discovered project fact: replace all paths, IDs and claims with actual reviewed input. Paths must be unique. The viewer nests an entry below its closest recorded ancestor; it does not invent roles for omitted intermediate directories. A file cannot be a parent. Unsupported structure claims are omitted, failed source rereads get unverified badges, and references to omitted owners are removed. Structures are retained in `atlas.internal.json` through normal builds. Older JSON without this array remains valid and shows an explicit unrecorded-structure message, not an invented folder map.
+
+Feature existence/ownership, evidence confidence, and detail availability are independent. Search covers recorded labels, summaries, symbols, modules and target/associated structure paths. Filters select a responsibility region or detail availability. The catalog counts only recorded capabilities, never all project functionality. Missing detail buttons copy a precise host request; the offline page does not run AI.
+
+## Build the map
+
 ~~~sh
 python3 "$ATLAS_ROOT/scripts/atlas.py" --code-flow-root "$FLOW_ROOT" build \
   "$ATLAS_INTERNAL/atlas.internal.json" --source-root "$SOURCE_ROOT" \
@@ -68,7 +104,7 @@ HTML and retained JSON are staged only after all rendering and storage checks su
 
 The map checks catalog target/scope/language, the source snapshot and an active return link to this map. A missing, incompatible, stale or one-way detail remains a generation request. To add the return link to an existing detail, explicitly supply its internal input in the pages manifest. Pages that were not requested are neither generated nor rewritten. Rebuild the map after generating another child to refresh its availability.
 
-Map-to-detail navigation carries the current region, selection, camera and layout dimensions as URL state; returning uses the atlas URL recorded in the detail, never a supplied external destination. Camera coordinates are restored only for matching dimensions; after resizing or when opening an older link, the selected item is framed in the current layout. Browser storage is not required. These local links require the HTML files to be available and do not publish them.
+Map-to-detail navigation carries either the overview's role/folder tab, search, filters and selected capability, or the diagram's current region, selection, camera and layout dimensions as URL state. Folder expansion is local UI state, not retained across pages. Returning uses the atlas URL recorded in the detail, never a supplied external destination. Camera coordinates are restored only for matching dimensions; after resizing or when opening an older link, the selected item is framed in the current layout. Browser storage is not required. These local links require the HTML files to be available and do not publish them.
 
 ## Re-render, refresh and share
 

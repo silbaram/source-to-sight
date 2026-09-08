@@ -122,7 +122,7 @@ Where: the same agent conversation you used in step 3.
 
 ```text
 $codebase-atlas Create an English project map for someone seeing this project for the first time.
-Explain its purpose, main responsibilities, component relationships, and representative capabilities using the actual source.
+Explain its purpose, main responsibilities, real package/folder structure, component relationships, and representative capabilities using the actual source.
 Create only the map for now; do not generate capability detail pages yet.
 Distinguish the reviewed scope from anything that could not be verified.
 
@@ -142,8 +142,9 @@ When generation finishes:
 
 1. Open the HTML link from the agent. If it does not open, find `build/source-to-sight/project.html` in your file manager and open it with a browser.
 2. Read the project purpose and analysis scope.
-3. Select components or capabilities to see their roles and evidence locations.
-4. Read the unresolved items and **Scope and limitations** too.
+3. Switch between **By responsibility / Packages & folders** to explore roles and real paths. Expand a folder to see related capabilities and evidence.
+4. Search/filter the **What can it do?** catalog. Use **Full structure diagram** or **Locate in diagram** for the existing detailed relationships; those diagrams are still available.
+5. Read the unresolved items and **Scope and limitations** too. The catalog covers recorded representative capabilities; folder nesting does not mean call order.
 
 GitHub's HTML file view is not the rendered interactive page. Download remote files and open them locally. Viewing the result needs no Node.js, Python, or web server; the interactive map needs JavaScript enabled in the browser.
 
@@ -153,9 +154,9 @@ GitHub's HTML file view is not the rendered interactive page. Download remote fi
 
 Where: first the browser, then the same agent chat.
 
-1. Select one capability under **CAPABILITIES** in the map.
-2. If a **Behavior** link is already available, open it.
-3. If you see **copy generation command**, click it to copy the request.
+1. Find a capability in the entry's **What can it do?** catalog.
+2. If **Open detailed flow** is available, open it. The existing diagram's capability panel calls this link **Behavior**.
+3. If you see **Copy detail request**, click it to copy the request. An ungenerated detail does not mean the capability is absent.
 4. Paste the copied request into the agent, append the following, and send them together:
 
 ```text
@@ -169,6 +170,8 @@ Report the generated HTML paths when finished.
 If you changed the output folders earlier, use those same paths here. If copying fails, tell the agent the capability name shown in the map and ask it to confirm the target and scope before generating the detail.
 
 **Done when:** after reopening or refreshing the rebuilt map, you can open the capability detail and return. Ordered behavior may have a walkthrough; an unordered relationship diagram does not need playback controls.
+
+Returning to the entry restores its structure tab, search, filters and selected capability. Older JSON without package/folder entries shows an unrecorded-structure message; ask the agent to review the actual paths/evidence and add `structureEntries`. Existing HTML must be re-rendered to receive the new entry UI.
 
 The browser button only copies a request. Clicking it does not start analysis or generate HTML.
 

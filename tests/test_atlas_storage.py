@@ -51,6 +51,7 @@ class AtlasStorageTests(unittest.TestCase):
         original = deepcopy(self.map)
         self.build(data_output=self.internal / "atlas.render.json")
         saved = self.read("atlas.internal.json")
+        self.assertEqual(saved["structureEntries"], self.map["structureEntries"])
         self.assertEqual(saved["evidence"], original["evidence"])
         self.assertEqual(saved["nodes"], original["nodes"])
         self.assertEqual(self.map, original)
