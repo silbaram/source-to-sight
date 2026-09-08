@@ -318,7 +318,7 @@
     connections.setAttribute('width', width);
     connections.setAttribute('height', height);
     const defs = svg('defs');
-    for (const [name,color] of [['normal','var(--blue)'],['uncertain','var(--amber)'],['structural','var(--violet)'],['data','var(--teal)'],['active','var(--teal)']]) {
+    for (const [name,color] of [['normal','var(--blue)'],['uncertain','var(--amber)'],['structural','var(--violet)'],['data','var(--data)'],['active','var(--accent)']]) {
       const marker = svg('marker', {id:'arrow-'+name, markerWidth:10, markerHeight:8, refX:9, refY:4,
         orient:'auto', markerUnits:'userSpaceOnUse', viewBox:'0 0 10 8'});
       marker.append(svg('path', {d:'M 0 0 L 10 4 L 0 8 Z', fill:color}));

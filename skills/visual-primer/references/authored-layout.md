@@ -85,8 +85,10 @@ second header, navigation system, evidence database or output metadata block.
   JPEG, GIF or WebP data URLs. No external/local asset loads, frames, forms, CSS
   imports or external scripts. The bundled `S2S` font is already available.
 - Use the shared semantic variables `--ink`, `--muted`, `--paper`, `--surface`,
-  `--line`, `--soft` and `--teal` where appropriate; topic-specific accent colors
-  must remain readable in both `html[data-theme="light"]` and `"dark"`.
+  `--line`, `--accent`, `--accent-soft` and `--data` where appropriate;
+  `--teal` and `--soft` remain compatibility aliases for existing layouts.
+  Topic-specific accent colors must remain readable in both
+  `html[data-theme="light"]` and `"dark"`.
 - Preserve a complete static picture without JavaScript. Use short labeled
   controls, perceivable state changes, and reset/pause where relevant. Honor
   `prefers-reduced-motion` in JavaScript or SVG animation too; the shell disables
