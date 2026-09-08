@@ -29,6 +29,8 @@ Explore **project map → capability/behavior → a picture-first explanation of
 
 The host agent reads the target source, records evidence and authors the visual lesson. The builders check evidence locations, identity and links, and package offline HTML that opens directly in a browser. Maps and walkthroughs use the maintained canvas; business-rule lessons use authored visuals inside the shared navigation/evidence shell. No server is required. Request the details you need; clicking an ungenerated item copies a request rather than running analysis in the browser.
 
+Atlas builds automatically retain reusable analysis, evidence and picture-layout JSON below the HTML directory in `_internal/<map filename without extension>/`. Without an output-location request, use `docs/atlas/<project-key>.html` and `docs/atlas/_internal/<project-key>/`. These JSON files are regeneration inputs and may contain source excerpts: exclude them from sharing and web publishing. See the [quickstart's retention and refresh instructions](docs/quickstart.en.md#keep-share-and-regenerate-your-files).
+
 ## Repository layout
 
 ```text

@@ -127,12 +127,14 @@ $codebase-atlas 현재 프로젝트를 처음 보는 사람이 이해할 수 있
 확인한 범위와 확인하지 못한 부분을 구분해줘.
 
 HTML은 프로젝트 루트 기준 build/source-to-sight/project.html에 저장해줘.
-재생성에 필요한 내부 작성 데이터는 work/source-to-sight/에 따로 보관해줘.
+재생성에 필요한 내부 작성 데이터는 build/source-to-sight/_internal/project/에 보관해줘.
 소스 코드와 설정 파일은 수정하지 마.
 완료되면 HTML의 절대 경로와 링크, 내부 작성 데이터의 위치를 알려줘.
 ```
 
-`build/source-to-sight/`는 이 안내에서 정한 **결과 폴더**이고, `work/source-to-sight/`는 **에이전트의 내부 작성 데이터 폴더**입니다. 없으면 생성 과정에서 만듭니다. 파일을 직접 작성할 필요는 없습니다. 프로젝트에 별도의 결과물 저장 규칙이 있으면 요청의 두 경로를 그 규칙에 맞게 바꾸세요.
+`build/source-to-sight/`는 이 안내에서 정한 **결과 폴더**입니다. 내부 작성 JSON은 HTML 폴더 아래의 **`_internal/<지도 HTML의 확장자를 뺀 이름>/`**에 보관하므로, 위 요청에서는 `build/source-to-sight/_internal/project/`가 됩니다. 없으면 생성 과정에서 만들며, 파일을 직접 작성할 필요는 없습니다. 프로젝트에 별도의 저장 규칙이 있으면 그 규칙을 지정하세요. 내부 위치만 별도로 정할 때는 에이전트가 빌더의 `--internal-dir`에도 같은 경로를 전달해야 합니다.
+
+출력 위치를 아예 지정하지 않으면 지도는 프로젝트 루트의 `docs/atlas/<project-key>.html`, 내부 데이터는 `docs/atlas/_internal/<project-key>/`가 기본입니다. 스킬 설치 폴더에 생성하는 것이 아닙니다.
 
 에이전트가 소스를 읽고 파일을 생성할 때까지 기다립니다. 여러 패키지가 있어 범위를 물으면 처음 확인할 패키지 하나를 지정하세요. 기존 출력이 다른 프로젝트·대상·언어의 파일이면 덮어쓰지 말고 새 출력 경로를 지정합니다.
 
@@ -158,7 +160,7 @@ GitHub의 HTML 파일 화면은 완성된 대화형 페이지가 아닙니다. �
 
 ```text
 복사한 요청의 대상, 범위, 출력 경로를 유지해서 이 기능의 동작 설명을 만들어줘.
-내부 작성 데이터는 work/source-to-sight/에 보관해줘.
+내부 작성 데이터는 기존 build/source-to-sight/_internal/project/에 보관하고 다른 기능의 데이터도 유지해줘.
 이 기능만 추가하고, 기존 build/source-to-sight/project.html도 다시 생성해서
 지도에서 상세로 이동하고 상세에서 같은 지도로 돌아올 수 있게 연결해줘.
 완료되면 생성한 HTML 파일들의 경로를 알려줘.
@@ -181,7 +183,7 @@ $code-flow --explain 방금 지도에 연결한 기능의 조건, 결과, 이유
 핵심 비즈니스 로직을 처음 보는 사람도 이해하도록 visual-primer의 맞춤형 그림 설명으로 만들어줘.
 큰 그림과 짧은 설명을 중심으로 구성하고, 필요한 경우 실제 조건·분기를 살펴보는 조작을 넣어줘.
 기존 동작 설명의 대상과 범위를 유지하고 실제 소스를 다시 확인해줘.
-내부 작성 데이터는 work/source-to-sight/에 보관해줘.
+내부 작성 데이터와 원본 그림 구성 JSON은 기존 build/source-to-sight/_internal/project/에 보관해줘.
 지도·동작·규칙 페이지를 함께 갱신해서 서로 이동할 수 있게 연결해줘.
 결과는 기존 build/source-to-sight/ 아래에 저장하고 HTML 경로를 알려줘.
 ```
@@ -198,7 +200,8 @@ $code-flow --explain 방금 지도에 연결한 기능의 조건, 결과, 이유
 
 ```text
 $code-flow 대상 함수명의 입력, 처리 과정, 반환 결과와 오류 처리를 소스에 근거해 한국어로 설명해줘.
-HTML은 build/source-to-sight/에, 내부 작성 데이터는 work/source-to-sight/에 보관하고 경로를 알려줘.
+HTML은 build/source-to-sight/에 저장하고, 내부 작성 데이터는 그 아래 _internal/<HTML 확장자를 뺀 이름>/에 보관해줘.
+실제 파일 경로들을 알려줘.
 ```
 
 일반 개념 그림은 소스 기반 지도·동작 설명과 별도의 흐름입니다.
@@ -213,7 +216,7 @@ build/source-to-sight/oauth.html에 저장해줘.
 ```text
 $codebase-atlas Explain this project's purpose, responsibilities, and representative capabilities in English.
 Generate only the project map at build/source-to-sight/project.en.html.
-Keep internal authoring data separately under work/source-to-sight/en/ and report all file paths.
+Keep internal authoring data under build/source-to-sight/_internal/project.en/ and report all file paths.
 Show the reviewed scope and anything that could not be verified. Do not modify source code or configuration.
 ```
 
@@ -224,19 +227,31 @@ Show the reviewed scope and anything that could not be verified. Do not modify s
 | 파일 / 폴더 | 용도와 주의점 |
 | --- | --- |
 | `build/source-to-sight/`의 HTML | 브라우저에서 보는 결과. 연결된 HTML을 함께 공유해야 페이지 이동이 유지됩니다. |
-| `work/source-to-sight/`의 내부 JSON | 에이전트가 근거를 검토하고 다시 생성할 때 쓰는 데이터 파일. 근거 확인용 원문이 있을 수 있어 공유용이 아닙니다. |
+| `build/source-to-sight/_internal/project/`의 내부 JSON | 분석·소스 근거·원본 그림 구성·페이지 연결 목록. 다시 생성할 때 사용하는 원본이며 공유용이 아닙니다. |
 | 선택적으로 생성되는 render JSON | 화면 표시용 데이터. 내부 작성 JSON을 대신하지 않으며, HTML만 볼 때는 필수가 아닙니다. |
 
-파일은 UTF-8로 읽고 씁니다. 공유할 때는 HTML에 표시되거나 포함된 프로젝트명·경로·식별자·설명도 검토하세요. 연결된 HTML의 폴더 구조를 유지해 묶어서 전달하면 받는 사람은 내려받고 압축을 푼 뒤 `project.html`을 열 수 있습니다. 내부 작성 데이터는 공유 묶음에서 제외합니다.
+지도 빌더는 `atlas.internal.json`과 `pages.json`을 자동 보관합니다. 요청한 상세가 있으면 `detail-<subject-id>.behavior.internal.json`, `detail-<subject-id>.logic.internal.json`, `detail-<subject-id>.layout.json`도 보관합니다. 규칙 설명을 요청하지 않았다면 logic/layout 파일은 없습니다. `<subject-id>`는 파일명에 사용할 수 있게 변환한 기능의 고유 식별자입니다. 지도만 다시 만들어도 기존 상세의 원본은 유지하며, 브라우저는 이 JSON을 불러오지 않습니다. 지도 없이 쓰는 `code-flow`는 에이전트가 위 요청의 위치에 내부 입력을 작성하며, 지도용 묶음을 자동 생성하지는 않습니다.
+
+파일은 UTF-8로 읽고 씁니다. 공유할 때는 HTML에 표시되거나 포함된 프로젝트명·경로·식별자·설명도 검토하세요. 연결된 HTML의 폴더 구조를 유지해 묶어서 전달하면 받는 사람은 내려받고 압축을 푼 뒤 `project.html`을 열 수 있습니다. **`_internal/` 전체는 공유 묶음과 정적 사이트 게시에서 제외하세요.** 소스 발췌가 포함될 수 있으며, 밑줄로 시작하는 폴더명 자체가 접근을 차단하지는 않습니다.
+
+화면만 다시 만들 때는 기존 분석을 재사용할 수 있습니다.
+
+```text
+build/source-to-sight/_internal/project/의 원본 JSON과 pages.json을 사용해서
+기존 지도와 연결된 HTML을 다시 렌더링해줘. 소스 시점과 근거 검사는 유지하고,
+변경이 발견되면 영향받는 설명을 재검토해줘. 원본 분석을 처음부터 새로 작성하지 마.
+```
 
 소스가 바뀌어도 HTML이 자동 갱신되지는 않습니다. 기존 파일과 내부 작성 데이터가 있는 프로젝트에서 다음처럼 요청합니다.
 
 ```text
 build/source-to-sight/project.html과 연결된 기존 설명을 최신 소스 기준으로 다시 검토하고 생성해줘.
-work/source-to-sight/의 내부 작성 데이터를 참고하되 변경된 근거와 설명을 다시 확인해줘.
+build/source-to-sight/_internal/project/의 원본 JSON을 사용하되 변경된 근거와 설명을 다시 확인하고 갱신해줘.
 기존 대상·범위·언어를 유지하고, 이미 생성한 페이지의 링크도 갱신해줘.
 아직 만들지 않은 다른 기능의 상세 페이지는 생성하지 마.
 ```
+
+이 보관 기능이 Git 변경 분석이나 HTML 부분 패치를 자동 수행하는 것은 아닙니다. 에이전트가 영향을 받는 소스를 검토해 JSON을 갱신하고, 빌더는 명시적으로 요청한 페이지 전체를 렌더링합니다. 기존 `work/` 등에 원본이 있다면 최초 한 번 그 입력으로 지도 빌더를 실행해 새 위치에 보관할 수 있습니다. 이전 원본을 자동 삭제하지 않으며, HTML만으로 사라진 내부 근거나 원본 그림 구성을 완전히 복원할 수는 없습니다.
 
 Source to Sight 자체를 업데이트하려면 **2단계의 설치 명령을 다시 실행**하고, 새 대화에서 **3단계의 준비 확인**을 반복합니다. 설치 사본을 직접 수정했다면 먼저 별도로 보관하세요. 스킬 업데이트만으로 기존 HTML이 바뀌지는 않습니다.
 

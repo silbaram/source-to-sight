@@ -127,12 +127,14 @@ Create only the map for now; do not generate capability detail pages yet.
 Distinguish the reviewed scope from anything that could not be verified.
 
 Save the HTML at build/source-to-sight/project.html relative to the project root.
-Keep the internal authoring data needed for regeneration separately under work/source-to-sight/.
+Keep the internal authoring data needed for regeneration under build/source-to-sight/_internal/project/.
 Do not modify source code or configuration.
 When finished, provide the HTML's absolute path and link, plus the internal data locations.
 ```
 
-`build/source-to-sight/` is the **output folder** chosen for this guide. `work/source-to-sight/` is the **agent's internal authoring folder**. The generation workflow creates them if needed; you do not need to write the files yourself. If your project has an output-location policy, adjust both paths in the request to follow it.
+`build/source-to-sight/` is the **output folder** chosen for this guide. Internal authoring JSON lives below the HTML directory in **`_internal/<map HTML filename without extension>/`**, so this request uses `build/source-to-sight/_internal/project/`. The workflow creates the directories if needed; you do not need to write the files yourself. A project-specific storage policy takes precedence. For a separate private location, the agent must also pass that path as the builder's `--internal-dir`.
+
+Without an output-location request, the defaults are `docs/atlas/<project-key>.html` and `docs/atlas/_internal/<project-key>/` under the target project root, not the skill installation folder.
 
 Wait for the agent to read the source and create the files. If it asks which package to cover, choose one package to start with. If an existing output belongs to another project, subject, or language, choose a new output path instead of overwriting it.
 
@@ -158,7 +160,7 @@ Where: first the browser, then the same agent chat.
 
 ```text
 Keep the copied request's subject, scope, and output path, and generate this capability's behavior explanation.
-Store internal authoring data under work/source-to-sight/.
+Store internal authoring data under the existing build/source-to-sight/_internal/project/ and preserve other capabilities' data.
 Add only this capability, and rebuild the existing build/source-to-sight/project.html
 so I can navigate from the map to the detail and back to the same map.
 Report the generated HTML paths when finished.
@@ -181,7 +183,7 @@ $code-flow --explain Explain the conditions, outcomes, reasons, and exceptions f
 Use visual-primer's authored picture lesson so a newcomer can understand the important business rules.
 Lead with large meaningful visuals and short explanations; add controls for real conditions or branches when useful.
 Preserve the behavior explanation's subject and scope, and reread the actual source.
-Keep internal authoring data under work/source-to-sight/.
+Keep internal authoring data and the original picture-layout JSON under the existing build/source-to-sight/_internal/project/.
 Update the map, behavior, and rules pages together so their navigation links work in both directions.
 Save results under the existing build/source-to-sight/ folder and report the HTML paths.
 ```
@@ -198,7 +200,8 @@ If you only want one capability explained, use `$code-flow` directly after the r
 
 ```text
 $code-flow Explain TARGET_FUNCTION's inputs, processing, return values, and error handling in English, based on its source.
-Save HTML under build/source-to-sight/ and internal authoring data under work/source-to-sight/, then report the paths.
+Save HTML under build/source-to-sight/ and internal authoring data below it in _internal/<HTML filename without extension>/.
+Report the actual file paths.
 ```
 
 A general concept explainer is a separate workflow from source-backed maps and walkthroughs:
@@ -213,7 +216,7 @@ This guide's main requests already ask for English. To keep a separate English m
 ```text
 $codebase-atlas Explain this project's purpose, responsibilities, and representative capabilities in English.
 Generate only the project map at build/source-to-sight/project.en.html.
-Keep internal authoring data separately under work/source-to-sight/en/ and report all file paths.
+Keep internal authoring data under build/source-to-sight/_internal/project.en/ and report all file paths.
 Show the reviewed scope and anything that could not be verified. Do not modify source code or configuration.
 ```
 
@@ -224,19 +227,31 @@ Both Korean and English are supported for explanations and viewer controls. Requ
 | File / folder | Purpose and precautions |
 | --- | --- |
 | HTML under `build/source-to-sight/` | Browser-ready output. Share linked HTML files together to preserve navigation. |
-| Internal JSON under `work/source-to-sight/` | Data files for reviewing evidence and regenerating pages. They can contain source excerpts used as evidence and are not shareable outputs. |
+| Internal JSON under `build/source-to-sight/_internal/project/` | Analysis, source evidence, original picture layouts and page mappings. These are reusable authoring inputs, not shareable outputs. |
 | Optional render JSON | Display data. It does not replace the internal authoring JSON and is not needed just to view the HTML. |
 
-Files are read and written as UTF-8. Before sharing, review project names, paths, identifiers, and explanations visible or embedded in the HTML. Package the linked HTML files with their relative folder structure intact. Recipients can download and extract them, then open `project.html`. Exclude internal authoring data from the shared package.
+The atlas builder automatically retains `atlas.internal.json` and `pages.json`. For explicitly requested details it also retains `detail-<subject-id>.behavior.internal.json`, `detail-<subject-id>.logic.internal.json` and `detail-<subject-id>.layout.json`; logic/layout files are absent until rules are requested. `<subject-id>` is the capability's filename-escaped unique identifier. A map-only refresh preserves existing detail inputs, and the browser never fetches these JSON files. For standalone `code-flow`, the agent writes the internal input at the requested location; it does not automatically create an atlas bundle.
+
+Files are read and written as UTF-8. Before sharing, review project names, paths, identifiers, and explanations visible or embedded in the HTML. Package the linked HTML files with their relative folder structure intact. Recipients can download and extract them, then open `project.html`. **Exclude the entire `_internal/` directory from shared packages and static-site publishing.** It may contain source excerpts; an underscore-prefixed directory name is not access control.
+
+For presentation-only regeneration, reuse the existing analysis:
+
+```text
+Use the original JSON and pages.json under build/source-to-sight/_internal/project/
+to re-render the existing map and linked HTML. Keep source snapshot and evidence checks,
+and review affected explanations if changes are detected. Do not recreate the original analysis from scratch.
+```
 
 HTML does not update automatically when the source changes. With the existing files and internal data available in the project, ask:
 
 ```text
 Reread the latest source and regenerate build/source-to-sight/project.html and its existing linked explanations.
-Refer to the internal data under work/source-to-sight/, but review changed evidence and explanations again.
+Reuse the original JSON under build/source-to-sight/_internal/project/, reviewing and updating changed evidence and explanations.
 Preserve the existing subjects, scopes, and languages, and refresh links between the pages already generated.
 Do not create detail pages for other capabilities we have not requested.
 ```
+
+This retention feature does not automatically analyze Git diffs or patch parts of HTML. The agent reviews affected source and updates the JSON; the builder renders each explicitly requested page as a complete file. To retain older inputs from `work/` or another location, supply them once to the atlas builder. It does not delete the original inputs, and HTML alone cannot recover lost verification anchors or the full original picture layout.
 
 To update Source to Sight itself, **rerun the installation command in step 2**, then repeat **step 3's readiness check** in a new conversation. Preserve any edits you made to installed copies first. Updating the skills does not automatically update existing HTML.
 

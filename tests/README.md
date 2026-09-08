@@ -28,6 +28,14 @@ Fragment regressions reject non-void HTML self-closing tags and unfinished marku
 before existing pair outputs can be replaced, while retaining SVG/MathML geometry,
 HTML integration points and complete comments.
 
+`test_atlas_storage.py` checks automatic retention under the HTML directory's
+`_internal/<map-stem>/`, private directory overrides, unpruned source evidence and
+original layouts, and rebuilding all three layers from only the retained bundle.
+It covers partial-build preservation, identity/path collisions, failed-build
+immutability, source commit/evidence checks, nested Unicode filenames and installed
+CLI reuse in Korean/English under emulated cp949 file defaults. Private bundles are
+authoring inputs and must be excluded from shared HTML packages and web publishing.
+
 ## Optional picture-lesson browser QA
 
 Create the synthetic bilingual demo in a **new** directory (an existing directory

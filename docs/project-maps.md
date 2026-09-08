@@ -50,3 +50,11 @@ $codebase-atlas 에이전트 실행 제어, 도구, 모델, 기록이 어떻게 
 | 웹 | 경로 등록·탐색, 보정, 외부 처리기 |
 
 생성된 HTML은 대상 프로젝트에 대한 기록된 분석 결과입니다. 지도에 빠진 부분과 동적으로 결정되는 내용은 **설명 범위와 한계**에 표시합니다.
+
+## 원본 데이터 보관과 재생성
+
+출력 위치를 지정하지 않으면 `docs/atlas/<project-key>.html`을 사용합니다. 지도 빌더는 HTML 폴더 아래 `_internal/<지도 파일명에서 확장자를 뺀 이름>/`에 분석 원본을 자동 보관합니다. 예를 들어 `build/source-to-sight/project.html`의 원본은 `build/source-to-sight/_internal/project/`에 있습니다. 별도의 내부 위치는 `--internal-dir`로 지정합니다.
+
+지도 원본 `atlas.internal.json`, 기능별 동작·규칙 원본 `*.internal.json`, 원본 그림 구성 `*.layout.json`, 입력과 HTML 경로를 연결하는 `pages.json`을 재사용합니다. 요청하지 않은 상세는 새로 만들지 않으며, 지도만 갱신해도 기존 상세 원본과 연결 목록은 보존합니다. 화면만 다시 만들 때는 이 JSON으로 렌더링하고, 소스가 바뀌면 영향을 받는 근거와 설명을 검토해 JSON을 갱신합니다. 자동 Git 변경 분석이나 HTML 부분 패치 기능은 아닙니다.
+
+`render.json`은 검증 근거가 제거되거나 표시할 내용만 남은 화면용 데이터라서 원본 JSON을 대신하지 않습니다. `_internal/`에는 소스 발췌가 들어갈 수 있으므로 공유와 정적 사이트 게시에서 폴더 전체를 제외합니다. 자세한 명령과 기존 원본의 이전 방법은 [조립 안내](../skills/codebase-atlas/references/assembly.md#re-render-refresh-and-share)에 있습니다.

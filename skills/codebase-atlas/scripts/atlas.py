@@ -98,11 +98,104 @@ def write_outputs(outputs):
             temporary.unlink(missing_ok=True)
 
 
-def build_site(data, source_root, output, pages=(), data_output=None, code_flow_root=None, visual_primer_root=None):
+def internal_directory(output, internal_dir=None):
+    output = Path(output).resolve()
+    return Path(internal_dir).resolve() if internal_dir is not None else output.parent / "_internal" / output.stem
+
+
+def graph_identity(graph):
+    return (graph["snapshot"]["repository"], graph["layer"], graph["language"],
+            {key: graph["subject"][key] for key in ("id", "kind", "module", "targets", "scope")})
+
+
+def read_manifest(path):
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, list):
+        raise ValueError("The pages manifest must be a list of explicitly requested pages.")
+    for entry in manifest:
+        if not isinstance(entry, dict) or not {"behavior", "output"} <= entry.keys() or entry.keys() - {"behavior", "output", "logic", "layout", "logicOutput"}:
+            raise ValueError("Each page needs behavior and output, optionally logic, layout and logicOutput together.")
+        if any(k in entry for k in ("logic", "layout", "logicOutput")) and not all(k in entry for k in ("logic", "layout", "logicOutput")):
+            raise ValueError("Supply logic, layout and logicOutput together.")
+        if any(not isinstance(value, str) or not value.strip() for value in entry.values()):
+            raise ValueError("Page manifest paths must be nonempty strings.")
+    return manifest
+
+
+def preserve_inputs(graphs, layouts, pages, output, root, s2s):
+    """Prepare reusable, unpruned inputs; never load saved pages for rendering implicitly."""
+    saved = {}
+
+    def private_path(value):
+        path = (root / value).resolve()
+        if not path.is_relative_to(root):
+            raise ValueError("Saved authoring inputs must remain inside the internal directory.")
+        return path
+
+    def check_graph(path, graph):
+        if path.exists():
+            previous = s2s.validate(json.loads(path.read_text(encoding="utf-8")))
+            if graph_identity(previous) != graph_identity(graph):
+                raise ValueError("The internal JSON belongs to another repository, subject, scope, or language. Choose another internal directory.")
+
+    atlas_path = private_path("atlas.internal.json")
+    manifest_path = private_path("pages.json")
+    if atlas_path == manifest_path:
+        raise ValueError("Saved authoring files need distinct paths.")
+    check_graph(atlas_path, graphs[output])
+    if manifest_path.exists():
+        if not atlas_path.exists():
+            raise ValueError("An existing pages manifest needs its owning atlas.internal.json.")
+        for entry in read_manifest(manifest_path):
+            destination = (output.parent / entry["output"]).resolve()
+            if destination in saved:
+                raise ValueError("Saved pages must have distinct behavior outputs.")
+            for key in ("behavior", "logic", "layout"):
+                if key in entry:
+                    private_path(entry[key])
+            saved[destination] = entry
+
+    # Graphs still contain evidence anchors and unpruned claims, unlike render JSON.
+    documents = {atlas_path: graphs[output]}
+    for item in pages:
+        destination = Path(item["output"]).resolve()
+        graph = graphs[destination]
+        # Prefix Windows device names (e.g. CON); escape any schema-accepted control characters.
+        key = "detail-" + quote(graph["subject"]["id"], safe="")
+        entry = dict(saved.get(destination, {}))
+        entry.update({"behavior": f"{key}.behavior.internal.json",
+                      "output": Path(os.path.relpath(destination, output.parent)).as_posix()})
+        entries = [(entry["behavior"], graph)]
+        if "logic" in item:
+            logic_path = Path(item["logicOutput"]).resolve()
+            entry.update({"logic": f"{key}.logic.internal.json", "layout": f"{key}.layout.json",
+                          "logicOutput": Path(os.path.relpath(logic_path, output.parent)).as_posix()})
+            entries.extend(((entry["logic"], graphs[logic_path]), (entry["layout"], layouts[logic_path])))
+        for name, document in entries:
+            path = private_path(name)
+            if path in documents or path == manifest_path:
+                raise ValueError("Saved authoring files need distinct paths.")
+            if "layer" in document:
+                check_graph(path, document)
+            elif path.exists() and name != saved.get(destination, {}).get("layout"):
+                if json.loads(path.read_text(encoding="utf-8")) != document:
+                    raise ValueError("An unrelated layout already exists in the internal directory.")
+            documents[path] = document
+        saved[destination] = entry
+    documents[manifest_path] = list(saved.values())
+    retained = {private_path(entry[key]) for entry in saved.values()
+                for key in ("behavior", "logic", "layout") if key in entry}
+    return documents, retained
+
+
+def build_site(data, source_root, output, pages=(), data_output=None, code_flow_root=None, visual_primer_root=None,
+               internal_dir=None):
     """pages contains explicitly supplied internal graphs, never discovery requests."""
     s2s, author = companion(code_flow_root)
     validate_atlas(data, s2s)
     output = Path(output).resolve()
+    pages = list(pages)
+    internal = internal_directory(output, internal_dir)
     atlas = copy.deepcopy(data)
     catalog = {s["id"]: s for s in atlas["subjects"]}
     graphs, layouts = {output: atlas}, {}
@@ -163,24 +256,23 @@ def build_site(data, source_root, output, pages=(), data_output=None, code_flow_
                          if path in layouts else s2s.render(graph))
     if data_output:
         outputs[Path(data_output).resolve()] = json.dumps(prepared[output], ensure_ascii=False, indent=2) + "\n"
+    documents, retained = preserve_inputs(graphs, layouts, pages, output, internal, s2s)
+    if any(path.is_relative_to(internal) for path in graphs):
+        raise ValueError("Keep HTML outside the private internal directory.")
+    if outputs.keys() & (documents.keys() | retained):
+        raise ValueError("Keep HTML, render JSON and saved authoring inputs at distinct paths.")
+    outputs.update({path: json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+                    for path, document in documents.items()})
     write_outputs(outputs)
     return prepared
 
 
 def read_pages(path, output):
-    manifest = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(manifest, list):
-        raise ValueError("The pages manifest must be a list of explicitly requested pages.")
+    manifest = read_manifest(path)
     pages, inputs = [], {path.resolve()}
     for entry in manifest:
-        if not isinstance(entry, dict) or not {"behavior", "output"} <= entry.keys() or entry.keys() - {"behavior", "output", "logic", "layout", "logicOutput"}:
-            raise ValueError("Each page needs behavior and output, optionally logic, layout and logicOutput together.")
-        if any(k in entry for k in ("logic", "layout", "logicOutput")) and not all(k in entry for k in ("logic", "layout", "logicOutput")):
-            raise ValueError("Supply logic, layout and logicOutput together.")
         page = {}
         for key, value in entry.items():
-            if not isinstance(value, str) or not value:
-                raise ValueError("Page manifest paths must be nonempty strings.")
             resolved = (output.parent / value if key in ("output", "logicOutput") else path.parent / value).resolve()
             if key in ("output", "logicOutput"):
                 page[key] = resolved
@@ -209,6 +301,8 @@ def main(argv=None):
     build.add_argument("input", type=Path)
     build.add_argument("--pages", type=Path)
     build.add_argument("--data-output", type=Path)
+    build.add_argument("--internal-dir", type=Path,
+                       help="Retained authoring JSON directory (default: HTML directory/_internal/HTML stem)")
     for command in (init, build):
         command.add_argument("--source-root", type=Path, required=True)
         command.add_argument("--output", type=Path, required=True)
@@ -238,6 +332,7 @@ def main(argv=None):
                 raise ValueError("Keep internal evidence, layout and page manifests separate from outputs.")
             result = build_site(json.loads(input_path.read_text(encoding="utf-8")), pages=pages, **args)
             print(f"{args['output']}: {len(result)} requested pages; {len(result[args['output'].resolve()]['subjects'])} catalog capabilities")
+            print(f"Authoring inputs (private; do not publish): {internal_directory(args['output'], args['internal_dir'])}")
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(1, f"atlas: {error}\n")
 
