@@ -58,19 +58,26 @@
   const selectedNodeId=()=>nodeMap.has(selected)?selected:subjectMap.get(selected)?.nodeId;
   let regionId=null;
   let entryTab='roles', entryQuery='', entryGroup='', entryAvailability='', entrySelected=null;
+  let closeEntryPalette=()=>{}, closeEntryContext=()=>{}, openEntryContext=()=>{};
   const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions,...subjectMap.values()].map(item=>[item.id,item]));
   const incomingAtlas=new URLSearchParams(location.search).get('s2s-atlas');
   const returnAtlas=incomingAtlas?.startsWith('#s2s=1&')&&incomingAtlas.length<16000?incomingAtlas:null;
 
   async function copy(text) {
-    copyReturnFocus=document.activeElement;
+    const trigger=document.activeElement;
+    copyReturnFocus=trigger;
     try {
       if (!navigator.clipboard) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(text);
     } catch {
+      // Clipboard permission can settle after a dialog has been dismissed or
+      // replaced. Do not move focus into a stale or now-inert copy surface.
+      if(!trigger.isConnected||trigger.closest('[hidden],[inert]')) {
+        announce(t('복사하지 못했습니다. 필요하면 다시 시도해 주세요.','Copy failed. Try again if needed.'));return;
+      }
       const field = element('textarea', text);
       field.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01';
-      document.body.append(field);
+      (isAtlas&&!$('entry-context').hidden?$('entry-context'):document.body).append(field);
       field.select();
       let ok = false;
       try {ok = document.execCommand('copy');} catch {/* Manual copying remains available. */}
@@ -837,7 +844,6 @@
   function locationHash() {
     const params=new URLSearchParams({s2s:'1',subject:data.subject.id,view,detail:detail?'detail':'core',speed:String(playbackRate)});
     if(isAtlas&&view==='overview') {
-      params.set('tab',entryTab);
       if(entryQuery)params.set('q',entryQuery);
       if(entryGroup)params.set('group',entryGroup);
       if(entryAvailability)params.set('available',entryAvailability);
@@ -930,6 +936,7 @@
       try{restored=readLocation(hash);}catch{invalid=true;}
     }
     restoringLocation=true;
+    closeEntryContext(false);closeEntryPalette(false);
     stop();history.length=0;closePanel(false);
     selected=null;focusId=null;stepIndex=-1;stepElapsed=0;playbackState='idle';
     view=restored.view;detail=restored.detail;scenarioIndex=restored.scenario;playbackRate=restored.rate;regionId=restored.region||null;
@@ -971,7 +978,7 @@
       }
     }
     if(isAtlas&&view==='overview'&&entrySelected) {
-      const card=Array.from($('entry-features').children).find(el=>el.dataset.featureId===entrySelected);
+      const card=entryCard(entrySelected);
       card?.focus({preventScroll:true});
       // Returning to a capability restores its visible location as well as
       // its selection. Apply immediately, including under reduced motion.
@@ -1008,7 +1015,19 @@
     document.body.classList.add('atlas-page');$('atlas-navigation').hidden=false;$('atlas-summary').hidden=false;
     const counts=t('책임 구역 ','Responsibility regions ')+data.regions.length+' · '+t('구성 요소 ','Components ')+data.nodes.length+' · '+t('주요 기능 ','Capabilities ')+data.subjects.length;
     $('atlas-summary').append(element('span',counts));
-    const scope=element('button',t('분석 범위 보기','View analysis scope'));scope.type='button';scope.addEventListener('click',()=>{const section=$('scope-title').parentElement;section.open=true;section.scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth'});});$('atlas-summary').append(scope);
+    // Count recorded, reviewed items, not repository-wide or test coverage.
+    // Legacy capabilities inherit the owner's review state, as their cards do.
+    const reviewed=[...data.nodes.filter(n=>!n.contextOnly),...data.regions,...subjectMap.values(),...(data.structureEntries||[])];
+    const checked=reviewed.filter(item=>item.displayStatus==='confirmed').length;
+    const coverage=element('span',undefined,'coverage');
+    coverage.style.setProperty('--coverage',(reviewed.length?checked/reviewed.length*100:0)+'%');
+    coverage.append(element('span',t('기록된 항목 확인 ','Recorded items checked ')+checked+' / '+reviewed.length,'coverage-label'));
+    coverage.title=t('이 지도에 기록된 구성 요소·구역·기능·경로의 확인 비율입니다. 프로젝트 전체나 테스트 커버리지가 아닙니다.','Review status of components, regions, capabilities and paths recorded in this map; not repository-wide or test coverage.');
+    $('atlas-summary').append(coverage);
+    const scope=element('button',t('분석 범위와 한계 ▸','Analysis scope and limits ▸'));scope.type='button';scope.addEventListener('click',()=>{
+      if(view==='overview'&&!$('atlas-entry').hidden){$('entry-gaps').open=true;focusEntry($('entry-gaps-title'));}
+      else {const section=$('scope-title').parentElement;section.open=true;section.scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth'});}
+    });$('atlas-summary').append(scope);
     $('atlas-regions-title').textContent=t('책임 구역','RESPONSIBILITIES');$('atlas-regions-title').hidden=!data.regions.length;
     $('capabilities-title').textContent=t('주요 기능','CAPABILITIES');$('capabilities-title').hidden=!data.subjects.length;
     for(const region of data.regions){const button=element('button',region.label);button.type='button';button.dataset.regionId=region.id;
@@ -1024,11 +1043,13 @@
     $('atlas-entry').hidden=!home||!usable;
     $('workspace').hidden=home||!usable;
     document.body.classList.toggle('atlas-overview',home);
+    if(!home||!usable){closeEntryContext(false);closeEntryPalette(false);}
     const skip=document.querySelector('.skip');
     skip.href=home?'#entry-title':'#canvas';
     skip.textContent=home?t('프로젝트 소개로 건너뛰기','Skip to project overview'):t('다이어그램으로 건너뛰기','Skip to diagram');
   }
   function openEntryDiagram(action) {
+    closeEntryContext(false);closeEntryPalette(false);
     restoreLocation('#'+new URLSearchParams({s2s:'1',subject:data.subject.id,view:'structure',detail:'core',speed:'1'}));
     $('canvas').scrollIntoView({block:'center'});
     $('canvas').focus({preventScroll:true});
@@ -1045,78 +1066,411 @@
     evidenceSection(details,item.evidenceIds);
     return details;
   }
+  function entryGlyph(kind) {
+    const paths={
+      feature:'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z',
+      input:'M14 4h6v16h-6 M3 12h12 M9 6l6 6-6 6',
+      output:'M10 4H4v16h6 M9 12h12 M15 6l6 6-6 6',
+      project:'M12 3l9 5-9 5-9-5z M3 12l9 5 9-5 M3 16l9 5 9-5'
+    };
+    const icon=svg('svg',{viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.4','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true',class:'entry-icon'});
+    icon.append(svg('path',{d:paths[kind]||paths.feature}));return icon;
+  }
+  function entryCard(id) {
+    return [...$('entry-features').querySelectorAll('.feature-card')].find(card=>card.dataset.featureId===id);
+  }
+  function entryPaths(nodeId) {
+    return (data.structureEntries||[]).filter(entry=>entry.nodeIds.includes(nodeId));
+  }
+  function entryLandmark(nodeId) {
+    return entryPaths(nodeId).filter(entry=>entry.path!=='.').sort((a,b)=>
+      (a.kind==='file')-(b.kind==='file')||a.path.split('/').length-b.path.split('/').length||a.path.localeCompare(b.path))[0];
+  }
+  function openEntryPath(id) {
+    const item=[...$('entry-files').querySelectorAll('.entry-tree-item')].find(el=>el.dataset.structureId===id);
+    if(!item)return;
+    closeEntryContext(false);closeEntryPalette(false);
+    $('entry-files-section').open=true;
+    for(let parent=item;parent&&parent!==$('entry-files');parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
+    focusEntry(item.querySelector('summary'));
+  }
+  function renderEntrySummary() {
+    const summary=$('entry-summary');summary.replaceChildren();
+    summary.setAttribute('aria-label',t('프로젝트의 입력과 결과 · 실행 순서가 아닙니다','Project inputs and outputs · not execution order'));
+    summary.hidden=!data.summary.inputs.length&&!data.summary.outputs.length;
+    for(const [key,label,kind] of [['inputs',t('들어오는 것','INPUT'),'input'],['outputs',t('만들어지는 것','OUTPUT'),'output']]) {
+      if(key==='outputs') {
+        const center=element('div',undefined,'entry-io-center');
+        center.append(entryGlyph('project'),element('span',t('이 프로젝트','This project')));summary.append(center);
+      }
+      const box=element('div',undefined,'entry-io');
+      const heading=element('p',label,'entry-io-label');heading.prepend(entryGlyph(kind));box.append(heading);
+      const values=element('ul');
+      for(const value of data.summary[key])values.append(element('li',value));
+      if(!values.childElementCount)values.append(element('li',t('아직 기록되지 않았습니다.','Not recorded yet.')));
+      box.append(values);summary.append(box);
+    }
+    const limits=[...new Set([...data.warnings.filter(w=>w.severity==='high').map(w=>w.message),...data.analysis.unresolved,...data.summary.limitations])];
+    const alerts=$('entry-alerts');alerts.replaceChildren();alerts.hidden=!limits.length;
+    if(limits.length) {
+      alerts.append(element('span',t('확인하고 읽기','READ WITH CONTEXT'),'entry-alert-label'),element('p',limits[0]),
+        entryButton(t('분석 범위 보기','Review scope'),()=>{$('entry-gaps').open=true;focusEntry($('entry-gaps-title'));}));
+    }
+  }
   function renderEntryFilters() {
     $('entry-search').value=entryQuery;$('entry-group').value=entryGroup;$('entry-availability').value=entryAvailability;
-    $('entry-roles-tab').setAttribute('aria-pressed',String(entryTab==='roles'));
-    $('entry-files-tab').setAttribute('aria-pressed',String(entryTab==='files'));
-    $('entry-roles').hidden=entryTab!=='roles';$('entry-files').hidden=entryTab!=='files';
-    $('entry-structure-note').textContent=entryTab==='roles'?
-      t('같은 일을 맡는 부분을 묶었습니다. 카드를 누르면 기존 관계도로 이동합니다.','Parts are grouped by responsibility. Open a card to explore the relationship diagram.'):
-      t('분석한 실제 경로만 표시합니다. 들여쓰기는 폴더 포함 관계이며 호출·의존 관계가 아닙니다.','Only reviewed paths are shown. Indentation means folder containment, not calls or dependencies.');
     const query=entryQuery.trim().toLocaleLowerCase();
-    const matches=data.subjects.filter(s=>{
-      const owner=nodeMap.get(s.nodeId);
-      const paths=(data.structureEntries||[]).filter(e=>e.nodeIds.includes(s.nodeId)).map(e=>e.path);
-      return (!entryGroup||regionMap.get(entryGroup).nodeIds.includes(s.nodeId))&&
-        (!entryAvailability||(entryAvailability==='ready')===s.link.generated)&&
-        [s.label,s.summary,s.question,s.module,owner.label,owner.codeName,...paths,
-          ...(s.targets||[]).flatMap(target=>[target.file,target.symbol,target.label])]
-          .some(v=>v?.toLocaleLowerCase().includes(query));
+    const matches=data.subjects.filter(subject=>{
+      const owner=nodeMap.get(subject.nodeId),paths=entryPaths(subject.nodeId).map(entry=>entry.path);
+      return (!entryGroup||regionMap.get(entryGroup).nodeIds.includes(subject.nodeId))&&
+        (!entryAvailability||(entryAvailability==='ready')===subject.link.generated)&&
+        [subject.label,subject.summary,subject.question,subject.module,owner.label,owner.codeName,...paths,
+          ...(subject.targets||[]).flatMap(target=>[target.file,target.symbol,target.label])]
+          .some(value=>value?.toLocaleLowerCase().includes(query));
     });
     $('entry-count').textContent=t('기록된 기능 ','Recorded capabilities: ')+matches.length+' / '+data.subjects.length;
     $('entry-features').replaceChildren();
+    const containers=new Map();
     for(const subject of matches) {
       const item=subjectMap.get(subject.id),owner=nodeMap.get(subject.nodeId);
+      const group=data.regions.find(region=>region.nodeIds.includes(subject.nodeId))||owner;
+      if(!containers.has(group.id)) {
+        const section=element('section',undefined,'entry-capability-group');section.dataset.groupId=group.id;section.setAttribute('aria-label',group.label);
+        const heading=element('div',undefined,'entry-group-heading');
+        const title=element('h3',group.label);heading.append(title);
+        const belongs=capability=>(data.regions.find(region=>region.nodeIds.includes(capability.nodeId))?.id||capability.nodeId)===group.id;
+        const shown=matches.filter(belongs).length,total=data.subjects.filter(belongs).length;
+        const count=element('span',t('기능 ','Capabilities: ')+(shown===total?total:shown+' / '+total),'entry-group-count');
+        count.title=t('현재 필터에 표시된 기능 / 이 그룹에 기록된 기능','Visible capabilities / capabilities recorded in this group');heading.append(count);
+        if(regionMap.has(group.id))heading.append(statusBadge(group));
+        heading.append(entryButton(t('그룹 관계도 ↗','Group diagram ↗'),()=>openEntryDiagram(()=>{
+          if(regionMap.has(group.id))enterRegion(group.id);else chooseNode(owner);
+        })));
+        const cards=element('div',undefined,'entry-grid');
+        section.append(heading,cards);$('entry-features').append(section);containers.set(group.id,cards);
+      }
       const card=element('article',undefined,'entry-card feature-card');card.dataset.featureId=subject.id;card.tabIndex=-1;
       card.classList.toggle('entry-selected',entrySelected===subject.id);
-      card.append(statusBadge(item),element('h3',subject.label),element('p',subject.summary||owner.summary));
-      const group=data.regions.find(r=>r.nodeIds.includes(subject.nodeId));
-      card.append(element('p',t('담당: ','Owner: ')+(group?group.label+' / ':'')+owner.label,'entry-meta'));
-      card.append(element('p',subject.link.generated?t('상세 설명 준비됨','Detail available'):t('상세 설명 미생성 · 기능이 없다는 뜻은 아닙니다','Detail not generated · the capability is still recorded'),'entry-meta'));
+      const title=element('h4'),selectButton=entryButton(undefined,()=>selectEntryFeature(subject.id,{reset:false,inspect:true}),'entry-select');
+      selectButton.setAttribute('aria-haspopup','dialog');
+      selectButton.setAttribute('aria-controls','entry-context');
+      selectButton.title=t('기능 요약 열기: ','Open capability summary: ')+subject.label;
+      selectButton.append(entryGlyph('feature'),element('span',subject.label),element('span','→','entry-select-arrow'));title.append(selectButton);
+      card.append(title,element('p',subject.summary||owner.summary,'entry-feature-summary'));
+      const meta=element('div',undefined,'entry-feature-meta');meta.append(element('span',t('담당 · ','Owner · ')+owner.label));
+      const landmark=entryLandmark(owner.id);
+      if(landmark) {
+        const path=entryButton(landmark.path,()=>openEntryPath(landmark.id),'entry-path-link '+landmark.displayStatus);
+        path.title=landmark.label+' · '+labels[landmark.displayStatus];
+        if(landmark.displayStatus!=='confirmed')path.append(element('span',' · '+labels[landmark.displayStatus]));
+        meta.append(path);
+      }
+      card.append(meta);
+      const state=element('div',undefined,'entry-feature-state');state.append(statusBadge(item),
+        element('span',subject.link.generated?t('상세 준비됨','Detail ready'):t('상세 문서 미생성','Detail not generated'),'entry-availability'));
+      card.append(state);
       const actions=element('div',undefined,'entry-actions');
-      // Capture before linkControl's click/auxclick listeners serialize return
-      // state; also supports opening a detail in a new tab.
-      const control=linkControl('behavior',subject.link,subject.link.generated?t('상세 흐름 보기 →','Open detailed flow →'):t('상세 생성 요청 복사','Copy detail request'));
-      control.textContent=subject.link.generated?t('상세 흐름 보기 →','Open detailed flow →'):t('상세 생성 요청 복사','Copy detail request');
-      const select=()=>{entrySelected=subject.id;for(const other of $('entry-features').children)other.classList.toggle('entry-selected',other===card);syncLocation();};
+      const control=linkControl('behavior',subject.link);
+      control.textContent=subject.link.generated?t('상세 흐름 →','Detailed flow →'):t('상세 생성 요청 복사','Copy detail request');
+      // Capture the selected capability before return-state serialization.
+      const select=()=>{entrySelected=subject.id;updateEntrySelection();syncLocation();};
       for(const event of ['click','auxclick'])control.addEventListener(event,select,{capture:true});
       actions.append(control,entryButton(t('구조에서 위치 보기','Locate in diagram'),()=>{entrySelected=subject.id;openEntryDiagram(()=>chooseNode(owner,item));}));
-      card.append(actions);$('entry-features').append(card);
+      card.append(actions);containers.get(group.id).append(card);
     }
     if(!matches.length)$('entry-features').append(element('p',data.subjects.length?
       t('일치하는 기능이 없습니다. 검색이나 필터를 초기화해 보세요.','No matching capabilities. Clear the search or filters.'):
-      t('이 분석에는 기능 목록이 아직 기록되지 않았습니다. 전체 구조와 분석 범위를 확인해 주세요.','No capabilities were cataloged in this analysis. Explore the diagram and analysis scope.'),'entry-empty'));
+      t('기능 목록이 아직 기록되지 않았습니다. 아래 구성과 분석 범위를 확인해 주세요.','No capabilities have been cataloged. Explore the components and analysis scope below.'),'entry-empty'));
+    renderEntryContext();
+  }
+  function focusEntry(target) {
+    if(!target)return;
+    target.focus({preventScroll:true});
+    target.scrollIntoView({block:'start',behavior:reducedMotion.matches?'instant':'smooth'});
+  }
+  function updateEntrySelection() {
+    for(const card of $('entry-features').querySelectorAll('.feature-card')) {
+      const active=entrySelected===card.dataset.featureId;
+      card.classList.toggle('entry-selected',active);
+    }
+    renderEntryContext();
+  }
+  function selectEntryFeature(id,{reset=true,inspect=true}={}) {
+    if(!subjectMap.has(id))return;
+    entrySelected=id;
+    if(reset&&(entryQuery||entryGroup||entryAvailability)) {
+      entryQuery='';entryGroup='';entryAvailability='';renderEntryFilters();
+    } else updateEntrySelection();
+    syncLocation();
+    const card=entryCard(id);
+    if(!card)return;
+    // Search/tree navigation has a new return destination. Direct card clicks
+    // leave the page still, including when it is only partly in the viewport.
+    if(reset)card.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+    if(inspect)openEntryContext(card.querySelector('.entry-select'));
+    else focusEntry(card);
+  }
+  function initializeEntryContext() {
+    const overlay=$('entry-context'),box=overlay.querySelector('.entry-context-box'),fallback=$('copy-fallback');
+    let previousFocus=null,background=[],previousOverflow='',previousPadding='',position=null,backdropStart=false;
+    closeEntryContext=(restoreFocus=true)=>{
+      if(overlay.hidden)return;
+      overlay.hidden=true;
+      fallback.hidden=true;document.body.insertBefore(fallback,$('announcement'));
+      for(const [item,inert] of background)item.inert=inert;
+      background=[];document.documentElement.style.overflow=previousOverflow;document.body.style.paddingRight=previousPadding;
+      if(restoreFocus) {
+        const target=previousFocus?.isConnected?previousFocus:entryCard(entrySelected)?.querySelector('.entry-select')||$('entry-title');
+        target.focus({preventScroll:true});
+        if(position)scrollTo({left:position.x,top:position.y,behavior:'instant'});
+      }
+      previousFocus=null;position=null;
+    };
+    openEntryContext=target=>{
+      if(view!=='overview'||$('atlas-entry').hidden||!entryCard(entrySelected))return;
+      closeEntryPalette(false);
+      if(!overlay.hidden){$('entry-context-title').focus({preventScroll:true});return;}
+      previousFocus=target;position={x:scrollX,y:scrollY};
+      previousOverflow=document.documentElement.style.overflow;previousPadding=document.body.style.paddingRight;
+      const gutter=innerWidth-document.documentElement.clientWidth;
+      if(gutter)document.body.style.paddingRight=(parseFloat(getComputedStyle(document.body).paddingRight)+gutter)+'px';
+      fallback.hidden=true;box.append(fallback);
+      background=[...document.body.children].filter(item=>item!==overlay&&item!==$('announcement')).map(item=>[item,item.inert]);
+      for(const [item] of background)item.inert=true;
+      document.documentElement.style.overflow='hidden';overlay.hidden=false;
+      for(const disclosure of overlay.querySelectorAll('details'))disclosure.open=false;
+      $('entry-context-body').scrollTop=0;
+      $('entry-context-title').focus({preventScroll:true});
+    };
+    const focusable=()=>[...overlay.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),textarea:not(:disabled),select:not(:disabled),summary,[tabindex="0"]')]
+      .filter(item=>item.getClientRects().length&&getComputedStyle(item).visibility==='visible'&&!item.closest('[inert]'));
+    $('entry-context-close').addEventListener('click',()=>closeEntryContext());
+    overlay.addEventListener('pointerdown',event=>{backdropStart=event.target===overlay;});
+    overlay.addEventListener('click',event=>{if(event.target===overlay&&backdropStart)closeEntryContext();backdropStart=false;});
+    overlay.addEventListener('keydown',event=>{
+      if(event.isComposing)return;
+      if(event.key==='Escape') {
+        event.preventDefault();event.stopPropagation();
+        if(!fallback.hidden)$('close-copy').click();else closeEntryContext();
+      } else if(event.key==='Tab') {
+        const targets=focusable(),first=targets[0],last=targets.at(-1);
+        if(!first){event.preventDefault();$('entry-context-title').focus();}
+        else if(event.shiftKey&&(document.activeElement===first||!targets.includes(document.activeElement))){event.preventDefault();last.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      }
+    });
+    document.addEventListener('focusin',event=>{
+      if(!overlay.hidden&&!overlay.contains(event.target))$('entry-context-title').focus({preventScroll:true});
+    });
+  }
+  function renderEntryContext() {
+    const subject=entryCard(entrySelected)?subjectMap.get(entrySelected):null;
+    if(!subject){closeEntryContext(false);return;}
+    $('entry-context-title').textContent=subject.label;
+    $('entry-context-note').textContent=subject.summary||nodeMap.get(subject.nodeId).summary;
+    $('entry-context-status').replaceChildren(statusBadge(subject));
+    if(subject.displayStatus!=='confirmed'&&subject.verificationNote)$('entry-context-status').append(element('p',subject.verificationNote,'entry-note'));
+    const owner=nodeMap.get(subject.nodeId),actions=$('entry-context-actions');actions.replaceChildren();
+    const control=linkControl('behavior',subject.link);
+    control.textContent=subject.link.generated?t('상세 흐름 열기 ↗','Open detailed flow ↗'):t('상세 생성 요청 복사','Copy detail request');
+    actions.append(control,entryButton(t('구조에서 확인','View in diagram'),()=>openEntryDiagram(()=>chooseNode(owner,subject))));
+    const ownerBox=$('entry-context-owner');ownerBox.replaceChildren(element('h3',t('담당하는 부분','RESPONSIBLE COMPONENT')),element('p',owner.label),element('p',owner.summary,'entry-note'),statusBadge(owner));
+    const paths=$('entry-context-paths');paths.replaceChildren(element('h3',t('관련 코드 위치','CODE LOCATIONS')));
+    const locations=entryPaths(owner.id);
+    const primary=entryLandmark(owner.id)||locations[0],extra=element('details',undefined,'entry-evidence');
+    extra.append(element('summary',t('다른 관련 경로 ','More related paths: ')+Math.max(0,locations.length-1)));
+    for(const entry of locations) {
+      const button=entryButton(undefined,()=>openEntryPath(entry.id),'entry-location');
+      button.append(element('code',entry.path),element('small',entry.label),statusBadge(entry));
+      if(entry===primary)paths.append(button);else extra.append(button);
+    }
+    if(locations.length>1)paths.append(extra);
+    if(!locations.length)paths.append(element('p',t('폴더 연결이 기록되지 않았습니다. 아래 근거 위치를 확인하세요.','No folder mapping is recorded. Check the evidence locations below.'),'entry-note'));
+    const reviewIds=[...new Set([...(subject.evidenceIds||[]),...(owner.evidenceIds||[])])];
+    const references=element('details',undefined,'entry-evidence');
+    references.append(element('summary',t('소스 근거 확인','Review source evidence')));evidenceSection(references,reviewIds);paths.append(references);
+    const connections=$('entry-context-connections');connections.replaceChildren(element('h3',t('연결된 부분','CONNECTED COMPONENTS')));
+    const edges=data.edges.filter(edge=>edge.from===owner.id||edge.to===owner.id);
+    for(const edge of edges) {
+      const peer=nodeMap.get(edge.from===owner.id?edge.to:edge.from);
+      const button=entryButton(undefined,()=>openEntryDiagram(()=>chooseNode(peer)),'entry-connection');
+      button.append(element('span',nodeMap.get(edge.from).label+' → '+nodeMap.get(edge.to).label),element('small',edge.label),statusBadge(edge));connections.append(button);
+    }
+    connections.append(element('p',edges.length?
+      t('기록된 직접 연결입니다. 변경 영향의 전체 목록은 아닙니다.','Recorded direct relationships, not an exhaustive change-impact analysis.'):
+      t('직접 연결이 기록되지 않았습니다. 의존성이 없다는 뜻은 아닙니다.','No direct relationships are recorded; this does not establish that there are no dependencies.'),'entry-note'));
+    renderEntryFlow(owner.id);renderCautions(owner.id);
+    const tests=reviewIds.filter(id=>evidenceMap.get(id)?.kind==='test');
+    const checks=$('entry-context-checks');checks.replaceChildren(element('summary',tests.length?
+      t('연결된 테스트 근거 ','Linked test evidence: ')+tests.length:t('테스트 연결 미기록','Test mapping not recorded')));
+    if(tests.length) {
+      checks.append(element('p',t('검토된 테스트 위치입니다. 테스트 실행 결과를 뜻하지 않습니다.','Reviewed test locations, not test execution results.'),'entry-note'));evidenceSection(checks,tests);
+    } else checks.append(element('p',t('연결된 테스트가 기록되지 않았습니다. 변경 전에 별도로 찾아 확인해야 합니다.','No linked tests are recorded. Locate and check them before making a change.'),'entry-note'));
+    const scope=$('entry-context-scope');scope.replaceChildren(element('summary',t('설명 범위와 한계','Scope and limits')));
+    if(subject.scope) {
+      list(scope,t('이 기능의 설명 범위','CAPABILITY SCOPE'),subject.scope.includes);
+      list(scope,t('제외한 범위','OUTSIDE THIS SCOPE'),subject.scope.excludes);
+    }
+    scope.append(element('p',t('상세 문서 미생성은 기능이 없다는 뜻이 아닙니다. 기록된 범위 밖은 별도 분석이 필요합니다.','A missing detail page does not mean the capability is absent. Anything outside the recorded scope needs further analysis.'),'entry-note'));
+  }
+  function renderEntryFlow(ownerId) {
+    // Owner overlap establishes related context, not an exact capability trace.
+    const scenarios=data.scenarios.filter(scenario=>scenario.steps.some(step=>step.nodeId===ownerId||
+      [edgeMap.get(step.edgeId)?.from,edgeMap.get(step.edgeId)?.to].includes(ownerId)));
+    $('entry-flow').hidden=!scenarios.length;$('entry-flow-steps').replaceChildren();
+    for(const scenario of scenarios) {
+      const section=element('details',undefined,'entry-flow-case');
+      section.append(element('summary',scenario.title));
+      const steps=element('ol',undefined,'entry-flow-steps');
+      for(const step of scenario.steps) {
+        const node=nodeMap.get(step.nodeId||edgeMap.get(step.edgeId)?.to);
+        const item=element('li',undefined,'entry-flow-step '+step.displayStatus);item.dataset.stepId=step.id;
+        item.classList.toggle('nonsequential',nonSequential(step));
+        const body=node?entryButton(undefined,()=>openEntryDiagram(()=>chooseNode(node)),'entry-flow-button'):element('div',undefined,'entry-flow-button');
+        body.append(element('span',step.caption,'entry-flow-caption'));
+        if(step.condition)body.append(element('small',t('이 조건에서: ','When: ')+step.condition));
+        if(nonSequential(step)||step.branch&&step.branch!=='normal')body.append(element('small',
+          [nonSequential(step)?executionLabels[step.execution]:null,step.branch&&step.branch!=='normal'?branchLabels[step.branch]:null].filter(Boolean).join(' · ')));
+        if(node)body.append(element('small',node.label+' ↗','entry-flow-owner'));
+        body.append(statusBadge(step));item.append(body);steps.append(item);
+      }
+      section.append(steps);$('entry-flow-steps').append(section);
+    }
+  }
+  function renderCautions(ownerId) {
+    const rules=data.rules.filter(rule=>rule.nodeIds.includes(ownerId));
+    $('entry-cautions').hidden=!rules.length;$('entry-cautions-list').replaceChildren();
+    for(const rule of rules) {
+      const card=element('article',undefined,'entry-caution');card.dataset.ruleId=rule.id;
+      card.append(statusBadge(rule),element('h4',rule.plainText));
+      const facts=element('dl',undefined,'entry-rule-facts');
+      for(const [label,value] of [[t('언제','When'),rule.condition],[t('그러면','Then'),rule.outcome]])if(value)facts.append(element('dt',label),element('dd',value));
+      if(rule.evidenceIds.some(id=>evidenceMap.get(id)?.kind==='documentation'))card.append(element('p',
+        t('문서에 명시된 규약입니다. 모든 코드의 준수를 보장하지 않습니다.','A documented convention; this does not guarantee compliance throughout the code.'),'entry-meta'));
+      const details=element('details',undefined,'entry-evidence');
+      details.append(element('summary',t('조건·이유·예외·근거','Conditions, reasons, exceptions and evidence')),facts);
+      if(rule.rationale)details.append(element('p',rule.rationale));
+      list(details,t('예외','Exceptions'),rule.exceptions||[]);
+      details.append(element('p',rule.verificationNote));evidenceSection(details,rule.evidenceIds);
+      card.append(details);$('entry-cautions-list').append(card);
+    }
+  }
+  function renderGaps() {
+    const body=$('entry-gaps-body');body.replaceChildren();
+    for(const [label,items] of [[t('아직 확인하지 못한 것','Unresolved'),data.analysis.unresolved],
+      [t('설명의 한계','Limitations'),data.summary.limitations],
+      [t('이번 분석에서 제외한 것','Outside this analysis'),data.subject.scope.excludes],
+      [t('다음에 확인할 것','Next checks'),data.analysis.nextAttempts]]) {
+      const group=element('div');list(group,label,[...new Set(items)]);
+      if(group.childElementCount)body.append(group);
+    }
+    if(!body.childElementCount)body.append(element('p',t('기록된 미확인 항목이 없습니다.','No unresolved items are recorded.')));
+  }
+  function renderPalette() {
+    const overlay=$('entry-palette'),input=$('entry-palette-input'),results=$('entry-palette-results');
+    let previousFocus=null,background=[],previousOverflow='';
+    const index=[
+      ...data.subjects.map(subject=>({kind:t('기능','Capability'),label:subject.label,
+        description:subject.summary||nodeMap.get(subject.nodeId).summary,
+        search:[subject.question,subject.module,...(subject.targets||[]).flatMap(target=>[target.file,target.symbol,target.label])],
+        open:()=>selectEntryFeature(subject.id)})),
+      ...data.nodes.filter(node=>!node.contextOnly).map(node=>({kind:t('구성 요소','Component'),label:node.label,
+        description:node.summary,search:[node.codeName,node.roleLabel],open:()=>openEntryDiagram(()=>chooseNode(node))})),
+      ...(data.structureEntries||[]).map(entry=>({kind:t('경로','Path'),label:entry.path,description:entry.label+' · '+entry.summary,search:[],open:()=>openEntryPath(entry.id)}))
+    ].map(item=>({...item,query:[item.label,item.description,...item.search].filter(Boolean).join(' ').toLocaleLowerCase()}));
+    closeEntryPalette=(restoreFocus=true)=>{
+      if(overlay.hidden)return;
+      overlay.hidden=true;
+      for(const [item,inert] of background)item.inert=inert;
+      background=[];document.documentElement.style.overflow=previousOverflow;
+      if(restoreFocus&&previousFocus?.isConnected)previousFocus.focus({preventScroll:true});
+    };
+    const render=()=>{
+      const query=input.value.trim().toLocaleLowerCase(),matches=index.filter(item=>item.query.includes(query));
+      results.replaceChildren();
+      for(const match of matches) {
+        const item=element('li'),button=entryButton(undefined,()=>{closeEntryPalette();match.open();});
+        button.append(element('small',match.kind),element('span',match.label),element('small',match.description));
+        item.append(button);results.append(item);
+      }
+      if(!matches.length)results.append(element('li',t('일치하는 항목이 없습니다. 다른 이름이나 경로로 찾아보세요.','No matches. Try another name or path.'),'entry-palette-empty'));
+      $('entry-palette-hint').textContent=t('검색 결과 ','Results: ')+matches.length+t('개 · ↑↓ 이동 · Enter 선택 · Esc 닫기',' · ↑↓ navigate · Enter select · Esc close');
+    };
+    const open=()=>{
+      if(view!=='overview'||$('atlas-entry').hidden)return;
+      closeEntryContext();
+      if(!overlay.hidden){input.focus();input.select();return;}
+      previousFocus=document.activeElement;previousOverflow=document.documentElement.style.overflow;
+      background=[...document.body.children].filter(item=>item!==overlay).map(item=>[item,item.inert]);
+      for(const [item] of background)item.inert=true;
+      document.documentElement.style.overflow='hidden';overlay.hidden=false;
+      input.value='';render();input.focus();
+    };
+    $('entry-palette-open').addEventListener('click',open);
+    $('entry-palette-close').addEventListener('click',()=>closeEntryPalette());
+    overlay.addEventListener('click',event=>{if(event.target===overlay)closeEntryPalette();});
+    input.addEventListener('input',render);
+    document.addEventListener('keydown',event=>{
+      if(event.defaultPrevented||event.isComposing||event.repeat||event.altKey||event.shiftKey)return;
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'&&view==='overview'&&!$('atlas-entry').hidden) {
+        if(overlay.hidden&&event.target.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))return;
+        event.preventDefault();open();
+      }
+    });
+    overlay.addEventListener('keydown',event=>{
+      if(event.isComposing)return;
+      if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeEntryPalette();return;}
+      const buttons=[...results.querySelectorAll('button')];
+      if(['ArrowDown','ArrowUp'].includes(event.key)&&!event.ctrlKey&&!event.metaKey&&!event.altKey) {
+        event.preventDefault();
+        const current=buttons.indexOf(document.activeElement),direction=event.key==='ArrowDown'?1:-1;
+        const next=current<0?(direction===1?0:buttons.length-1):(current+direction+buttons.length)%buttons.length;
+        buttons[next]?.focus();
+      } else if(event.key==='Enter'&&event.target===input) {event.preventDefault();buttons[0]?.click();}
+      else if(event.key==='Tab') {
+        const focusable=[$('entry-palette-close'),input,...buttons],first=focusable[0],last=focusable.at(-1);
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+      }
+    });
   }
   function initializeEntry() {
     const texts={
-      'entry-route':t('입구 → 상세 흐름 → 핵심 규칙 그림','OVERVIEW → DETAILED FLOW → RULE PICTURES'),
-      'entry-title':t('무엇을 하는 프로젝트인가요?','What does this project do?'),
-      'entry-note':t('위에서 목적을 확인하고, 아래에서 구조와 관심 있는 기능을 찾아보세요. 이 목록은 분석 범위 안의 대표 기능입니다.','Start with the purpose above, then explore the structure and a capability. This catalog covers representative capabilities within the analysis scope.'),
-      'entry-diagram':t('전체 구조 다이어그램 ↗','Full structure diagram ↗'),
-      'entry-structure-title':t('어떻게 구성되어 있나요?','How is it organized?'),
-      'entry-tabs':t('프로젝트 구조 보기','Project structure views'),
-      'entry-roles-tab':t('역할별 보기','By responsibility'),
-      'entry-files-tab':t('패키지·폴더 보기','Packages & folders'),
-      'entry-features-kicker':t('관심 있는 기능부터','START WITH A CAPABILITY'),
-      'entry-features-title':t('어떤 기능이 있나요?','What can it do?'),
-      'entry-search-label':t('기능·이름·경로 검색','Search capabilities, names or paths'),
+      'entry-route':t('프로젝트 둘러보기','EXPLORE THE PROJECT'),
+      'entry-title':t('무엇을 살펴볼까요?','What would you like to explore?'),
+      'entry-note':t('같은 목적의 기능을 그룹으로 묶었습니다. 기능 이름을 누르면 요약 팝업이 열립니다.','Capabilities are grouped by responsibility. Select a name to open its summary dialog.'),
+      'entry-diagram':t('연결 다이어그램 ↗','Relationship diagram ↗'),
+      'entry-palette-open':t('통합 검색 · Ctrl / ⌘ K','Find anything · Ctrl / ⌘ K'),
+      'entry-palette-label':t('기능·구성 요소·경로 찾기','Find capabilities, components or paths'),
+      'entry-palette-close':t('닫기','Close'),
+      'entry-structure-title':t('함께 살펴볼 구성','Other components'),
+      'entry-structure-note':t('별도 기능 카드가 연결되지 않은 구성입니다. 역할과 근거를 확인할 수 있습니다.','Components without separate capability cards. Explore their roles and evidence.'),
+      'entry-files-title':t('패키지·폴더 펼쳐 보기','Explore packages and folders'),
+      'entry-files-note':t('기록된 실제 경로입니다. 들여쓰기는 포함 관계이며 호출·의존 관계가 아닙니다.','Recorded paths. Indentation means containment, not calls or dependencies.'),
+      'entry-search-label':t('기능 필터','Filter capabilities'),
       'entry-group-label':t('담당 구역','Responsibility'),
-      'entry-availability-label':t('상세 설명','Detail availability'),
-      'entry-reset':t('초기화','Clear filters'),
+      'entry-availability-label':t('상세 문서','Detail pages'),
+      'entry-reset':t('초기화','Reset'),
+      'entry-context-kicker':t('기능 요약','CAPABILITY SUMMARY'),
+      'entry-context-close':t('닫기 ×','Close ×'),
+      'entry-flow-title':t('담당 구성의 관련 흐름','RELATED COMPONENT FLOWS'),
+      'entry-flow-note':t('같은 담당 구성을 포함하는 설명입니다. 이 기능만의 흐름을 보장하지 않습니다. 번호는 설명 순서이며 실제 실행 기록이 아닙니다.','These explanations share the owner component, not necessarily this exact capability scope. Numbers indicate explanation order, not an execution trace.'),
+      'entry-cautions-title':t('담당 구성에서 지킬 규칙','COMPONENT CAUTIONS'),
+      'entry-cautions-note':t('담당 구성에 연결된 규칙입니다. 조건과 적용 범위를 함께 확인하세요.','Rules linked to the owner component. Check their conditions and scope.'),
+      'entry-gaps-title':t('분석 범위와 아직 모르는 것','Analysis scope and open questions'),
+      'entry-gaps-note':t('기록된 항목의 확인 비율은 전체 프로젝트의 분석률이 아닙니다. 목록이 비어 있어도 전체 검증을 뜻하지 않습니다.','The recorded-item review ratio is not whole-project coverage. An empty list does not establish exhaustive validation.'),
       'entry-home':t('← 프로젝트 입구','← Project overview')
     };
-    for(const [id,value] of Object.entries(texts)) {
-      if(id==='entry-tabs')$(id).setAttribute('aria-label',value);else $(id).textContent=value;
-    }
+    for(const [id,value] of Object.entries(texts))$(id).textContent=value;
+    $('entry-search').placeholder=t('기능 이름이나 코드 경로','Capability name or code path');
+    initializeEntryContext();
+    renderEntrySummary();renderGaps();renderPalette();
     $('entry-home').hidden=false;
     $('entry-home').addEventListener('click',()=>{
       stop();closePanel(false);history.length=0;view='overview';selected=null;focusId=null;regionId=null;
       applyAtlasView();renderEntryFilters();syncLocation();$('entry-title').focus();$('entry-title').scrollIntoView({block:'start'});
     });
     $('entry-diagram').addEventListener('click',()=>openEntryDiagram());
-    for(const tab of ['roles','files'])$('entry-'+tab+'-tab').addEventListener('click',()=>{
-      entryTab=tab;renderEntryFilters();syncLocation();
-    });
     for(const [id,values] of [
       ['entry-group',[['',t('모든 구역','All responsibilities')],...data.regions.map(r=>[r.id,r.label])]],
       ['entry-availability',[['',t('모든 상태','Any availability')],['ready',t('준비됨','Available')],['missing',t('미생성','Not generated')]]]
@@ -1125,8 +1479,9 @@
     $('entry-search').addEventListener('input',filter);
     $('entry-group').addEventListener('change',filter);$('entry-availability').addEventListener('change',filter);
     $('entry-reset').addEventListener('click',()=>{entryQuery='';entryGroup='';entryAvailability='';entrySelected=null;renderEntryFilters();syncLocation();});
-    const grouped=new Set(data.regions.flatMap(r=>r.nodeIds));
-    const groups=[...data.regions,...data.nodes.filter(n=>!n.contextOnly&&!grouped.has(n.id))];
+    const owners=new Set(data.subjects.map(subject=>subject.nodeId));
+    const groups=data.nodes.filter(node=>!node.contextOnly&&!owners.has(node.id));
+    $('entry-support').hidden=!groups.length;
     for(const group of groups) {
       const card=element('article',undefined,'entry-card role-card');
       card.append(statusBadge(group),element('h3',group.label),element('p',group.summary));
@@ -1137,7 +1492,6 @@
         if(regionMap.has(group.id))enterRegion(group.id);else chooseNode(group);
       })));$('entry-roles').append(card);
     }
-    if(!groups.length)$('entry-roles').append(element('p',t('확인된 역할 구역이 없습니다.','No reviewed responsibility groups.'),'entry-empty'));
     // The IR accepts language tags that a browser's Intl may reject. Sorting
     // must not stop initialization or change the recorded explanation language.
     let comparePaths=(left,right)=>left<right?-1:left>right?1:0;
@@ -1161,10 +1515,7 @@
       const actions=element('div',undefined,'entry-actions');
       for(const id of entry.nodeIds)actions.append(entryButton(nodeMap.get(id).label+' ↗',()=>openEntryDiagram(()=>chooseNode(nodeMap.get(id)))));
       const capabilities=data.subjects.filter(s=>entry.nodeIds.includes(s.nodeId));
-      for(const subject of capabilities)actions.append(entryButton(t('기능: ','Capability: ')+subject.label,()=>{
-        entryQuery='';entryGroup='';entryAvailability='';entrySelected=subject.id;renderEntryFilters();syncLocation();
-        const card=Array.from($('entry-features').children).find(el=>el.dataset.featureId===subject.id);card?.focus();card?.scrollIntoView({block:'center'});
-      }));
+      for(const subject of capabilities)actions.append(entryButton(t('기능: ','Capability: ')+subject.label,()=>selectEntryFeature(subject.id)));
       body.append(actions,entryEvidence(entry));details.append(body);
       (containers.get(parent?.id)||tree).append(details);containers.set(entry.id,body);
     }

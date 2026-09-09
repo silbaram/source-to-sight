@@ -75,6 +75,54 @@ def render_runtime_fixtures(atlas, source, folder, language):
         (folder / f"runtime-{name}.html").write_text(page, encoding="utf-8")
 
 
+def render_workspace_fixture(s2s, project, source, folder, language):
+    """Independent owners prove that selecting a feature cannot mix its context."""
+    t = lambda ko, en: ko if language == "ko" else en
+    fixture = deepcopy(project)
+    other = deepcopy(fixture["nodes"][0])
+    other.update({"id": "node-review", "label": t("출고 후 검토", "Post-shipment review"),
+                  "summary": t("출고된 주문의 별도 검토 결과입니다.", "The manual-review outcome for shipped orders."), "actions": []})
+    fixture["nodes"].append(other)
+    group = deepcopy(fixture["regions"][0])
+    group.update({"id": "region-review", "label": other["label"], "nodeIds": [other["id"]]})
+    fixture["regions"].append(group)
+    subject = deepcopy(fixture["subjects"][0])
+    subject.update({"id": "subject-review", "nodeId": other["id"], "label": t("출고 후 결과 살펴보기", "Explore the shipped outcome"),
+                    "summary": other["summary"]})
+    subject["link"].update({"url": "review.html", "generated": False,
+                            "command": f"$code-flow synthetic post-shipment review | subject={subject['id']} | language={language}"})
+    fixture["subjects"].append(subject)
+    fixture["rules"][1]["nodeIds"] = [other["id"]]
+    scenario = deepcopy(fixture["scenarios"][0])
+    scenario.update({"id": "scenario-review", "title": other["label"], "kind": "alternate"})
+    step = deepcopy(scenario["steps"][-1])
+    step.update({"id": "step-review", "nodeId": other["id"], "branch": "alternate",
+                 "caption": t("별도 검토 결과를 반환합니다.", "Return manual review."),
+                 "condition": t("이미 출고되었을 때", "When already shipped")})
+    scenario["steps"] = [step]
+    fixture["scenarios"].append(scenario)
+    fixture["structureEntries"][1]["nodeIds"].append(other["id"])
+    test_source = 'from example import check\n\ndef test_unshipped():\n    assert check(False) == "cancelled"\n'
+    (source / "test_example.py").write_text(test_source, encoding="utf-8")
+    test = deepcopy(fixture["evidence"][0])
+    test.update({"id": "ev-linked-test", "kind": "test", "file": "test_example.py", "startLine": 3,
+                 "endLine": 4, "symbolOrKey": "test_unshipped", "anchorText": "def test_unshipped():"})
+    fixture["evidence"].append(test)
+    fixture["subjects"][0]["evidenceIds"].append(test["id"])
+    (folder / "entry-workspace.html").write_text(s2s.render(s2s.prepare(fixture, source)), encoding="utf-8")
+    # Uneven groups (three capabilities versus one) exercise the visual boundary
+    # and filtered group counts without inventing extra graph connections.
+    grouped = deepcopy(fixture)
+    for name, label in (("condition", t("취소 조건 살펴보기", "Explore cancellation conditions")),
+                        ("result", t("취소 결과 살펴보기", "Explore cancellation results"))):
+        capability = deepcopy(grouped["subjects"][0])
+        capability.update({"id": "subject-" + name, "label": label})
+        capability["link"].update({"url": name + ".html", "generated": False,
+                                    "command": f"$code-flow synthetic {name} | subject={capability['id']} | language={language}"})
+        grouped["subjects"].append(capability)
+    (folder / "entry-groups.html").write_text(s2s.render(s2s.prepare(grouped, source)), encoding="utf-8")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="New directory for synthetic QA artifacts")
@@ -91,16 +139,41 @@ def main():
     spec.loader.exec_module(atlas)
     for language in ("ko", "en"):
         project, behavior, logic, layout = story_case(language)
+        t = lambda ko, en: ko if language == "ko" else en
+        project["summary"]["purpose"] = t(
+            "취소 요청을 받아 출고 여부를 확인하고, 취소 완료 또는 별도 검토 결과를 돌려줍니다.",
+            "Receives a cancellation request, checks shipment, and returns cancelled or manual review.")
+        project["subject"]["scope"]["excludes"] = deepcopy(behavior["subject"]["scope"]["excludes"])
+        project["analysis"].update({"status": "partial", "unresolved": [t(
+            "실제 배송 시스템과의 연결은 확인하지 않았습니다.", "Integration with a real shipping system has not been checked.")],
+            "nextAttempts": [t("실제 서비스에 적용하기 전에 배송 연동을 확인하세요.", "Review shipping integration before using this in a real service.")]})
+        project["summary"]["limitations"] = [t(
+            "작은 합성 예제이며 실제 서비스 전체를 분석한 결과가 아닙니다.", "A small synthetic example, not an analysis of an entire real service.")]
+        steps = project["scenarios"][0]["steps"]
+        steps[0]["caption"] = t("취소 판단을 요청합니다.", "Request a cancellation decision.")
+        for step_id, caption, condition in (
+            ("step-shipment", t("출고 여부를 확인합니다.", "Check shipment state."), t("취소 요청을 받았을 때", "When cancellation is requested")),
+            ("step-cancelled", t("취소 완료를 반환합니다.", "Return cancelled."), t("아직 출고되지 않았을 때", "When the order has not shipped")),
+        ):
+            step = deepcopy(steps[0])
+            step.pop("edgeId")
+            step.update({"id": step_id, "nodeId": "node-main", "caption": caption, "condition": condition})
+            steps.append(step)
+        project["rules"][0]["exceptions"] = [t(
+            "출고된 주문은 별도 검토 경로로 갑니다.", "Shipped orders take the manual-review path.")]
         folder = root / language
         rendered = atlas.build_site(project, source, folder / "project.html", pages=[{
             "behavior": behavior, "output": folder / "behavior.html", "logic": logic,
             "layout": layout, "logicOutput": folder / "logic.html",
         }])
         s2s, _ = atlas.companion()
-        for variant in ("legacy", "missing", "empty", "uncertain", "ungrouped"):
+        render_workspace_fixture(s2s, project, source, folder, language)
+        for variant in ("legacy", "missing", "empty", "uncertain", "ungrouped", "narrative-empty", "narrative-uncertain"):
             fixture = deepcopy(rendered[(folder / "project.html").resolve()])
             if variant == "legacy":
                 fixture.pop("structureEntries")
+                fixture["subjects"] = [{key: subject[key] for key in ("id", "label", "nodeId", "link")}
+                                       for subject in fixture["subjects"]]
             if variant == "missing":
                 for subject in fixture["subjects"]:
                     subject["link"]["generated"] = False
@@ -110,7 +183,44 @@ def main():
                 fixture["structureEntries"][0].update({"confidence": "inferred", "supportStatus": "uncertain", "displayStatus": "uncertain"})
             if variant == "ungrouped":
                 fixture["regions"] = []
+            if variant == "narrative-empty":
+                fixture["scenarios"] = []
+                fixture["rules"] = []
+                fixture["analysis"].update({"status": "complete", "unresolved": [], "nextAttempts": []})
+                fixture["summary"]["limitations"] = []
+                fixture["subject"]["scope"]["excludes"] = []
+            if variant == "narrative-uncertain":
+                # Presentation-only fault injection, not a source-backed
+                # assertion that this sequential example actually runs in parallel.
+                fixture["scenarios"][0]["steps"][1].update({
+                    "confidence": "inferred", "supportStatus": "uncertain", "displayStatus": "uncertain",
+                    "execution": "parallel", "branch": "alternate",
+                    "caption": t("합성 병렬 구간 · 화면 검증용", "Synthetic parallel segment · presentation test")})
+                fixture["rules"][0].update({"confidence": "inferred", "supportStatus": "uncertain", "displayStatus": "uncertain"})
             (folder / f"entry-{variant}.html").write_text(s2s.render(fixture), encoding="utf-8")
+        # Documentation may establish a stated convention, not code-wide compliance.
+        documented = deepcopy(project)
+        rule_document = source / "CONTRIBUTING.md"
+        rule_document.write_text("Keep cancellation outcomes distinct.\n", encoding="utf-8")
+        evidence = deepcopy(documented["evidence"][0])
+        evidence.update({"id": "ev-documentation", "kind": "documentation", "file": "CONTRIBUTING.md",
+                         "startLine": 1, "endLine": 1, "symbolOrKey": "Cancellation convention",
+                         "anchorText": "Keep cancellation outcomes distinct."})
+        documented["evidence"].append(evidence)
+        rule = deepcopy(documented["rules"][0])
+        rule.update({"id": "rule-documentation", "evidenceIds": ["ev-documentation"], "exceptions": [],
+                     "plainText": t("문서는 취소 결과를 구분하도록 정합니다.", "The document requires distinct cancellation outcomes."),
+                     "condition": t("결과를 수정할 때", "When changing outcomes"),
+                     "outcome": t("취소와 검토 결과를 구분합니다.", "Keep cancellation and review outcomes distinct."),
+                     "rationale": t("프로젝트 규약에 명시되어 있습니다.", "Stated in the project convention.")})
+        documented["rules"] = [rule]
+        numeric = deepcopy(rule)
+        numeric.update({"id": "rule-numeric-unverified", "numeric": True, "supportStatus": "uncertain",
+                        "confidence": "inferred", "plainText": "Retry 7 times."})
+        documented["rules"].append(numeric)
+        prepared = s2s.prepare(documented, source)
+        assert [rule["id"] for rule in prepared["rules"]] == ["rule-documentation"]
+        (folder / "entry-narrative-documentation.html").write_text(s2s.render(prepared), encoding="utf-8")
         render_structure_fixtures(s2s, project, source, folder)
         render_runtime_fixtures(atlas, source, folder, language)
         if language == "en":

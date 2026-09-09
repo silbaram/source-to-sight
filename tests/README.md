@@ -96,10 +96,27 @@ absolute `skills` directory when running the suite. The CLI smoke test uses that
 installation directly; generated artifacts still stay in its temporary workspace.
 
 The separate entry browser check covers Korean/English at 1440, 768, 390 and
-320 pixels: default overview, role/folder toggle, tree/evidence disclosure,
-capability search and filters, missing-detail request copying, entry → behavior →
-rules → entry state, original diagram deep links, invalid-link fallback, empty
-and legacy catalogs, ungrouped components, both themes and no network requests.
+320 pixels: input/output orientation, visibly enclosed groups and filtered counts,
+summary dialogs, recorded-item counts, visible analysis warnings, on-demand tree and
+evidence, capability filters, Ctrl/Cmd+K search routes, modal focus trapping/dismissal, missing-detail
+request copying, entry → behavior → rules → entry state, original diagram and
+deprecated `tab=` links, invalid-link fallback, empty and legacy catalogs,
+ungrouped components, both themes and no network requests. Major entry and search
+text colors are measured against their composited backgrounds at WCAG 4.5:1.
+Flow checks cover edge/node owners, recorded step order, absent data and an
+explicitly synthetic uncertain parallel segment. Caution checks include exceptions,
+documentation evidence and numeric-rule pruning. Important limitations are visible
+before selection and the full analysis scope can be expanded. A multiple-owner
+fixture verifies that unrelated flows, rules and test evidence cannot leak across
+capability selections. Recorded test locations are explicitly not execution results.
+Uneven three-versus-one groups must enclose their cards, stack vertically and use
+the catalog width; desktop siblings share a row. Dialog checks cover keyboard
+focus trapping, Escape/backdrop dismissal, preserved selection/filters/page scroll,
+fixed close/actions while the body scrolls, and fresh internal disclosure state.
+Search replaces the summary without nesting dialogs. Manual-copy fallback stays
+usable inside the active summary and closes before it on Escape. Path/diagram/hash
+navigation releases inert/scroll locks. Detail return highlights the card without
+automatically reopening its dialog.
 The demo renderer also creates explicitly synthetic `entry-*.html` variants.
 Return checks assert that the selected card is focused and inside the viewport,
 both directly from behavior and through rules. Separate locale fixtures exercise
@@ -111,6 +128,25 @@ desktop/mobile in both languages: one-character `R`, `_` and `가` folders,
 root present/omitted, children recorded before parents, an omitted intermediate
 folder, and a sibling sharing a prefix (`Rextra`). Only recorded entries appear.
 Use a fresh demo directory after changing templates; old HTML embeds old assets.
+
+## Optional viewer structural checks
+
+Use an existing development installation of Acorn 8 (JavaScript parser):
+
+```sh
+node --check skills/code-flow/templates/viewer.js
+node tests/check_viewer_static.cjs /absolute/path/to/acorn
+```
+
+The last argument is optional if Node can resolve `acorn`. This check does not
+install packages, and Acorn is not a runtime or Python-suite dependency. It rejects
+same-line closing-brace/function insertions, checks literal DOM references and
+translated text IDs against the HTML (with an explicit dynamically-created panel
+heading exception), and verifies renderer functions plus the final initialization
+call are at the IIFE body scope. AST inspection avoids false scope counts from
+braces inside strings, comments and regex. Fault-injected source/template variants
+prove those guards fail on the intended mistakes. Same-line declarations are legal
+JavaScript; the formatting guard and actual scope/initialization guard are distinct.
 
 ## Optional differential audit
 

@@ -141,10 +141,10 @@ Wait for the agent to read the source and create the files. If it asks which pac
 When generation finishes:
 
 1. Open the HTML link from the agent. If it does not open, find `build/source-to-sight/project.html` in your file manager and open it with a browser.
-2. Read the project purpose and analysis scope.
-3. Switch between **By responsibility / Packages & folders** to explore roles and real paths. Expand a folder to see related capabilities and evidence.
-4. Search/filter the **What can it do?** catalog. Use **Full structure diagram** or **Locate in diagram** for the existing detailed relationships; those diagrams are still available.
-5. Read the unresolved items and **Scope and limitations** too. The catalog covers recorded representative capabilities; folder nesting does not mean call order.
+2. Read the project purpose and **Recorded items checked N / M**. This counts review status within the recorded map, not whole-project completeness or test coverage.
+3. Below the input/output overview, use **What would you like to explore?** to find capabilities. A large bordered container encloses each responsibility group, with its title, capability count and **Group diagram** control. Grouping means shared responsibility, not execution order. Each card identifies its owner and an associated path when recorded.
+4. Select a capability name to open its summary dialog, full-screen on small phones. See the owner, representative path, connections and rule summaries first; expand flows, conditions, tests and evidence when needed. **Close** or `Esc` returns to the card while preserving selection, filters and page scroll. Use **Find anything** / `Ctrl+K` / `Cmd+K` to search capabilities, components and paths.
+5. Open **Explore packages and folders** for the full tree or **Relationship diagram** for the existing canvas. Read the visible limitations and **Analysis scope and open questions**. Component-related flows are not necessarily exact traces of the selected capability, and test evidence does not mean tests passed.
 
 GitHub's HTML file view is not the rendered interactive page. Download remote files and open them locally. Viewing the result needs no Node.js, Python, or web server; the interactive map needs JavaScript enabled in the browser.
 
@@ -154,8 +154,8 @@ GitHub's HTML file view is not the rendered interactive page. Download remote fi
 
 Where: first the browser, then the same agent chat.
 
-1. Find a capability in the entry's **What can it do?** catalog.
-2. If **Open detailed flow** is available, open it. The existing diagram's capability panel calls this link **Behavior**.
+1. Find a capability under **What would you like to explore?**.
+2. Open **Detailed flow** on the card or **Open detailed flow** in its summary dialog. The existing diagram's capability panel calls this link **Behavior**.
 3. If you see **Copy detail request**, click it to copy the request. An ungenerated detail does not mean the capability is absent.
 4. Paste the copied request into the agent, append the following, and send them together:
 
@@ -171,7 +171,7 @@ If you changed the output folders earlier, use those same paths here. If copying
 
 **Done when:** after reopening or refreshing the rebuilt map, you can open the capability detail and return. Ordered behavior may have a walkthrough; an unordered relationship diagram does not need playback controls.
 
-Returning to the entry restores its structure tab, search, filters and selected capability. Older JSON without package/folder entries shows an unrecorded-structure message; ask the agent to review the actual paths/evidence and add `structureEntries`. Existing HTML must be re-rendered to receive the new entry UI.
+Returning restores search, filters and the selected capability, bringing its card into view without automatically reopening the dialog. Old `tab=roles/files` links still open; the tab value is ignored. Missing folder/test mappings do not establish that those things are absent. Ask the agent to review source and update the internal JSON before adding unrecorded content. For UI-only changes, re-render the retained internal JSON.
 
 The browser button only copies a request. Clicking it does not start analysis or generate HTML.
 

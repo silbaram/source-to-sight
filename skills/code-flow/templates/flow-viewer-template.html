@@ -27,18 +27,25 @@
     </section>
     <section id="insufficient" class="empty" hidden></section>
     <section id="atlas-entry" class="atlas-entry" aria-labelledby="entry-title" hidden>
-      <div class="entry-heading"><div><p id="entry-route" class="entry-kicker"></p><h2 id="entry-title" tabindex="-1"></h2><p id="entry-note" class="entry-note"></p></div><button id="entry-diagram" type="button" class="entry-primary"></button></div>
-      <section aria-labelledby="entry-structure-title">
-        <div class="entry-heading"><h2 id="entry-structure-title"></h2><div id="entry-tabs" class="view-switch" role="group"><button id="entry-roles-tab" type="button" aria-pressed="true" aria-controls="entry-roles"></button><button id="entry-files-tab" type="button" aria-pressed="false" aria-controls="entry-files"></button></div></div>
-        <p id="entry-structure-note" class="entry-note"></p>
-        <div id="entry-roles" class="entry-grid"></div>
-        <div id="entry-files" hidden></div>
+      <div id="entry-purpose" class="entry-overview">
+        <div id="entry-summary" class="entry-summary" role="group"></div>
+        <div id="entry-alerts" class="entry-alerts" hidden></div>
+      </div>
+      <section id="entry-features-section" aria-labelledby="entry-title">
+        <div class="entry-heading">
+          <div><p id="entry-route" class="entry-kicker"></p><h2 id="entry-title" tabindex="-1"></h2><p id="entry-note" class="entry-note"></p></div>
+          <div class="entry-tools"><button id="entry-palette-open" type="button" class="entry-palette-open" aria-haspopup="dialog" aria-controls="entry-palette"></button><button id="entry-diagram" type="button" class="entry-primary"></button></div>
+        </div>
+        <div class="entry-filters"><label><span id="entry-search-label"></span><input id="entry-search" type="search" maxlength="240" autocomplete="off"></label><label><span id="entry-group-label"></span><select id="entry-group"></select></label><label><span id="entry-availability-label"></span><select id="entry-availability"></select></label><button id="entry-reset" type="button"></button><p id="entry-count" class="entry-note" role="status"></p></div>
+        <div class="entry-workbench">
+          <div id="entry-structure" class="entry-map">
+            <div id="entry-features"></div>
+            <section id="entry-support" class="entry-support" aria-labelledby="entry-structure-title" hidden><h3 id="entry-structure-title"></h3><p id="entry-structure-note" class="entry-note"></p><div id="entry-roles" class="entry-grid"></div></section>
+          </div>
+        </div>
       </section>
-      <section aria-labelledby="entry-features-title">
-        <div class="entry-heading"><div><p class="entry-kicker" id="entry-features-kicker"></p><h2 id="entry-features-title" tabindex="-1"></h2></div><p id="entry-count" class="entry-note" role="status"></p></div>
-        <div class="entry-filters"><label><span id="entry-search-label"></span><input id="entry-search" type="search" maxlength="240" autocomplete="off"></label><label><span id="entry-group-label"></span><select id="entry-group"></select></label><label><span id="entry-availability-label"></span><select id="entry-availability"></select></label><button id="entry-reset" type="button"></button></div>
-        <div id="entry-features" class="entry-grid"></div>
-      </section>
+      <details id="entry-files-section" class="entry-reference"><summary id="entry-files-title"></summary><p id="entry-files-note" class="entry-note"></p><div id="entry-files"></div></details>
+      <details id="entry-gaps" class="entry-reference"><summary id="entry-gaps-title"></summary><p id="entry-gaps-note" class="entry-note"></p><div id="entry-gaps-body" class="entry-gaps-body"></div></details>
     </section>
     <section id="workspace" class="workspace">
       <nav id="rail" class="rail">
@@ -93,6 +100,30 @@
     <section class="scope"><details><summary id="scope-title"></summary><div id="scope-body"></div></details></section>
     <footer><p id="offline-note"></p><details><summary>Open-source licenses</summary><pre class="license">__S2S_NOTICES__</pre></details></footer>
   </main>
+  <div id="entry-context" class="entry-context" role="dialog" aria-modal="true" aria-labelledby="entry-context-title" hidden>
+    <div class="entry-context-box">
+      <div class="entry-context-heading"><div><p id="entry-context-kicker" class="entry-kicker"></p><h2 id="entry-context-title" tabindex="-1"></h2></div><button id="entry-context-close" type="button"></button></div>
+      <div id="entry-context-body" class="entry-context-body">
+        <div id="entry-context-status"></div>
+        <p id="entry-context-note" class="entry-note"></p>
+        <div class="entry-context-grid"><div id="entry-context-owner" class="entry-context-section"></div><div id="entry-context-paths" class="entry-context-section"></div></div>
+        <div id="entry-context-connections" class="entry-context-section"></div>
+        <section id="entry-cautions" class="entry-context-section" aria-labelledby="entry-cautions-title" hidden><h3 id="entry-cautions-title"></h3><p id="entry-cautions-note" class="entry-note"></p><div id="entry-cautions-list"></div></section>
+        <details id="entry-flow" class="entry-context-section entry-context-disclosure" hidden><summary id="entry-flow-title"></summary><p id="entry-flow-note" class="entry-note"></p><div id="entry-flow-steps"></div></details>
+        <details id="entry-context-checks" class="entry-context-section entry-context-disclosure"></details>
+        <details id="entry-context-scope" class="entry-context-section entry-context-disclosure"></details>
+      </div>
+      <div id="entry-context-actions" class="entry-actions entry-context-actions"></div>
+    </div>
+  </div>
+  <div id="entry-palette" class="entry-palette" role="dialog" aria-modal="true" aria-labelledby="entry-palette-label" aria-describedby="entry-palette-hint" hidden>
+    <div class="entry-palette-box">
+      <div class="entry-palette-heading"><label id="entry-palette-label" for="entry-palette-input"></label><button id="entry-palette-close" type="button"></button></div>
+      <input id="entry-palette-input" type="search" maxlength="240" autocomplete="off" aria-controls="entry-palette-results">
+      <ul id="entry-palette-results" class="entry-palette-results"></ul>
+      <p id="entry-palette-hint" class="entry-palette-hint" role="status"></p>
+    </div>
+  </div>
   <p id="navigation-notice" class="navigation-notice" role="status" hidden></p>
   <div id="copy-fallback" class="copy-fallback" hidden><label for="copy-text" id="copy-label"></label><textarea id="copy-text" readonly></textarea><button id="close-copy" type="button"></button></div>
   <div id="announcement" class="announcement" role="status"></div>
