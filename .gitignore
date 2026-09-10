@@ -6,3 +6,5 @@ __pycache__/
 test-results/
 playwright-report/
 build/
+# Source excerpts and authoring inputs stay out of shared visual checks.
+/visual-checks/**/_internal/

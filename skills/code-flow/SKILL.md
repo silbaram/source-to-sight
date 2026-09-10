@@ -7,7 +7,7 @@ metadata:
 
 # Code Flow
 
-Turn a user's question about **one bounded capability** into a readable explanation with a diagram, optional walkthrough, evidence locations, and honest limits. This skill supplies the source-reading workflow and local authoring/rendering tools. The host agent performs discovery and semantic review; the scripts do not infer arbitrary program behavior.
+Turn a user's question about **one bounded capability** into a readable data-flow explanation with labeled transfers, decisions, optional walkthrough, maintenance evidence, and honest limits. A selected node connects its important rules to a picture lesson; keep implementation and test pointers on demand. This skill supplies the source-reading workflow and local authoring/rendering tools. The host agent performs discovery and semantic review; the scripts do not infer arbitrary program behavior.
 
 Use the installed directory containing this file as `SKILL_ROOT`, and the target repository/package as `SOURCE_ROOT`. They need not share a checkout. File search, file reading, local command execution, and preferably a browser are sufficient. No specific model, provider, subagent, language server, target-project installation, or server is required. The phases below can run sequentially in one context.
 

@@ -41,11 +41,18 @@ async function checkContrast(page, selector) {
         page.on('console',message => {if(message.type()==='error')errors.push(message.text());});
         page.on('request',request => {if(/^https?:/.test(request.url()))external.push(request.url());});
         const url = name => pathToFileURL(path.join(root,language,name+'.html')).href;
-        const ready = () => page.waitForSelector('html[data-ready="true"]');
+        // This suite exercises the catalog's existing filters/dialogs. The
+        // diagram-first entry and direct journey have their own browser suite.
+        const ready = async () => {
+          await page.waitForSelector('html[data-ready="true"]');
+          await page.locator('#entry-catalog').evaluateAll(items=>items.forEach(item=>{item.open=true;}));
+        };
         const selectedInView = async (focus='card') => {
           const position = await page.locator('.entry-selected').evaluate((card,focus) => {
-            const bounds = card.getBoundingClientRect();
-            return {top:bounds.top,bottom:bounds.bottom,height:innerHeight,focused:document.activeElement===(focus==='card'?card:card.querySelector('.entry-select'))};
+            const map=document.querySelector('.atlas-map-node.is-selected');
+            const target=focus==='card'?(map||card):card.querySelector('.entry-select');
+            const bounds = target.getBoundingClientRect();
+            return {top:bounds.top,bottom:bounds.bottom,height:innerHeight,focused:document.activeElement===target&&(!map||map.dataset.featureId===card.dataset.featureId)};
           },focus);
           assert(position.focused,'The returned capability receives focus');
           assert(position.top>=-1&&position.bottom<=position.height+1,

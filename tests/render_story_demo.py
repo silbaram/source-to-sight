@@ -8,6 +8,30 @@ from pathlib import Path
 from authored_cases import SOURCE, story_case
 
 
+def render_learning_fixture(atlas, project, behavior, logic, layout, source, folder, language):
+    """Synthetic extra processing node checks data labels and rule isolation."""
+    t = lambda ko, en: ko if language == "ko" else en
+    behavior, logic, layout = deepcopy(behavior), deepcopy(logic), deepcopy(layout)
+    for graph in (behavior, logic):
+        owner = deepcopy(next(node for node in graph["nodes"] if node["id"] == "node-main"))
+        owner.update(id="node-extra", label=t("별도 처리", "Separate processing"), importance="detail", actions=[])
+        graph["nodes"].append(owner)
+        transfer = deepcopy(graph["edges"][0])
+        transfer.update(id="edge-result", **{"from": "node-main", "to": "node-extra"},
+                        label=t("판단 결과", "Decision result"), type="passes-data")
+        graph["edges"].append(transfer)
+        rule = deepcopy(graph["rules"][0])
+        rule.update(id="rule-extra", nodeIds=["node-extra"], plainText=t("별도 처리의 합성 규칙", "Synthetic rule for the separate step"))
+        graph["rules"].append(rule)
+    layout["sections"].append({"id": "separate", "kind": "authored", "title": t("별도 처리의 그림", "Separate step picture"),
+                               "ruleIds": ["rule-extra"], "html": '<svg viewBox="0 0 320 140" role="img" aria-label="Synthetic separate scene"><circle cx="160" cy="70" r="48" fill="none" stroke="currentColor"/></svg>'})
+    target = folder / "journey"
+    atlas.build_site(project, source, target / "project.html", pages=[{
+        "behavior": behavior, "output": target / "behavior.html", "logic": logic,
+        "layout": layout, "logicOutput": target / "logic.html",
+    }])
+
+
 def render_structure_fixtures(s2s, project, source, folder):
     """Verify literal ancestry independently of path length and input order."""
     fixture = deepcopy(project)
@@ -167,6 +191,7 @@ def main():
             "layout": layout, "logicOutput": folder / "logic.html",
         }])
         s2s, _ = atlas.companion()
+        render_learning_fixture(atlas, project, behavior, logic, layout, source, folder, language)
         render_workspace_fixture(s2s, project, source, folder, language)
         for variant in ("legacy", "missing", "empty", "uncertain", "ungrouped", "narrative-empty", "narrative-uncertain"):
             fixture = deepcopy(rendered[(folder / "project.html").resolve()])

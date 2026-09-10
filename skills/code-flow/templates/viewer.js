@@ -59,6 +59,7 @@
   let regionId=null;
   let entryTab='roles', entryQuery='', entryGroup='', entryAvailability='', entrySelected=null;
   let closeEntryPalette=()=>{}, closeEntryContext=()=>{}, openEntryContext=()=>{};
+  let entryMapZoom=1, entryMapSize={width:1,height:1}, entryMapAll=false;
   const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions,...subjectMap.values()].map(item=>[item.id,item]));
   const incomingAtlas=new URLSearchParams(location.search).get('s2s-atlas');
   const returnAtlas=incomingAtlas?.startsWith('#s2s=1&')&&incomingAtlas.length<16000?incomingAtlas:null;
@@ -110,18 +111,23 @@
     values.forEach(text => ul.append(element('li', text)));
     parent.append(ul);
   }
-  function linkControl(kind, link, title) {
-    const names = {atlas:t('프로젝트 지도', 'Project map'),
-                   behavior:t('동작 설명', 'Behavior'), logic:t('규칙과 이유', 'Rules & reasons')};
+  function linkControl(kind, link, title, nodeId) {
+    const names = {atlas:t('01 · 프로젝트 지도', '01 · Project map'),
+                   behavior:t('02 · 데이터 흐름', '02 · Data flow'), logic:t('03 · 규칙 그림', '03 · Rule pictures')};
     if (link.generated) {
       const a = element('a', (title || names[kind]) + ' ↗');
       a.href = link.url;
       const update=()=>{
         const state=isAtlas&&kind==='behavior'?savedAtlasLocation():returnAtlas;
-        if(!state)return;
         const url=new URL(link.url,location.href);
-        if(kind==='atlas')url.hash=state;
-        else url.searchParams.set('s2s-atlas',state);
+        if(state) {
+          if(kind==='atlas')url.hash=state;
+          else url.searchParams.set('s2s-atlas',state);
+        }
+        if(kind==='logic'&&nodeId) {
+          url.searchParams.set('s2s-node',nodeId);
+          url.searchParams.set('s2s-behavior',locationHash());
+        }
         a.href=url.href;
       };
       update();a.addEventListener('click',update);a.addEventListener('auxclick',update);
@@ -166,18 +172,21 @@
     const title = element('h2', item.label || item.plainText || item.caption);
     title.id = 'panel-title';
     body.append(title);
-    if (item.codeName) body.append(element('p', item.codeName, 'code-name'));
     const description = edgeMap.has(item.id) ? nodeMap.get(item.from).label + ' → ' + nodeMap.get(item.to).label : item.summary;
     if (description) body.append(element('p', description, 'description'));
+    if(nodeMap.has(item.id))renderNodeGuide(body,item);
+    const reference=element('details',undefined,'node-reference');
+    reference.append(element('summary',t('유지보수 · 구현 위치와 근거','Maintenance · implementation and evidence')));
+    if (item.codeName) reference.append(element('p', item.codeName, 'code-name'));
     // Different fields can carry the same sentence. Keep distinct review notes,
     // but do not repeat text already visible in this item's title or summary.
     const normalize = text => (text || '').replace(/\s+/g,' ').trim();
     const note = normalize(item.verificationNote);
     if (note && ![title.textContent,description].some(text => normalize(text) === note)) {
-      body.append(element('p', item.verificationNote, 'evidence-note'));
+      reference.append(element('p', item.verificationNote, 'evidence-note'));
     }
     if (item.actions?.length) {
-      body.append(element('h3', t('이 동작에서 하는 일', 'Actions in this behavior')));
+      reference.append(element('h3', t('구현에서 확인할 처리', 'Implementation checkpoints')));
       const ul = element('ul');
       for (const action of item.actions) {
         const li = element('li', action.plainText);
@@ -185,7 +194,7 @@
         evidenceSection(li, action.evidenceIds);
         ul.append(li);
       }
-      body.append(ul);
+      reference.append(ul);
     }
     for (const state of data.stateTransitions.filter(s => s.subjectNodeId === item.id)) {
       body.append(element('h3', t('상태 변화', 'State change')));
@@ -215,7 +224,8 @@
         if(owned.length){body.append(element('h3',t('이 부분의 주요 기능','Capabilities in this part')));for(const s of owned)body.append(capabilityButton(s));}
       }
     }
-    evidenceSection(body, item.evidenceIds || []);
+    evidenceSection(reference, item.evidenceIds || []);
+    body.append(reference);
     for (const sourceId of item.sourceIds || []) {
       const source = data.sources.find(s => s.id === sourceId);
       const a = element('a', source.title + ' · ' + source.version);
@@ -239,6 +249,52 @@
     // Reset after replacing content and sizing the flex body; otherwise the
     // browser can restore the previous evidence list's scroll anchor.
     body.scrollTop = 0;
+  }
+  function renderNodeGuide(parent,node) {
+    const edges=data.edges.filter(edge=>edge.from===node.id||edge.to===node.id);
+    const transfers=edges.filter(edge=>['passes-data','reads','writes','emits','consumes'].includes(edge.type));
+    if(transfers.length) {
+      const picture=element('div',undefined,'node-data-picture');
+      picture.setAttribute('aria-label',t('이 처리에 들어오고 나가는 데이터','Data entering and leaving this step'));
+      for(const [direction,label] of [['in',t('받는 데이터','Receives')],['out',t('보내는 데이터','Sends')]]) {
+        const box=element('div',undefined,'node-data-side');box.append(element('h3',label));
+        const matches=transfers.filter(edge=>direction==='in'?edge.to===node.id:edge.from===node.id);
+        for(const edge of matches) {
+          const button=entryButton(undefined,()=>showItem(edge,true),'node-data-item');
+          button.append(element('strong',edge.label),element('small',nodeMap.get(direction==='in'?edge.from:edge.to).label));
+          if(edge.displayStatus!=='confirmed')button.append(statusBadge(edge));
+          box.append(button);
+        }
+        if(!matches.length)box.append(element('small',t('연결 미기록','Not recorded')));
+        picture.append(box);
+        if(direction==='in')picture.append(element('span','↓','node-data-arrow'));
+      }
+      parent.append(picture);
+    }
+    const rules=data.rules.filter(rule=>rule.nodeIds.includes(node.id));
+    if(rules.length) {
+      const section=element('section',undefined,'node-rules');
+      section.append(element('h3',t('여기서 결정되는 것','Decisions at this step')));
+      for(const rule of rules) {
+        const button=entryButton(rule.plainText,()=>showItem(rule,true),'node-rule');
+        if(rule.displayStatus!=='confirmed')button.append(statusBadge(rule));
+        section.append(button);
+      }
+      if(data.links.logic)section.append(linkControl('logic',data.links.logic,t('이 규칙을 그림으로 이해하기','Understand these rules in pictures'),node.id));
+      parent.append(section);
+    }
+    const checks=edges.filter(edge=>!transfers.includes(edge));
+    if(checks.length) {
+      const related=element('details',undefined,'node-reference');related.append(element('summary',t('함께 확인할 연결','Related connections to inspect')));
+      for(const edge of checks)related.append(entryButton(nodeMap.get(edge.from).label+' → '+nodeMap.get(edge.to).label+' · '+edge.label,()=>showItem(edge,true),'node-rule'));
+      parent.append(related);
+    }
+    const tests=(node.evidenceIds||[]).filter(id=>evidenceMap.get(id)?.kind==='test');
+    const testBox=element('details',undefined,'node-reference');
+    testBox.append(element('summary',tests.length?t('변경 후 확인할 테스트 근거','Test evidence to inspect after changes'):t('테스트 연결 미기록','Test mapping not recorded')));
+    if(tests.length)evidenceSection(testBox,tests);
+    testBox.append(element('p',tests.length?t('기록된 테스트 위치입니다. 테스트 통과 결과는 아닙니다.','Recorded test locations, not passing test results.'):t('이 처리와 테스트의 연결은 아직 기록되지 않았습니다.','No test mapping has been recorded for this step.'),'panel-note'));
+    parent.append(testBox);
   }
   function positionPanel() {
     const panel = $('panel');
@@ -299,7 +355,7 @@
     graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:isAtlas?112:46, edgesep:24, ranksep:isAtlas?112:86, marginx:40, marginy:38});
     graph.setDefaultEdgeLabel(() => ({}));
     for (const n of visible) {
-      const height = 106 + Math.max(0, wrap(n.label, 12).length - 1) * 18;
+      const height = (isAtlas?106:132) + Math.max(0, wrap(n.label, 12).length - 1) * 20;
       graph.setNode(layoutNodes.get(n.id), {width:220, height});
     }
     const groups=isAtlas?data.regions.filter(r=>r.nodeIds.some(id=>visibleIds.has(id))):[];
@@ -309,7 +365,7 @@
       for(const child of region.nodeIds.filter(n=>visibleIds.has(n)))graph.setParent(layoutNodes.get(child),id);
     }
     for (const e of edges) {
-      graph.setEdge(layoutNodes.get(e.from), layoutNodes.get(e.to), {width:Math.min(140, Math.max(54, Array.from(e.label).length * 7)),
+      graph.setEdge(layoutNodes.get(e.from), layoutNodes.get(e.to), {width:Math.min(200, Math.max(80, Array.from(e.label).length * 12)),
         height:wrap(e.label, 16).length * 14 + 10, labelpos:'c'}, layoutEdges.get(e.id));
     }
     dagre.layout(graph);
@@ -394,8 +450,12 @@
         (position.y+dy-position.height/2)+'px;width:'+position.width+'px;height:'+position.height+'px';
       button.setAttribute('aria-label', n.label+' — '+labels[n.displayStatus]);
       button.append(element('span',n.roleLabel,'node-role'),element('span',n.label,'node-label'));
-      if (n.codeName) {const code=element('span',n.codeName,'node-code');code.title=n.codeName;button.append(code);}
-      button.append(element('span',labels[n.displayStatus],'node-status '+n.displayStatus));
+      if (isAtlas&&n.codeName) {const code=element('span',n.codeName,'node-code');code.title=n.codeName;button.append(code);}
+      if(!isAtlas) {
+        const rules=data.rules.filter(rule=>rule.nodeIds.includes(n.id));
+        button.append(element('span',rules.length?t('판단 규칙 ','Decision rules: ')+rules.length+' · '+t('눌러 보기','explore'):t('데이터·구현 위치 보기','Data and implementation'),'node-guide-label'));
+      }
+      if(isAtlas||n.displayStatus!=='confirmed')button.append(element('span',labels[n.displayStatus],'node-status '+n.displayStatus));
       button.addEventListener('click', () => {stop();showItem(n,true);});
       layer.append(button);
     }
@@ -671,10 +731,18 @@
     if (!initial) finishCamera();
     const canvas = $('canvas');
     const ratio = Math.min(1,(canvas.clientWidth-32)/graphWidth,(canvas.clientHeight-32)/graphHeight);
-    zoom = Math.max(initial ? (canvas.clientWidth < 600 ? .8 : .55) : .2,ratio);
+    zoom = Math.max(initial ? (isAtlas ? .8 : .9) : .2,ratio);
     applyZoom();
     canvas.scrollLeft=$('stage').offsetLeft+(graphWidth*zoom-canvas.clientWidth)/2;
     canvas.scrollTop=$('stage').offsetTop+(graphHeight*zoom-canvas.clientHeight)/2;
+    if(initial&&!isAtlas) {
+      const first=visibleNodes()[0];
+      const target=[...$('node-layer').children].find(node=>node.dataset.id===first?.id);
+      if(target) {
+        if(canvas.clientWidth<600)canvas.scrollTop=$('stage').offsetTop+target.offsetTop*zoom-30;
+        else canvas.scrollLeft=$('stage').offsetLeft+target.offsetLeft*zoom-30;
+      }
+    }
     if ($('panel').classList.contains('open') && selectedNodeId()) revealNode(selectedNodeId());
     updateMini();
   }
@@ -978,7 +1046,8 @@
       }
     }
     if(isAtlas&&view==='overview'&&entrySelected) {
-      const card=entryCard(entrySelected);
+      const card=entryMapTarget(entrySelected)||entryCard(entrySelected);
+      if(!entryMapTarget(entrySelected))$('entry-catalog').open=true;
       card?.focus({preventScroll:true});
       // Returning to a capability restores its visible location as well as
       // its selection. Apply immediately, including under reduced motion.
@@ -1043,6 +1112,7 @@
     $('atlas-entry').hidden=!home||!usable;
     $('workspace').hidden=home||!usable;
     document.body.classList.toggle('atlas-overview',home);
+    if(home&&usable)renderEntryMap();
     if(!home||!usable){closeEntryContext(false);closeEntryPalette(false);}
     const skip=document.querySelector('.skip');
     skip.href=home?'#entry-title':'#canvas';
@@ -1078,6 +1148,144 @@
   }
   function entryCard(id) {
     return [...$('entry-features').querySelectorAll('.feature-card')].find(card=>card.dataset.featureId===id);
+  }
+  function entryMapTarget(id) {
+    return [...$('entry-map-stage').querySelectorAll('[data-feature-id]')].find(node=>node.dataset.featureId===id);
+  }
+  function zoomEntryMap(value) {
+    entryMapZoom=Math.max(.6,Math.min(1.6,value));
+    $('entry-map-stage').style.transform='scale('+entryMapZoom+')';
+    $('entry-map-space').style.width=entryMapSize.width*entryMapZoom+'px';
+    $('entry-map-space').style.height=entryMapSize.height*entryMapZoom+'px';
+    $('entry-map-fit').textContent=Math.round(entryMapZoom*100)+'%';
+  }
+  function renderEntryMap() {
+    if(!isAtlas||data.analysis.status==='insufficient')return;
+    const stage=$('entry-map-stage'),canvas=$('entry-map');
+    const focused=document.activeElement?.dataset?.featureId;
+    stage.replaceChildren();
+    $('entry-group-key').replaceChildren();
+    const nodes=data.nodes.filter(node=>entryMapAll||node.importance==='core'||node.contextOnly||data.subjects.some(subject=>subject.id===entrySelected&&subject.nodeId===node.id));
+    const ids=new Set(nodes.map(node=>node.id));
+    const regions=data.regions.filter(group=>group.nodeIds.some(id=>ids.has(id)));
+    const edges=data.edges.filter(edge=>ids.has(edge.from)&&ids.has(edge.to));
+    for(const group of regions) {
+      const note=element('p');note.append(element('strong',group.label),document.createTextNode(' · '+group.summary));
+      $('entry-group-key').append(note);
+    }
+    if(!nodes.length){stage.append(element('p',t('핵심 구성이 미기록입니다. 지원 구성을 포함해 살펴보세요.','No core components are recorded. Include supporting components to explore.'),'entry-note'));return;}
+    const narrow=innerWidth<720;
+    stage.classList.toggle('atlas-map-compact',narrow);
+    for(const id of ['entry-map-out','entry-map-fit','entry-map-in'])$(id).hidden=narrow;
+    $('entry-map-all').setAttribute('aria-pressed',String(entryMapAll));
+    if(narrow) {
+      stage.style.cssText='';$('entry-map-space').style.cssText='';
+      const containers=new Map();
+      for(const node of nodes) {
+        const group=regions.find(region=>region.nodeIds.includes(node.id));
+        const key=group?.id||null;
+        if(!containers.has(key)) {
+          const section=element('section',undefined,'atlas-compact-group');
+          if(group){section.dataset.groupId=group.id;section.append(element('h3',group.label));}
+          stage.append(section);containers.set(key,section);
+        }
+        const item=element('div',undefined,'atlas-compact-part');item.append(entryNodeControl(node));
+        for(const edge of edges.filter(edge=>edge.from===node.id)) {
+          const connection=entryButton(undefined,()=>openEntryDiagram(()=>showItem(edge,true)),'atlas-compact-edge');
+          connection.dataset.edgeId=edge.id;
+          const structural=['depends-on','registers'].includes(edge.type);
+          connection.append(element('span',structural?'⇢':'→','atlas-compact-arrow'),element('span',edge.label),element('strong',nodeMap.get(edge.to).label));
+          if(edge.displayStatus!=='confirmed')connection.append(statusBadge(edge));
+          item.append(connection);
+        }
+        containers.get(key).append(item);
+      }
+      if(focused)entryMapTarget(focused)?.focus({preventScroll:true});
+      updateEntrySelection();return;
+    }
+    const graph=new dagre.graphlib.Graph({multigraph:true,compound:true});
+    graph.setGraph({rankdir:narrow?'TB':'LR',nodesep:48,ranksep:100,edgesep:22,marginx:24,marginy:24});
+    graph.setDefaultEdgeLabel(()=>({}));
+    const keys=new Map(nodes.map((node,index)=>[node.id,'map-node-'+index]));
+    const regionKeys=new Map(regions.map((group,index)=>[group.id,'map-group-'+index]));
+    for(const node of nodes)graph.setNode(keys.get(node.id),{width:236,height:154});
+    for(const group of regions) {
+      graph.setNode(regionKeys.get(group.id),{});
+      for(const id of group.nodeIds.filter(id=>ids.has(id)))graph.setParent(keys.get(id),regionKeys.get(group.id));
+    }
+    const edgeKeys=new Map(edges.map((edge,index)=>[edge.id,'map-edge-'+index]));
+    for(const edge of edges)graph.setEdge(keys.get(edge.from),keys.get(edge.to),{
+      width:Math.max(90,Math.min(160,Array.from(edge.label).length*8)),height:wrap(edge.label,16).length*17+12,labelpos:'c'
+    },edgeKeys.get(edge.id));
+    dagre.layout(graph);
+    entryMapSize={width:Math.max(280,graph.graph().width),height:Math.max(180,graph.graph().height)};
+    stage.style.width=entryMapSize.width+'px';stage.style.height=entryMapSize.height+'px';
+    for(const group of regions) {
+      const box=graph.node(regionKeys.get(group.id));
+      const region=element('div',undefined,'atlas-map-group');region.dataset.groupId=group.id;
+      region.style.cssText='left:'+(box.x-box.width/2)+'px;top:'+(box.y-box.height/2)+'px;width:'+box.width+'px;height:'+box.height+'px';
+      const heading=entryButton(group.label,()=>openEntryDiagram(()=>showItem(group,true)),'atlas-map-group-title');
+      heading.title=group.summary;
+      region.append(heading);stage.append(region);
+    }
+    const drawing=svg('svg',{width:entryMapSize.width,height:entryMapSize.height,class:'atlas-map-edges','aria-label':t('기능 사이에 기록된 연결','Recorded connections between components')});
+    const defs=svg('defs');
+    for(const kind of ['transfer','dependency','uncertain']) {
+      const marker=svg('marker',{id:'entry-arrow-'+kind,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:8,markerHeight:8,orient:'auto-start-reverse'});
+      marker.append(svg('path',{d:'M0 0 L10 5 L0 10 Z',class:'atlas-arrow-'+kind}));defs.append(marker);
+    }
+    drawing.append(defs);
+    for(const edge of edges) {
+      const box=graph.edge({v:keys.get(edge.from),w:keys.get(edge.to),name:edgeKeys.get(edge.id)});
+      const relation=['depends-on','registers'].includes(edge.type)?'dependency':'transfer';
+      const kind=edge.displayStatus==='confirmed'?relation:'uncertain';
+      const group=svg('g',{class:'atlas-map-edge '+kind+' '+relation,role:'button',tabindex:0,'data-edge-id':edge.id,
+        'aria-label':nodeMap.get(edge.from).label+' → '+nodeMap.get(edge.to).label+' · '+edge.label+' · '+labels[edge.displayStatus]});
+      let points=box.points;
+      if(edge.from===edge.to) {
+        const node=graph.node(keys.get(edge.from));
+        points=[{x:node.x+node.width/2,y:node.y-24},{x:node.x+node.width/2+40,y:node.y-24},
+          {x:node.x+node.width/2+40,y:node.y+24},{x:node.x+node.width/2,y:node.y+24}];
+      }
+      const path=points.map((p,index)=>(index?'L':'M')+p.x+' '+p.y).join(' ');
+      group.append(svg('path',{d:path,class:'atlas-map-edge-hit'}),svg('path',{d:path,class:'atlas-map-edge-path','marker-end':'url(#entry-arrow-'+kind+')'}));
+      group.append(svg('rect',{x:box.x-box.width/2-6,y:box.y-box.height/2,width:box.width+12,height:box.height,rx:6,class:'atlas-map-edge-label-bg'}));
+      const lines=wrap(edge.label,16),label=svg('text',{x:box.x,y:box.y-(lines.length-1)*8.5+5});
+      for(const [index,line] of lines.entries()){const span=svg('tspan',{x:box.x,dy:index?17:0});span.textContent=line;label.append(span);}
+      group.append(label);
+      const open=()=>openEntryDiagram(()=>showItem(edge,true));group.addEventListener('click',open);
+      group.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();open();}});
+      drawing.append(group);
+    }
+    stage.append(drawing);
+    for(const node of nodes) {
+      const box=graph.node(keys.get(node.id)),button=entryNodeControl(node);
+      button.style.cssText='left:'+(box.x-box.width/2)+'px;top:'+(box.y-box.height/2)+'px;width:'+box.width+'px;height:'+box.height+'px';
+      stage.append(button);
+    }
+    zoomEntryMap(Math.min(1,(canvas.clientWidth||innerWidth-64)/entryMapSize.width));
+    if(focused)entryMapTarget(focused)?.focus({preventScroll:true});
+    updateEntrySelection();
+  }
+  function entryNodeControl(node) {
+    const capabilities=data.subjects.filter(subject=>subject.nodeId===node.id);
+    const subject=capabilities.length===1?capabilities[0]:null,ready=subject?.link.generated;
+    const button=ready?linkControl('behavior',subject.link):entryButton(undefined,()=>{
+      if(subject)selectEntryFeature(subject.id);else openEntryDiagram(()=>showItem(node,true));
+    });
+    const status=subject?subjectMap.get(subject.id):node;
+    button.replaceChildren();button.className='atlas-map-node '+status.displayStatus;button.dataset.nodeId=node.id;
+    if(subject) {
+      button.dataset.featureId=subject.id;
+      const select=()=>{entrySelected=subject.id;updateEntrySelection();syncLocation();};
+      button.addEventListener('click',select,{capture:true});button.addEventListener('auxclick',select,{capture:true});
+    }
+    button.append(element('span',node.roleLabel,'atlas-map-node-role'),element('strong',node.label));
+    const action=ready?t('데이터 흐름 살펴보기 →','Explore data flow →'):subject?t('역할과 연결 살펴보기 →','Explore role and connections →'):t('연결과 구현 위치 →','Connections and implementation →');
+    button.append(element('span',action,'atlas-map-node-action'));
+    if(status.displayStatus!=='confirmed')button.append(statusBadge(status));
+    button.setAttribute('aria-label',node.label+' · '+node.roleLabel+' · '+action+' · '+labels[status.displayStatus]);
+    return button;
   }
   function entryPaths(nodeId) {
     return (data.structureEntries||[]).filter(entry=>entry.nodeIds.includes(nodeId));
@@ -1193,10 +1401,12 @@
       const active=entrySelected===card.dataset.featureId;
       card.classList.toggle('entry-selected',active);
     }
+    for(const node of $('entry-map-stage').querySelectorAll('[data-feature-id]'))node.classList.toggle('is-selected',node.dataset.featureId===entrySelected);
     renderEntryContext();
   }
   function selectEntryFeature(id,{reset=true,inspect=true}={}) {
     if(!subjectMap.has(id))return;
+    $('entry-catalog').open=true;
     entrySelected=id;
     if(reset&&(entryQuery||entryGroup||entryAvailability)) {
       entryQuery='';entryGroup='';entryAvailability='';renderEntryFilters();
@@ -1437,9 +1647,13 @@
   function initializeEntry() {
     const texts={
       'entry-route':t('프로젝트 둘러보기','EXPLORE THE PROJECT'),
-      'entry-title':t('무엇을 살펴볼까요?','What would you like to explore?'),
-      'entry-note':t('같은 목적의 기능을 그룹으로 묶었습니다. 기능 이름을 누르면 요약 팝업이 열립니다.','Capabilities are grouped by responsibility. Select a name to open its summary dialog.'),
-      'entry-diagram':t('연결 다이어그램 ↗','Relationship diagram ↗'),
+      'entry-title':t('기능은 어떻게 연결될까요?','How do the parts work together?'),
+      'entry-note':t('전체 연결 → 기능의 데이터 흐름 → 처리 지점의 규칙 그림','Project connections → capability data flow → rule pictures at each step'),
+      'entry-diagram':t('구조 자세히 보기 ↗','Inspect the structure ↗'),
+      'entry-map-legend':t('실선 → 처리·데이터 전달　점선 ⇢ 의존·등록','Solid → processing / data　Dashed ⇢ dependency / registration'),
+      'entry-map-hint':t('기능을 눌러 안으로 들어가세요. 상자는 같은 책임의 범위이며, 화살표는 기록된 연결입니다.','Select a component to explore. Enclosures show shared responsibility; arrows show recorded relationships.'),
+      'entry-map-all':t('지원 구성 포함','Include supporting parts'),
+      'entry-catalog-title':t('기능 목록에서 찾기','Find in the capability catalog'),
       'entry-palette-open':t('통합 검색 · Ctrl / ⌘ K','Find anything · Ctrl / ⌘ K'),
       'entry-palette-label':t('기능·구성 요소·경로 찾기','Find capabilities, components or paths'),
       'entry-palette-close':t('닫기','Close'),
@@ -1465,6 +1679,13 @@
     $('entry-search').placeholder=t('기능 이름이나 코드 경로','Capability name or code path');
     initializeEntryContext();
     renderEntrySummary();renderGaps();renderPalette();
+    $('entry-map-fit').setAttribute('aria-label',t('그림을 화면에 맞추기','Fit the picture'));
+    $('entry-map-in').setAttribute('aria-label',t('그림 확대','Zoom in'));
+    $('entry-map-out').setAttribute('aria-label',t('그림 축소','Zoom out'));
+    $('entry-map-in').addEventListener('click',()=>zoomEntryMap(entryMapZoom*1.2));
+    $('entry-map-all').addEventListener('click',()=>{entryMapAll=!entryMapAll;renderEntryMap();});
+    $('entry-map-out').addEventListener('click',()=>zoomEntryMap(entryMapZoom/1.2));
+    $('entry-map-fit').addEventListener('click',()=>zoomEntryMap(Math.min(1,$('entry-map').clientWidth/entryMapSize.width)));
     $('entry-home').hidden=false;
     $('entry-home').addEventListener('click',()=>{
       stop();closePanel(false);history.length=0;view='overview';selected=null;focusId=null;regionId=null;
@@ -1699,6 +1920,7 @@
   }
   function initialize() {
     if(isAtlas)document.body.classList.add('atlas-page');
+    else document.body.classList.add('behavior-page');
     document.querySelector('.skip').textContent=t('그림으로 바로 이동','Skip to diagram');
     $('snapshot').textContent=data.snapshot.repository+' · '+(data.snapshot.commit?.slice(0,8)||t('Git 정보 없음','No Git snapshot'))+
       (data.snapshot.workingTreeClean===false ? t(' · 미커밋 변경 있음',' · Uncommitted changes') : '');
@@ -1708,6 +1930,8 @@
     $('status-badge').textContent={complete:t('지정 범위 확인','Scoped analysis'),partial:t('일부 미확인','Partial analysis'),insufficient:t('근거 부족','Insufficient evidence')}[data.analysis.status];
     if(data.analysis.status!=='complete') $('status-badge').classList.add('uncertain');
     $('title').textContent=data.summary.title;$('purpose').textContent=data.summary.purpose;
+    $('review-details-title').textContent=t('분석 기준과 확인 범위','Analysis source and review scope');
+    $('review-details-title').parentElement.open=data.provenance.kind==='synthetic';
     $('provenance').textContent=data.provenance.kind==='synthetic' ?
       t('합성 예시 · 화면과 계약을 검증하는 데이터입니다. 실제 프로젝트 분석 결과가 아닙니다.','Synthetic example · tests the viewer contract; not a real project analysis.') :
       data.provenance.description+(data.provenance.humanReviewed?'':t(' · 사람 검토 전',' · Pending human review'));
@@ -1729,8 +1953,8 @@
       warnings.append(li);
     }
     $('warning-list').append(warnings);
-    $('diagram-title').textContent=t('그림으로 따라가기','Follow the picture');
-    $('diagram-hint').textContent=data.scenarios.length?t('부분을 누르면 역할과 근거를 볼 수 있습니다.','Select a part to see its role and evidence.'):
+    $('diagram-title').textContent=t('데이터가 흐르고, 판단이 일어나는 곳','Where data moves and decisions happen');
+    $('diagram-hint').textContent=data.scenarios.length?t('선의 데이터와 조건을 따라가세요. 노드를 누르면 규칙 그림과 유지보수 근거로 이어집니다.','Follow the data and conditions on the connections. Select a node for rule pictures and maintenance evidence.'):
       t('관계도입니다. 실행 순서를 뜻하지 않습니다.','A relationship map; it does not imply execution order.');
     $('mode-label').textContent=t('보기','View');
     for(const [value,label] of [['core',t('핵심','Core')],['detail',t('상세','Detail')]]) {const option=element('option',label);option.value=value;$('mode').append(option);}
@@ -1796,6 +2020,7 @@
     }
     let resizeTimer;
     addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
+      if(isAtlas&&view==='overview')renderEntryMap();
       if(data.analysis.status!=='insufficient'&&view!=='overview') {
         finishCamera();
         draw();

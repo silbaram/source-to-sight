@@ -4,6 +4,13 @@ Use this mode for the final drill-down: **project map â†’ capability/behavior â†
 
 Read `code-flow/references/rule-checklist.md` in the actual companion installation. Keep an internal behavior JSON and a reviewed logic JSON with the same subject, scope, nodes, edges, scenarios and state transitions. The logic input can enrich existing rules with a source-backed rationale and exceptions, and add rules/evidence. It cannot silently alter the behavior's facts. Use the companion's `author.py explain` for a draft; it deliberately does not endorse the rules.
 
+Node-specific navigation uses the existing `rules[].nodeIds` and rendered scene
+rule bindings. A behavior link may carry `s2s-node` and `s2s-behavior`; the shell
+focuses matching scenes, offers all rules, and restores the selected behavior
+location using the checked local link. Bind rules to their actual processing
+nodes so unrelated rules do not appear in a selected node's lesson. Missing or
+withheld scenes must not be replaced with invented explanatory content.
+
 ## Compose the lesson
 
 Use an **authored layout, version 2**, following [authored-layout.md](authored-layout.md) and [its schema](authored-layout.schema.json). Design the lesson with the main skill's visual-story instructions: a dominant picture, short explanations, topic-specific geometry, and a small interaction when it makes the real decision clearer. A supplied explainer such as the OAuth example can guide hierarchy, connected paths and step controls; do not copy its OAuth facts or turn its exact layout into a universal template.

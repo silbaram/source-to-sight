@@ -369,7 +369,7 @@ def render_rules(data, layout, s2s, original=None):
     status = {"complete": t("지정 범위 확인", "Scoped analysis"), "partial": t("일부 미확인", "Partial analysis"), "insufficient": t("근거 부족", "Insufficient evidence")}[data["analysis"]["status"]]
     provenance = data["provenance"]["description"] + ('' if data["provenance"]["humanReviewed"] else t(" · 사람 검토 전", " · Pending human review"))
     main = '<section class="primer-intro"><p class="eyebrow">03 / ' + t("규칙과 이유", "RULES & REASONS") + ' <span class="pill">' + status + '</span></p>'
-    main += '<h1>' + escaped(data["summary"]["title"]) + '</h1><p class="primer-purpose">' + escaped(data["summary"]["purpose"]) + '</p><p class="provenance">' + escaped(provenance) + '</p><nav class="links" aria-label="' + t("관련 설명", "Related explanations") + '">' + ''.join(links) + '</nav></section>'
+    main += '<h1>' + escaped(data["summary"]["title"]) + '</h1><p class="primer-purpose">' + escaped(data["summary"]["purpose"]) + '</p><details class="review-details"><summary>' + t("분석 기준과 확인 범위", "Analysis source and review scope") + '</summary><p class="provenance">' + escaped(provenance) + '</p></details><nav class="links" aria-label="' + t("관련 설명", "Related explanations") + '">' + ''.join(links) + '</nav></section>'
     if not authored or len(layout["sections"]) > 1:
         main += '<nav class="primer-contents" aria-label="' + t("설명 목차", "Explanation contents") + '">' + ''.join(contents) + '</nav>'
     main += ''.join(figures)

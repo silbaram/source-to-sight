@@ -141,10 +141,10 @@ Wait for the agent to read the source and create the files. If it asks which pac
 When generation finishes:
 
 1. Open the HTML link from the agent. If it does not open, find `build/source-to-sight/project.html` in your file manager and open it with a browser.
-2. Read the project purpose and **Recorded items checked N / M**. This counts review status within the recorded map, not whole-project completeness or test coverage.
-3. Below the input/output overview, use **What would you like to explore?** to find capabilities. A large bordered container encloses each responsibility group, with its title, capability count and **Group diagram** control. Grouping means shared responsibility, not execution order. Each card identifies its owner and an associated path when recorded.
-4. Select a capability name to open its summary dialog, full-screen on small phones. See the owner, representative path, connections and rule summaries first; expand flows, conditions, tests and evidence when needed. **Close** or `Esc` returns to the card while preserving selection, filters and page scroll. Use **Find anything** / `Ctrl+K` / `Cmd+K` to search capabilities, components and paths.
-5. Open **Explore packages and folders** for the full tree or **Relationship diagram** for the existing canvas. Read the visible limitations and **Analysis scope and open questions**. Component-related flows are not necessarily exact traces of the selected capability, and test evidence does not mean tests passed.
+2. Read the project purpose and inputs/results. **Analysis source and review scope** reports recorded items, not whole-project completeness or test coverage.
+3. Explore the diagram under **How do the parts work together?**. Groups show shared responsibility, not execution order. **Include supporting parts** reveals additional components.
+4. Select a generated capability to open its data flow, then a processing node for rule pictures and maintenance evidence. **Find in the capability catalog** and **Find anything** also locate capabilities.
+5. Use **Explore packages and folders** for paths or **Inspect the structure** for the full diagram. Read the analysis limits; direct connections are not exhaustive change impact, and recorded tests are not passing results.
 
 GitHub's HTML file view is not the rendered interactive page. Download remote files and open them locally. Viewing the result needs no Node.js, Python, or web server; the interactive map needs JavaScript enabled in the browser.
 
@@ -154,8 +154,8 @@ GitHub's HTML file view is not the rendered interactive page. Download remote fi
 
 Where: first the browser, then the same agent chat.
 
-1. Find a capability under **What would you like to explore?**.
-2. Open **Detailed flow** on the card or **Open detailed flow** in its summary dialog. The existing diagram's capability panel calls this link **Behavior**.
+1. Find a capability in the diagram or **Find in the capability catalog**.
+2. Select a generated capability in the diagram or open **Detailed flow** from the catalog.
 3. If you see **Copy detail request**, click it to copy the request. An ungenerated detail does not mean the capability is absent.
 4. Paste the copied request into the agent, append the following, and send them together:
 

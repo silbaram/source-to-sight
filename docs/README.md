@@ -15,6 +15,7 @@ Source to Sight는 소프트웨어의 목적·구성·동작·규칙을 소스 �
 | [한국어 퀵스타터](quickstart.md) / [English quickstart](quickstart.en.md) | 도구·설치 확인, 복사 가능한 요청, 첫 결과 열기, 선택 기능, 공유·갱신·문제 해결 |
 | [한국어 시작 안내](../README.ko.md) / [English](../README.md) | 설치, 스킬 사용, 실제 사례와 지원 범위 |
 | [프로젝트 지도](project-maps.md) | 책임 구역, 기능 선택과 지도↔동작↔규칙 이동 |
+| [유지보수 문서 시각 검증](../visual-checks/README.md) | 실제 프로젝트의 HTML 11개와 데스크톱·모바일 화면 캡처 |
 | [배포 파일 기준](distribution.md) | 제품 스킬·안내와 개발·검증 보관물의 구분 |
 | [code-flow](../skills/code-flow/SKILL.md) | 동작 설명 스킬의 입력·출력과 사용 계약 |
 | [규칙 설명 생성](../skills/visual-primer/references/source-rules.md) | 소스 기반 맞춤형 그림 설명과 지도·동작 페이지 연결 |

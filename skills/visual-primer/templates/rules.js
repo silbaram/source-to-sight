@@ -16,6 +16,36 @@
       link.href=target.href;
     }
   }
+  // Node selection is scoped to the already identity-checked behavior/lesson pair.
+  // Match the builder's rule bindings, never scene-owned navigation or markup.
+  const params=new URLSearchParams(location.search);
+  const selectedNode=data.nodes.find(node=>node.id===params.get('s2s-node'));
+  const behaviorState=params.get('s2s-behavior');
+  if(selectedNode) {
+    const ruleIds=new Set(data.rules.filter(rule=>rule.nodeIds.includes(selectedNode.id)).map(rule=>rule.id));
+    const figures=[...document.querySelectorAll('#explanation > .rule-figure')];
+    const matches=figures.filter(figure=>[...figure.querySelectorAll('[data-rule-id]')].some(rule=>ruleIds.has(rule.dataset.ruleId)));
+    const context=document.createElement('div');context.className='node-lesson-context';
+    const label=document.createElement('p');label.textContent=selectedNode.label+' · '+t('이 처리의 규칙 그림','Rule pictures for this step');context.append(label);
+    const reset=document.createElement('button');reset.type='button';reset.textContent=t('전체 규칙 보기','Show all rules');context.append(reset);
+    document.querySelector('#explanation > .primer-intro').after(context);
+    if(matches.length) {
+      for(const figure of figures)figure.hidden=!matches.includes(figure)&&!figure.classList.contains('withheld');
+      for(const link of document.querySelectorAll('#explanation > .primer-contents > a')) {
+        const target=document.getElementById(link.getAttribute('href').slice(1));link.hidden=!!target?.hidden;
+      }
+    } else label.textContent+=' · '+t('연결된 그림이 없어 전체 설명을 표시합니다.','No linked picture; showing the full explanation.');
+    reset.addEventListener('click',()=>{
+      for(const figure of figures)figure.hidden=false;
+      for(const link of document.querySelectorAll('#explanation > .primer-contents > a'))link.hidden=false;
+      label.textContent=t('전체 규칙 그림','All rule pictures');reset.hidden=true;
+    });
+    if(behaviorState?.startsWith('#s2s=1&')&&behaviorState.length<16000) {
+      for(const link of document.querySelectorAll(navigationSelector+' > a[data-layer="behavior"]')) {
+        const url=new URL(link.getAttribute('href'),location.href);url.hash=behaviorState;link.href=url.href;
+      }
+    }
+  }
   const theme=document.getElementById('theme-toggle');
   function paintTheme(){
     const dark=document.documentElement.dataset.theme==='dark';

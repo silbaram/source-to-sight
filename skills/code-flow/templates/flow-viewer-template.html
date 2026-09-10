@@ -20,8 +20,7 @@
       <div class="eyebrow"><span id="layer-label"></span><span id="status-badge" class="pill"></span></div>
       <h1 id="title"></h1>
       <p id="purpose" class="purpose"></p>
-      <p id="provenance" class="provenance"></p>
-      <div id="atlas-summary" class="atlas-summary" hidden></div>
+      <details class="review-details"><summary id="review-details-title"></summary><p id="provenance" class="provenance"></p><div id="atlas-summary" class="atlas-summary" hidden></div></details>
       <details class="summary-details"><summary id="summary-details-title"></summary><div id="io" class="io"></div></details>
       <nav id="links" class="links" aria-label="Related explanations"></nav>
     </section>
@@ -36,6 +35,13 @@
           <div><p id="entry-route" class="entry-kicker"></p><h2 id="entry-title" tabindex="-1"></h2><p id="entry-note" class="entry-note"></p></div>
           <div class="entry-tools"><button id="entry-palette-open" type="button" class="entry-palette-open" aria-haspopup="dialog" aria-controls="entry-palette"></button><button id="entry-diagram" type="button" class="entry-primary"></button></div>
         </div>
+        <div class="atlas-map-shell">
+          <div class="atlas-map-toolbar"><p id="entry-map-legend"></p><div><button id="entry-map-all" type="button" aria-pressed="false"></button><button id="entry-map-out" type="button" aria-label="Zoom out">−</button><button id="entry-map-fit" type="button"></button><button id="entry-map-in" type="button" aria-label="Zoom in">+</button></div></div>
+          <div id="entry-map" class="atlas-map" role="region" tabindex="0" aria-labelledby="entry-title"><div id="entry-map-space"><div id="entry-map-stage"></div></div></div>
+          <div id="entry-group-key" class="atlas-group-key"></div>
+          <p id="entry-map-hint" class="atlas-map-hint"></p>
+        </div>
+        <details id="entry-catalog" class="entry-reference"><summary id="entry-catalog-title"></summary>
         <div class="entry-filters"><label><span id="entry-search-label"></span><input id="entry-search" type="search" maxlength="240" autocomplete="off"></label><label><span id="entry-group-label"></span><select id="entry-group"></select></label><label><span id="entry-availability-label"></span><select id="entry-availability"></select></label><button id="entry-reset" type="button"></button><p id="entry-count" class="entry-note" role="status"></p></div>
         <div class="entry-workbench">
           <div id="entry-structure" class="entry-map">
@@ -43,6 +49,7 @@
             <section id="entry-support" class="entry-support" aria-labelledby="entry-structure-title" hidden><h3 id="entry-structure-title"></h3><p id="entry-structure-note" class="entry-note"></p><div id="entry-roles" class="entry-grid"></div></section>
           </div>
         </div>
+        </details>
       </section>
       <details id="entry-files-section" class="entry-reference"><summary id="entry-files-title"></summary><p id="entry-files-note" class="entry-note"></p><div id="entry-files"></div></details>
       <details id="entry-gaps" class="entry-reference"><summary id="entry-gaps-title"></summary><p id="entry-gaps-note" class="entry-note"></p><div id="entry-gaps-body" class="entry-gaps-body"></div></details>
@@ -96,7 +103,7 @@
     </section>
     <div id="regions" class="regions"></div>
     <details id="warnings" class="warnings"><summary id="warnings-title"></summary><div id="warning-list"></div></details>
-    <section id="rules-section" class="rules-section" hidden><h2 id="rules-title"></h2><div id="rules-list" class="rules-list"></div></section>
+    <details id="rules-section" class="rules-section" hidden><summary id="rules-title"></summary><div id="rules-list" class="rules-list"></div></details>
     <section class="scope"><details><summary id="scope-title"></summary><div id="scope-body"></div></details></section>
     <footer><p id="offline-note"></p><details><summary>Open-source licenses</summary><pre class="license">__S2S_NOTICES__</pre></details></footer>
   </main>

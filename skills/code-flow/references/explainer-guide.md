@@ -15,3 +15,14 @@ Useful limits name the boundary: nonstreaming model path; registered implementat
 Prefer one precise sentence to a list of framework/class names. For example, describe “the registry stores the handler; a later request looks it up” and show the actual identifiers below it. Verify both registration and lookup before adding that sentence.
 
 The existing viewer handles one-node, dependency, branch, loop, state, and partial-result graphs. It does not require every explanation to fill every optional panel. The installed viewer uses the approved canvas design, including search, structure/walkthrough views, on-demand evidence panels, and dark mode. Its graph comes only from the reviewed IR. Shared visual design does not expand a scoped behavior explanation into a whole-project map.
+
+## Teach the data flow to a new maintainer
+
+Keep the picture central. Use concrete payload labels on data edges so a reader
+can see what enters a processing step and what it sends onward. Preserve failure
+conditions and state changes, not only the successful path. A node's inspector
+shows recorded incoming/outgoing data, its decision rules, and an action into the
+matching picture lesson. Keep implementation identifiers, evidence and explicitly
+linked test locations in maintenance disclosures. Missing test mappings are gaps,
+not evidence that no tests exist. Pair important rules with authored visual-primer
+scenes rather than asking the reader to interpret code or dense rule lists.

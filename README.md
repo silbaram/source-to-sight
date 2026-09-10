@@ -27,7 +27,7 @@ $visual-primer Explain OAuth.
 
 Explore **project map → capability/behavior → a picture-first explanation of the important business rules**. The last page uses topic-specific diagrams and meaningful interactions, with the teaching approach illustrated by the [OAuth example](assets/oauth-visual-primer-example.html), rather than requiring another fixed flowchart or rule-card layout.
 
-Project maps open with a quick purpose/input/output overview and clearly enclosed groups of capability cards. Each group has a title, recorded capability count and group-diagram control. Select a capability for a summary dialog with its owner, code locations, connections and rule summaries; longer flows, tests and evidence open on demand. Closing preserves selection, filters and page scroll. Search, the full folder tree, the existing diagram and deep links remain available. Important analysis limits stay visible; review counts and recorded tests do not establish whole-project coverage or passing test results. Re-render retained JSON to receive the new UI; missing content still needs source review, not inferred flows, dependencies or folders.
+Project maps start with purpose and inputs/results, then a large diagram of responsibilities and their recorded connections. Follow a generated capability into its data flow, then select a processing node for its rule pictures. Implementation locations, related connections and explicit test evidence open on demand. The catalog, search and folder tree remain available; return links restore the selected capability or node. Important limits stay visible, and recorded tests do not establish passing results or complete change-impact coverage. Re-render retained inputs to apply the UI; new facts still require source review.
 
 The host agent reads the target source, records evidence and authors the visual lesson. The builders check evidence locations, identity and links, and package offline HTML that opens directly in a browser. Maps and walkthroughs use the maintained canvas; business-rule lessons use authored visuals inside the shared navigation/evidence shell. No server is required. Request the details you need; clicking an ungenerated item copies a request rather than running analysis in the browser.
 
@@ -41,8 +41,11 @@ skills/visual-primer/   Concept and source-backed rules explanations
 skills/codebase-atlas/  Project maps and links to representative capabilities
 docs/                   Product guidance and distribution policy
 assets/                 A browsable visual-primer example
+visual-checks/          Selected HTML snapshots and screenshots for UI review
 ```
 
 See the [documentation index](docs/README.md) and [distribution file policy](docs/distribution.md). Development evaluation cases and temporary prototypes were removed from the product branch; test generated pages in a separate workspace when needed.
+
+The [maintainer-document visual check](visual-checks/README.md) keeps the current project map, its linked walkthroughs and rule pictures, and desktop/mobile screenshots together for review.
 
 English | [한국어](README.ko.md)

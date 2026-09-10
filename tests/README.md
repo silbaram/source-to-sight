@@ -129,6 +129,24 @@ root present/omitted, children recorded before parents, an omitted intermediate
 folder, and a sibling sharing a prefix (`Rextra`). Only recorded entries appear.
 Use a fresh demo directory after changing templates; old HTML embeds old assets.
 
+## Diagram and node-lesson browser QA
+
+The demo renderer also creates `ko/journey/` and `en/journey/`: explicitly
+synthetic paired pages with a data edge and a second node's independent rule
+scene. Run the new entry journey using the same existing Playwright installation:
+
+```sh
+node tests/check_learning_journey_browser.cjs build/business-logic-demo /absolute/path/to/playwright
+```
+
+This checks the diagram before the collapsed catalog, direct capability links,
+keyboard activation, payload labels, isolation of another node's rules, showing
+all scenes, node and map focus restoration, missing details, Korean/English,
+desktop/phone layouts, both themes and absence of network requests. The older
+entry suite opens the catalog explicitly to continue testing its filters, dialogs,
+search, tree and legacy links. Detail return now focuses a matching map component
+when one exists, with the catalog as a fallback.
+
 ## Optional viewer structural checks
 
 Use an existing development installation of Acorn 8 (JavaScript parser):
