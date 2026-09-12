@@ -1,5 +1,22 @@
 # Regression checks
 
+The composition/feature overview has dedicated scope and navigation checks.
+`test_feature_overview.py` verifies exact child identity with shared owners,
+render-only evidence sanitization, retained-child reuse, stale preview omission,
+composition pruning and rejection of mismatched or private child data.
+After rendering the fixtures below, run:
+
+```sh
+node tests/check_feature_overview_browser.cjs build/business-logic-demo /absolute/path/to/playwright
+```
+
+It checks Korean/English, desktop/mobile and both themes: composition before
+visible feature summaries, request/result headers above reviewed responsibility
+groups, actual boundary edges, shared-owner isolation and parallel relations.
+It checks summary → member processes → node rules, return focus, missing summaries
+without copying full detail graphs, missing detail pages and offline behavior. The older
+area-based journey remains covered as a compatibility view.
+
 Run the maintained regression suite with Python 3.10+ and no installed packages:
 
 ```sh
@@ -129,7 +146,7 @@ root present/omitted, children recorded before parents, an omitted intermediate
 folder, and a sibling sharing a prefix (`Rextra`). Only recorded entries appear.
 Use a fresh demo directory after changing templates; old HTML embeds old assets.
 
-## Diagram and node-lesson browser QA
+## Area hierarchy and node-lesson browser QA
 
 The demo renderer also creates `ko/journey/` and `en/journey/`: explicitly
 synthetic paired pages with a data edge and a second node's independent rule
@@ -139,13 +156,17 @@ scene. Run the new entry journey using the same existing Playwright installation
 node tests/check_learning_journey_browser.cjs build/business-logic-demo /absolute/path/to/playwright
 ```
 
-This checks the diagram before the collapsed catalog, direct capability links,
+This checks area panels before the collapsed catalog, nested scope and breadcrumbs,
+reviewed interfaces, boundary-only transfers, distinct dependencies, missing
+interface data, browser history, reload and invalid-area fallback, direct capability links,
 keyboard activation, payload labels, isolation of another node's rules, showing
 all scenes, node and map focus restoration, missing details, Korean/English,
 desktop/phone layouts, both themes and absence of network requests. The older
 entry suite opens the catalog explicitly to continue testing its filters, dialogs,
-search, tree and legacy links. Detail return now focuses a matching map component
-when one exists, with the catalog as a fallback.
+search, tree and legacy links. Detail return opens the owner area and focuses its matching component,
+with the catalog as a fallback. `test_atlas_regions.py` covers interface schema,
+parent containment, cycles, sibling overlap, unsupported parents, uncertainty
+and preservation through the public render contract without invented edges.
 
 ## Optional viewer structural checks
 

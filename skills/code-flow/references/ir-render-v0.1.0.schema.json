@@ -307,6 +307,33 @@
       },
       "minItems": 0
     },
+    "featureDetails": {"type": "array", "items": {"$ref": "#/$defs/featureDetail"}},
+    "composition": {
+      "type": "object",
+      "properties": {
+        "regionIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+          },
+          "uniqueItems": true
+        },
+        "edgeIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "regionIds",
+        "edgeIds"
+      ],
+      "additionalProperties": false
+    },
     "structureEntries": {
       "type": "array",
       "items": {"$ref": "#/$defs/structureEntry"},
@@ -442,6 +469,439 @@
   "$id": "urn:source-to-sight:render:0.1.0",
   "title": "Understanding Graph — render",
   "$defs": {
+    "featureDetail": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": "0.1.0"
+        },
+        "layer": {
+          "const": "behavior"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-zA-Z]{2,3}(-[a-zA-Z0-9]+)*$"
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "source-traced",
+                "synthetic"
+              ]
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1
+            },
+            "humanReviewed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "description",
+            "humanReviewed"
+          ],
+          "additionalProperties": false
+        },
+        "snapshot": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "branch": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commit": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{40,64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "workingTreeClean": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "skillVersion": {
+              "type": "string",
+              "minLength": 1
+            },
+            "model": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "repository",
+            "branch",
+            "commit",
+            "workingTreeClean",
+            "generatedAt",
+            "skillVersion",
+            "model"
+          ],
+          "additionalProperties": false
+        },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+            },
+            "kind": {
+              "enum": [
+                "project",
+                "capability",
+                "workflow",
+                "lifecycle"
+              ]
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            },
+            "module": {
+              "type": "string",
+              "minLength": 1
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/target"
+              },
+              "minItems": 0
+            },
+            "scope": {
+              "type": "object",
+              "properties": {
+                "includes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 1
+                },
+                "excludes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "minItems": 0
+                }
+              },
+              "required": [
+                "includes",
+                "excludes"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "title",
+            "question",
+            "module",
+            "targets",
+            "scope"
+          ],
+          "additionalProperties": false
+        },
+        "analysis": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "complete",
+                "partial",
+                "insufficient"
+              ]
+            },
+            "profiles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "searched": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            },
+            "unresolved": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            },
+            "nextAttempts": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            }
+          },
+          "required": [
+            "status",
+            "profiles",
+            "searched",
+            "unresolved",
+            "nextAttempts"
+          ],
+          "additionalProperties": false
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "purpose": {
+              "type": "string",
+              "minLength": 1
+            },
+            "inputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0
+            }
+          },
+          "required": [
+            "title",
+            "purpose",
+            "inputs",
+            "outputs",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "minItems": 0
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edge"
+          },
+          "minItems": 0
+        },
+        "scenarios": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scenario"
+          },
+          "minItems": 0
+        },
+        "stateTransitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/transition"
+          },
+          "minItems": 0
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule"
+          },
+          "minItems": 0
+        },
+        "regions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/region"
+          },
+          "minItems": 0
+        },
+        "subjects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability"
+          },
+          "minItems": 0
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "minItems": 0
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          },
+          "minItems": 0
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+              },
+              "url": {
+                "type": "string",
+                "minLength": 1
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "retrievedAt": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "url",
+              "title",
+              "version",
+              "retrievedAt"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "links": {
+          "type": "object",
+          "properties": {
+            "atlas": {
+              "$ref": "#/$defs/link"
+            },
+            "behavior": {
+              "$ref": "#/$defs/link"
+            },
+            "logic": {
+              "$ref": "#/$defs/link"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "regeneration": {
+          "type": "object",
+          "properties": {
+            "subjectId": {
+              "type": "string",
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1
+            },
+            "command": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "subjectId",
+            "question",
+            "language",
+            "command"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "layer",
+        "language",
+        "provenance",
+        "snapshot",
+        "subject",
+        "analysis",
+        "summary",
+        "nodes",
+        "edges",
+        "scenarios",
+        "stateTransitions",
+        "rules",
+        "regions",
+        "subjects",
+        "evidence",
+        "warnings",
+        "sources",
+        "links",
+        "regeneration"
+      ],
+      "additionalProperties": false
+    },
+
     "action": {
       "type": "object",
       "properties": {
@@ -1324,6 +1784,131 @@
         "summary": {
           "type": "string",
           "minLength": 1
+        },
+        "parentId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "support"
+          ]
+        },
+        "interface": {
+          "type": "object",
+          "properties": {
+            "inputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "activity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "actor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "entryLabel": {
+              "type": "string",
+              "minLength": 1
+            },
+            "example": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "illustrative"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "request",
+                        "record",
+                        "page",
+                        "selection"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "request",
+                        "record",
+                        "page",
+                        "selection"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "input",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "inputs",
+            "activity",
+            "outputs"
+          ],
+          "additionalProperties": false
         },
         "nodeIds": {
           "type": "array",

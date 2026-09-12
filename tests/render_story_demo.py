@@ -25,11 +25,93 @@ def render_learning_fixture(atlas, project, behavior, logic, layout, source, fol
         graph["rules"].append(rule)
     layout["sections"].append({"id": "separate", "kind": "authored", "title": t("별도 처리의 그림", "Separate step picture"),
                                "ruleIds": ["rule-extra"], "html": '<svg viewBox="0 0 320 140" role="img" aria-label="Synthetic separate scene"><circle cx="160" cy="70" r="48" fill="none" stroke="currentColor"/></svg>'})
+    project = deepcopy(project)
+    region = project["regions"][0]
+    region.update(parentId="region-domain", interface={"inputs": [t("취소 요청", "Cancellation request")],
+        "activity": t("취소 가능 여부 판단", "Decide whether cancellation is allowed"), "outputs": [t("판단 결과", "Decision result")]})
+    region["interface"].update(actor=t("주문 처리 프로그램", "Order processing program"),
+        entryLabel=t("취소 판단 과정 보기", "See how cancellation is decided"), example={
+            "kind": "illustrative",
+            "input": {"type": "request", "title": t("이 주문을 취소할 수 있나요?", "Can this order be cancelled?"), "items": ["<request> & example"]},
+            "output": {"type": "record", "title": t("판단 결과", "Decision result"), "items": [t("합성 예시의 응답", "Synthetic example response")]}})
+    parent = deepcopy(region)
+    parent.pop("parentId")
+    parent.update(id="region-domain", label=t("주문 영역", "Orders area"), nodeIds=["node-main", "node-caller"])
+    caller = deepcopy(region)
+    caller.update(id="region-entry", label=t("요청 접수", "Request intake"), nodeIds=["node-caller"])
+    caller["interface"].update(activity=t("요청을 받아 전달", "Receive and forward the request"))
+    caller["interface"].pop("example")
+    project["regions"].extend([caller, parent])
+    support = deepcopy(project["nodes"][0])
+    support.update(id="node-support", label=t("공통 도구", "Shared tool"), importance="detail", actions=[])
+    project["nodes"].append(support)
+    group = deepcopy(parent)
+    group.update(id="region-support", label=t("공통 지원", "Shared support"), nodeIds=[support["id"]], role="support")
+    group.pop("interface")
+    project["regions"].append(group)
+    edge = deepcopy(project["edges"][0])
+    edge.update(id="edge-dependency", **{"from": "node-main", "to": support["id"]}, type="depends-on", label=t("공통 도구 사용", "Use shared tool"))
+    project["edges"].append(edge)
     target = folder / "journey"
     atlas.build_site(project, source, target / "project.html", pages=[{
         "behavior": behavior, "output": target / "behavior.html", "logic": logic,
         "layout": layout, "logicOutput": target / "logic.html",
     }])
+    uncertain = deepcopy(project)
+    next(group for group in uncertain["regions"] if group["id"] == "region-domain")["supportStatus"] = "uncertain"
+    atlas.build_site(uncertain, source, target / "uncertain.html")
+
+
+def render_feature_fixture(atlas, project, behavior, logic, layout, source, folder, language):
+    """The same owner can expose two distinct, fully scoped feature previews."""
+    project = deepcopy(project)
+    project["composition"] = {"regionIds": [project["regions"][0]["id"]], "edgeIds": []}
+    behavior, logic = deepcopy(behavior), deepcopy(logic)
+    t = lambda ko, en: ko if language == "ko" else en
+    for graph in (behavior, logic):
+        extra = deepcopy(graph["nodes"][1])
+        extra.update(id="node-receive", label="DETAILED RECEIVE", importance="detail")
+        graph["nodes"].append(extra)
+        groups = []
+        for id, label, summary, members in (
+            ("group-request", t("요청 접수", "Request intake"), t("취소 요청을 받아 판단에 전달합니다.", "Accepts cancellation requests and passes them to the decision."), ["node-receive", "node-caller"]),
+            ("group-decision", t("취소 판단", "Cancellation decision"), t("주문 상태에 따라 취소 결과를 정합니다.", "Determines cancellation from the order status."), ["node-main"]),
+        ):
+            group = deepcopy(graph["regions"][0])
+            group.update(id=id, label=label, summary=summary, nodeIds=members, role="primary")
+            groups.append(group)
+        graph["regions"] = groups
+    second = deepcopy(behavior)
+    second["subject"]["id"] = second["regeneration"]["subjectId"] = "cap-second"
+    second["subject"]["scope"]["includes"].append("Separate synthetic capability")
+    second["nodes"][0]["label"] = "SECOND ONLY"
+    second["regions"][1]["label"] = "SECOND ONLY"
+    second["scenarios"][0]["steps"][0]["execution"] = "parallel"
+    alternate = deepcopy(second["scenarios"][0])
+    alternate.update(id="scenario-alternate", title="Alternate synthetic path", kind="alternate")
+    for step in alternate["steps"]:
+        step["id"] += "-alternate"
+        step.pop("execution", None)
+    second["scenarios"].append(alternate)
+    cap = deepcopy(project["subjects"][0])
+    cap.update(id="cap-second", label="SECOND CAPABILITY", scope=deepcopy(second["subject"]["scope"]))
+    cap["link"]["url"] = "second.html"
+    project["subjects"].append(cap)
+    missing = deepcopy(cap); missing.update(id="cap-missing", label="MISSING CAPABILITY")
+    missing["scope"]["includes"].append("Missing synthetic detail")
+    missing["link"]["url"] = "missing.html"
+    project["subjects"].append(missing)
+    target = folder / "features"
+    result = atlas.build_site(project, source, target / "project.html", pages=[
+        {"behavior": behavior, "output": target / "behavior.html", "logic": logic,
+         "layout": layout, "logicOutput": target / "logic.html"},
+        {"behavior": second, "output": target / "second.html"}])
+    uncondensed = deepcopy(result[target / "project.html"])
+    for child in uncondensed["featureDetails"]:
+        for group in child["regions"]:
+            group.pop("role", None)
+    s2s, _ = atlas.companion()
+    (target / "no-summary.html").write_text(s2s.render(uncondensed), encoding="utf-8")
 
 
 def render_structure_fixtures(s2s, project, source, folder):
@@ -192,6 +274,7 @@ def main():
         }])
         s2s, _ = atlas.companion()
         render_learning_fixture(atlas, project, behavior, logic, layout, source, folder, language)
+        render_feature_fixture(atlas, project, behavior, logic, layout, source, folder, language)
         render_workspace_fixture(s2s, project, source, folder, language)
         for variant in ("legacy", "missing", "empty", "uncertain", "ungrouped", "narrative-empty", "narrative-uncertain"):
             fixture = deepcopy(rendered[(folder / "project.html").resolve()])

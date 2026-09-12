@@ -107,19 +107,19 @@ Changing source evidence, wording, or the schema requires rebuilding outputs. Ch
 
 ## Project maps
 
-Atlas pages default to `view=overview`: purpose and recorded inputs/results, then a responsibility diagram with labeled connections. See the diagram-first maintainer journey below for core/support visibility and direct behavior navigation. The expandable catalog keeps full-width responsibility groups, member cards, filters and recorded counts. Membership is not execution order or mandatory composition. The package tree remains on demand. Old `view=structure`/`view=flow` links preserve the existing exploration canvas.
+Atlas pages default to `view=overview`. Without `composition`, this shows a plain-language purpose and an expandable project input/result summary, then responsibility-area panels with their own inputs/activity/outputs and recorded boundary connections. See the area-based maintainer journey below for hierarchy, support and behavior navigation. The expandable catalog keeps full-width responsibility groups, member cards, filters and recorded counts. Membership is not execution order or mandatory composition. The package tree remains on demand. Old `view=structure`/`view=flow` links preserve the existing exploration canvas.
 
-Selecting a feature from the catalog opens a wide modal summary, full-screen on small phones. The capability's own status, owner, representative path, direct relationships and rule summaries appear first; other paths/evidence, related flows, rule details, tests and scope are disclosed on demand. Header/close and detail/diagram actions remain outside the scrolling body. No initial selection is assumed. Closing preserves the selected card, filters and original page scroll and restores focus to the card's trigger. Saved/returned feature links focus the matching map component, or the expanded catalog card when no map control matches, without opening the dialog. No modal-open URL field is added. The dialog traps focus, makes background content inert, closes with Escape/backdrop/its visible button, and releases state before path, diagram or hash navigation. Search replaces rather than stacks on the summary. Manual-copy fallback remains inside the active dialog; Escape closes that field first. Reopening resets internal scroll/disclosures, not the page filters.
+Selecting a feature from the catalog opens a wide modal summary, full-screen on small phones. The capability's own status, owner, representative path, direct relationships and rule summaries appear first; other paths/evidence, related flows, rule details, tests and scope are disclosed on demand. Header/close and detail/diagram actions remain outside the scrolling body. No initial selection is assumed. Closing preserves the selected card, filters and original page scroll and restores focus to the card's trigger. Saved/returned feature links open the owner area and focus the matching component, or the expanded catalog card when no map control matches, without opening the dialog. No modal-open URL field is added. The dialog traps focus, makes background content inert, closes with Escape/backdrop/its visible button, and releases state before path, diagram or hash navigation. Search replaces rather than stacks on the summary. Manual-copy fallback remains inside the active dialog; Escape closes that field first. Reopening resets internal scroll/disclosures, not the page filters.
 
 Related scenarios are those with an owner-node step or an edge touching the owner. Render matching scenarios intact inside an on-demand disclosure, not just matching steps, and label them as component-related context, not an exact capability trace. Numbering is explanation order, never inferred runtime order. When expanded, conditions, non-sequential execution and non-normal branches stay visible; uncertain numbers use dashed warning borders. Steps close the summary and open their node or edge destination. Cautions match rule owner IDs and retain independent status, with condition/outcome and rationale/exceptions/evidence available together on demand. No matches means no contextual flow/caution section. Existing numeric-claim pruning and documentation-versus-implementation distinctions remain. Only capability/owner evidence explicitly marked `kind: test` appears as test evidence; never treat it as a passing test result.
 
-The analysis review disclosure counts confirmed recorded non-context nodes, regions, capabilities and structure entries, with legacy capability status inherited from its owner. This is not repository-wide or test coverage; pruned items are outside its denominator. Before the diagram, show the first high-severity warning, unresolved item or limitation, with a control to reveal all gaps. The scope disclosure retains unresolved items, limitations, exclusions and next attempts. Empty data means no unresolved items were **recorded**, not exhaustive validation. Direct relationships are not a complete change-impact analysis; missing folder/test mappings do not establish their absence.
+The analysis review disclosure counts confirmed recorded non-context nodes, regions, capabilities and structure entries, with legacy capability status inherited from its owner. This is not repository-wide or test coverage; pruned items are outside its denominator. Before the area panels, show the first high-severity warning, unresolved item or limitation, with a control to reveal all gaps. The scope disclosure retains unresolved items, limitations, exclusions and next attempts. Empty data means no unresolved items were **recorded**, not exhaustive validation. Direct relationships are not a complete change-impact analysis; missing folder/test mappings do not establish their absence.
 
 Optional atlas `structureEntries` are independent evidence-backed claims with canonical unique source-root-relative paths, a package/directory/file kind, short label/summary and owner `nodeIds`. They require local code/config evidence at the file or within the directory. They participate in ID/ref checks, unsupported pruning, source re-verification and display status validation. A file cannot contain entries. The viewer derives containment only from recorded ancestor paths; it never derives graph edges. Old inputs without the field remain valid. See atlas's assembly instructions for authoring fields.
 
 Containment uses path depth, with `.` at depth zero: attach recorded ancestors first and place each entry under its deepest recorded ancestor, independently of input order or folder-name length. An omitted root or intermediate folder does not create a synthetic entry.
 
-Overview return state uses the versioned hash with optional `q` (up to 240 characters), `group` (region ID), `available` (ready/missing), and `feature` (capability ID), without camera or diagram-selection fields. New links omit `tab`; old `tab=roles|files` values remain accepted and validated but have no UI effect. These entry fields are rejected on other views. Returning through behavior/rules restores filters and the selected feature; folder disclosures themselves are local. Diagram keyboard shortcuts are inactive on the overview. Entry components use safe text DOM, existing theme variables and no network fetches.
+Overview return state uses the versioned hash with optional `q` (up to 240 characters), `group` (region ID), `available` (ready/missing), `feature` (capability ID), and `area` (region ID), without camera or diagram-selection fields. New links omit `tab`; old `tab=roles|files` values remain accepted and validated but have no UI effect. These entry fields are rejected on other views. Returning through behavior/rules restores filters and the selected feature inside its owner area; legacy feature links without `area` resolve that owner. Area navigation and breadcrumbs create browser history entries. Folder disclosures themselves are local. Diagram keyboard shortcuts are inactive on the overview. Entry components use safe text DOM, existing theme variables and no network fetches.
 
 The Find button and Ctrl/Cmd+K open a modal search only on a usable atlas overview, excluding composition and editable fields when opening by shortcut. It searches capabilities, non-context components and recorded paths. Capability selection closes search, resets filters and opens the capability summary with its card as the return destination; component selection opens its diagram inspector; path selection expands recorded ancestors and focuses the path. The modal has a visible close button, inert background, focus trapping, arrow/Enter navigation and Escape/backdrop dismissal with focus restoration. Leaving the overview dismisses it and releases scroll/inert state. Search never generates pages or executes model requests.
 
@@ -127,21 +127,51 @@ When a restored feature is present in the filtered catalog, focus and immediatel
 
 Project maps include scoped `subjects` entries for representative capabilities. Each has its own summary, resolved subject identity, question, targets, included/excluded scope, owner node and evidence-backed claim status. Rejected entries are omitted and uncertain entries retain their own badge, independently of the owner. New atlas authoring requires code/config evidence for capability entry locations. Existing label-only behavior targets can be preserved with explicit location evidence; the copyable generation request carries both. Old four-field catalogs remain readable.
 
-Atlas regions have disjoint node membership. Compound layout groups actual nodes without inventing aggregate invocation edges. Their labels show the group's own status and open its evidence; entering a region shows all members and their immediate neighbors through actual edges. Region navigation and capability search preserve detail reveal, selection, zoom, mobile inspection and Back. Single-node maps need no region or scenario. A catalog is not a playback scenario.
+Sibling atlas regions have disjoint node membership. Parent membership contains child membership; cycles and unrelated overlaps are invalid. The detailed compound layout nests recorded groups around their actual nodes without inventing invocation edges. Their labels show the group's own status and open its evidence; entering a region shows all members and their immediate neighbors through actual edges. Region navigation and capability search preserve detail reveal, selection, zoom, mobile inspection and Back. Single-node maps need no region or scenario. A catalog is not a playback scenario.
 
 The atlas builder checks supplied behavior identity against the catalog and checks the parent's catalog on return. Only explicitly supplied details are built; other compatible existing files may be linked when they already expose an active return link to this map, but are not rewritten. Missing, stale, incompatible or one-way files remain precise generation requests. Requested pages are all validated/rendered before any destination replacement. Replacements are individually atomic; a filesystem failure may require rerunning the build.
 
 Atlas detail links carry a `s2s-atlas` query parameter containing the parent's versioned hash state. Region, selected item, core/detail mode and finite bounded camera coordinates return through behavior and rules pages without browser storage. The destination always comes from the detail's own validated atlas URL. Incoming state cannot supply a destination or request autoplay; invalid IDs or camera values use the default view and a notice. Ordinary current-view copy links capture IDs and region, while camera coordinates are added only for map/detail round trips.
 
-## Diagram-first maintainer journey
+## Area-based maintainer journey
 
-Atlas overview now renders a responsibility graph before the expandable capability
-catalog. It distinguishes existing processing/data and dependency/registration
-edges; no edge is added from containment. Core and context nodes appear first;
-supporting parts can be included explicitly. Narrow screens show the same recorded
-outgoing connections under their owner in a vertical layout, without shrinking
-labels or implying order between unrelated components. A single generated
-capability opens directly; multiple or absent details use reviewed context.
+Atlases with `composition` use the composition/feature overview described below.
+This area-selection journey remains the compatibility view for older inputs.
+
+Atlas overview renders one level of responsibility areas before the expandable
+capability catalog. Optional `regions[].interface` records inputs, activity and
+outputs under the region’s own evidence status; omitted data stays unrecorded.
+`parentId` establishes a reviewed hierarchy; `role: support` separates common
+support. Area panels remain at reading size on desktop and stack their input/work/
+output cells on phones. Boundary rows aggregate only recorded edges by peer,
+direction, type and test context; dependency and registration stay distinct from
+data transfer. Containment and array order never create edges. Entering an area
+shows its immediate children and direct components first, with ancestor breadcrumbs.
+The area's previously read interface and connections remain in a secondary
+disclosure; uncertain area context opens and retains its visible status.
+A component’s single generated capability opens directly; multiple or absent
+details use reviewed context.
+
+The global input/result summary is a native disclosure. Optional interface `actor`
+names who acts and `entryLabel` describes the next-level content. With an authored
+`example`, the heading uses the activity and a small area label; canonical inputs
+and outputs sit beside paired request/record/page/selection illustrations. The
+example has an explicit illustrative caption and literal-text artifacts, with no
+executable author content or network request. Non-confirmed regions withhold the
+example artifacts and show their status. Without an example, the existing three
+input/activity/output cells remain available. Dependency, registration and test
+rows use a secondary disclosure with visible uncertainty, while data transfers
+stay in the main reading path. Tiny artifact icons do not create a graph canvas.
+
+A noninteractive reading-stage strip marks area selection, capability selection,
+the selected capability's process, and condition/result pictures. Standalone
+details omit the atlas stages when no generated atlas link exists. Area actions
+preview the kind and count of content they open; connection actions name the peer
+area. Generated capability actions open their process. Processing boxes explicitly
+open an explanation panel; its rule link names the selected step. Top-level rule
+links identify the capability's full rule lesson, independently of node selection.
+Return links keep their validated destinations and saved state. The full structure
+diagram is labeled as all components/connections and uses a secondary style.
 
 Behavior nodes keep code identifiers in maintenance disclosures and show their
 incoming/outgoing data edges plus linked rules. The rule action carries `s2s-node`
@@ -150,3 +180,51 @@ matches rule-to-node bindings, keeps withheld notices visible, supports showing
 all scenes, and uses its own checked behavior URL for return. Existing map return
 state is propagated independently. Paths and explicit test evidence remain
 available, with no claim of exhaustive impact or passing tests.
+
+## Composition and visible feature flows
+
+`composition.regionIds` selects source-backed architectural groups; `edgeIds`
+selects actual relationships whose endpoints are visible in those groups. Render
+these before the feature list as package/service/environment/storage boxes and
+labeled connections. This graph describes architecture, not the documentation
+reading process. No web-service or external-provider categories are inferred.
+
+Keep visible prose about the target project's responsibilities, inputs, processing
+and results. Omit general instructions for reading or operating the HTML, including
+repeated "select a box" and "expand below" paragraphs on map, behavior and rules
+pages. Use destination-specific control labels, link styling, focus states and
+location indicators. Preserve meaningful analysis limits and missing-data states.
+If the target itself generates documents or implements a viewer, describe that
+verified behavior as project functionality, without turning it into a tutorial.
+
+The atlas builder's render-only `featureDetails` contains checked public behavior
+graphs matching each available capability's subject, language and source snapshot.
+Each nested graph is validated as behavior data in its own ID namespace, with no
+recursive atlas or source bodies. Inputs cannot author this derived field.
+
+Show one request/result header and a few responsibility boxes per capability on
+the project page. In its checked child, `regions` with `role: primary` carry the
+reviewed labels, short summaries and detailed `nodeIds`. Validate disjoint primary
+membership in behavior/logic graphs; preserve the same groups in paired rules data.
+Uncertain groups/members retain their status. Unsupported groups are omitted by
+normal claim preparation. Missing summary groups never fall back to a detailed
+node-for-node preview.
+
+Only show recorded edges crossing summary groups. Inline a single transfer between
+adjacent groups when the representative scenario records it as sequential; display
+other boundary relations separately, preserving parallel and dependency meanings.
+Card order alone never creates an arrow. Internal steps, error branches and scenario
+selectors remain on the detail page.
+
+Summary-box links use the catalog's checked URL and the child's region ID (`item`)
+to open its processing list and highlight the matching members. Processing-node
+selection exposes data, rules and source locations. Those rules open node-specific
+pictures. Preserve the selected capability in the validated atlas return state and
+focus its visible heading on return. The full-detail action, legacy catalog, full
+graph and file/evidence tools remain available. Stack summary boxes on phones.
+
+The capability's "View all processing" action opens the behavior with
+`detail=detail`, displaying all recorded nodes. Label that filter "Main processing"
+and "All processing" ("Main components" / "All components" for an atlas), separate
+from the concept of a detail page. Keep the existing `core` / `detail` URL values
+for compatibility. "All" refers to this page's recorded scope.

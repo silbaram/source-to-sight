@@ -26,8 +26,8 @@
     const figures=[...document.querySelectorAll('#explanation > .rule-figure')];
     const matches=figures.filter(figure=>[...figure.querySelectorAll('[data-rule-id]')].some(rule=>ruleIds.has(rule.dataset.ruleId)));
     const context=document.createElement('div');context.className='node-lesson-context';
-    const label=document.createElement('p');label.textContent=selectedNode.label+' · '+t('이 처리의 규칙 그림','Rule pictures for this step');context.append(label);
-    const reset=document.createElement('button');reset.type='button';reset.textContent=t('전체 규칙 보기','Show all rules');context.append(reset);
+    const label=document.createElement('p');label.textContent=t('선택한 처리 · ','Selected step · ')+selectedNode.label;context.append(label);
+    const reset=document.createElement('button');reset.type='button';reset.textContent=t('이 기능의 다른 규칙도 보기','Show the other rules in this capability');context.append(reset);
     document.querySelector('#explanation > .primer-intro').after(context);
     if(matches.length) {
       for(const figure of figures)figure.hidden=!matches.includes(figure)&&!figure.classList.contains('withheld');

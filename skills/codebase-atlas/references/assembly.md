@@ -19,7 +19,17 @@ python3 "$ATLAS_ROOT/scripts/atlas.py" --code-flow-root "$FLOW_ROOT" init \
 
 The draft is insufficient until source reading supplies actual facts. If it already exists, read and update it rather than running `init` again; `init` refuses overwrites. `code-flow/scripts/author.py capture` works on this internal IR. Evidence anchors stay internal. Use the companion's assembly protocol for claim statuses, source snapshots and rendering restrictions.
 
-Use `layer: atlas` and `subject.kind: project`. `nodes` are responsibilities/components, `edges` are observed relationships, and `regions` are evidence-backed, non-overlapping groups of node IDs. A one-node map can omit regions and edges. The common core/detail field hides optional detail until requested; entering a region shows all its nodes and their immediate, explicitly connected neighbors.
+Use `layer: atlas` and `subject.kind: project`. `nodes` are responsibilities/components, `edges` are observed relationships, and `regions` are evidence-backed areas. Sibling regions have disjoint membership; a parent includes its children's node IDs. A one-node map can omit regions and edges. The detailed structure view can still show a region's members and their immediate recorded neighbors.
+
+Optional region fields support the area overview without breaking existing inputs:
+
+- `interface: {inputs: string[], activity: string, outputs: string[]}`: short, reviewed descriptions of what comes in, what the area does, and what it produces. The region's evidence must support all these claims. Empty arrays mean no recorded items; an omitted interface shows an explicit unrecorded state.
+- Optional interface `actor` names who performs the work; `entryLabel` says what the area action opens. Use everyday terms and a short verb phrase for `activity`.
+- Optional interface `example` has `kind: illustrative` and `input`/`output` artifacts. Each artifact has `type: request|record|page|selection`, `title`, and a nonempty string array `items`. These are short explanatory examples rendered as literal text, not source bodies, arbitrary HTML or executed results. The renderer labels them as examples and withholds their artifacts when the region is not confirmed. Keep canonical inputs/outputs visible beside the example. Omit examples when they add no understanding.
+- `parentId`: another region's ID. Parents must exist, be acyclic and contain every child member. Overlap is valid only along this ancestry; shared dependencies use edges. Unsupported parents withhold descendant regions instead of promoting them to invented root areas.
+- `role: primary|support`: optionally separates cross-cutting support from the main areas. Legacy groups whose members are all detail nodes appear in support by default.
+
+The renderer groups boundary edges by peer area, direction, relation type and test context. It retains the original edge IDs and labels. It never creates transfers from interface text or group order. No extra handoff graph needs to be authored.
 
 Every `subjects` entry is a scoped capability with these fields:
 
@@ -30,11 +40,39 @@ Every `subjects` entry is a scoped capability with these fields:
 
 Older minimal catalog entries remain readable by the shared renderer; new atlas authoring requires scoped entries. The schema remains the unfrozen 0.1.0 draft, and the common authoring bundle is 0.8.0.
 
-## Capability workspace and package landmarks
+## Composition and feature workspace
 
-The entry leads with the reviewed purpose and inputs/results, followed by a large responsibility diagram. Nodes show plain roles; arrows show the actual edge labels and distinguish processing/data from dependency/registration. Group captions explain shared responsibility. No containment, catalog order or physical path creates an execution claim. Follow [maintenance-story.md](maintenance-story.md) for the information needed by a newcomer maintaining the project.
+For the current project overview, add `composition: {regionIds, edgeIds}`. These
+IDs select reviewed architectural groups and relationships from the atlas. The
+selected regions' node membership defines the visible components; every selected
+edge must have both endpoints among them. Use real service/package/environment/
+storage boundaries. Removed unsupported groups also remove their composition
+references and unavailable connections.
 
-A component with one generated capability opens that exact behavior page directly and records the selected capability for return. With multiple capabilities, show the explicit choices in the component inspector. A missing detail opens its scoped context and copyable request. The expandable capability catalog retains groups, filters, counts, status, owner/path pointers and precise generation actions; the entry diagram does not repeat this metadata. The package tree and analysis scope stay on demand. Old structure and flow links remain supported.
+The builder adds `featureDetails` to the public render graph only. Each entry is a
+checked public behavior graph for one available catalog subject, retaining its
+identity, summary input/output, nodes, edges, scenarios and evidence status. It
+uses the prepared requested child or an already linked child after the normal
+identity and current-source checks. It never embeds internal anchors, accepts an
+unrelated scope, merges shared owners, or rewrites an unrequested child. This
+projection is not saved into the private authoring atlas.
+
+The first screen shows project composition, then a concise group per capability.
+Place incoming request/data → produced result above responsibility boxes. Author
+these as the child's evidence-backed `regions` with `role: primary`, a short label,
+one-sentence summary and disjoint `nodeIds`. The member nodes are the detailed
+processing steps, not separate top-level boxes. Only crossing edges appear in the
+summary; internal checks, branches and scenario selection remain in the detail.
+Box links open their processing list through the region's `item` ID. A process
+node leads to its rule pictures. Without reviewed primary groups, show the I/O and
+detail action rather than repeating the detailed graph. A missing/stale child
+keeps an explicit gap and request. Return state focuses the feature heading.
+The old `area` field and region interfaces remain available for retained atlases
+without `composition`.
+
+Keep the full component diagram, searchable catalog, package tree and evidence
+inspection available. Follow [maintenance-story.md](maintenance-story.md) for the
+information a first-time maintainer needs.
 
 Selecting a capability from the catalog opens a wide summary dialog (full-screen on small phones), with no permanent side pane. It shows the capability's own status, owner, a representative path, direct relationships and rule summaries. Other paths, source evidence, related flows, rule conditions/reasons/exceptions, tests and scope open on demand; these are not removed from the data. The fixed actions reach the existing precise detail page or diagram. Connections are not an exhaustive change-impact analysis. No feature or dialog opens automatically. Dismissal preserves selection, filters and page scroll, returning focus to the invoking card. Choosing a capability from search or a tree item's capability action opens its dialog; restored detail links highlight/focus the card without reopening it. Dialog state is local, not a new URL field. Close the dialog before opening search, a tree path or the diagram; clipboard fallback must remain usable inside it.
 

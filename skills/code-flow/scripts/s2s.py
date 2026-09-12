@@ -142,10 +142,62 @@ def validate(data, stage="internal"):
     for item in entries:
         if item["kind"] == "file" and any(p.startswith(item["path"] + "/") for p in paths):
             raise InvalidGraph(f"{item['id']}: a file cannot contain structure entries.")
+    regions = {r["id"]: r for r in data["regions"]}
+    if data["layer"] != "atlas":
+        grouped = set()
+        for region in regions.values():
+            if region.get("role") != "primary":
+                continue
+            if grouped.intersection(region["nodeIds"]):
+                raise InvalidGraph("Capability summary groups must have disjoint processing nodes.")
+            grouped.update(region["nodeIds"])
+    if "composition" in data:
+        if data["layer"] != "atlas":
+            raise InvalidGraph("Project composition belongs only to an atlas.")
+        composition = data["composition"]
+        check(composition["regionIds"], regions, "composition")
+        check(composition["edgeIds"], edges, "composition")
+        members = {n for rid in composition["regionIds"] for n in regions[rid]["nodeIds"]}
+        for eid in composition["edgeIds"]:
+            if not {edges[eid]["from"], edges[eid]["to"]} <= members:
+                raise InvalidGraph("Composition edges must connect displayed components.")
+    if "featureDetails" in data:
+        if data["layer"] != "atlas" or stage != "render":
+            raise InvalidGraph("Feature previews are rendered atlas data only.")
+        seen = set()
+        catalog = {s["id"]: s for s in data["subjects"]}
+        for child in data["featureDetails"]:
+            validate(child, "render")
+            identifier = child["subject"]["id"]
+            subject = catalog.get(identifier)
+            if (identifier in seen or not subject or not subject["link"]["generated"]
+                    or not subject_matches(subject, child["subject"])
+                    or child["language"] != data["language"] or not source_matches(data, child)):
+                raise InvalidGraph("Feature preview must match one available capability and source snapshot.")
+            seen.add(identifier)
+    if data["layer"] != "atlas" and any("parentId" in r for r in regions.values()):
+        raise InvalidGraph("Region hierarchy belongs only to a project atlas.")
     if data["layer"] == "atlas":
-        memberships = [n for r in data["regions"] for n in r["nodeIds"]]
-        if len(memberships) != len(set(memberships)):
-            raise InvalidGraph("Atlas regions must have disjoint node membership; use edges for shared dependencies.")
+        ancestors = {}
+        for region in regions.values():
+            chain, current = set(), region
+            while "parentId" in current:
+                parent = current["parentId"]
+                check([parent], regions, current["id"])
+                if parent == region["id"] or parent in chain:
+                    raise InvalidGraph("Atlas region parents must not form a cycle.")
+                chain.add(parent)
+                if not set(current["nodeIds"]) <= set(regions[parent]["nodeIds"]):
+                    raise InvalidGraph("A child region's members must be contained in its parent.")
+                current = regions[parent]
+            ancestors[region["id"]] = chain
+        owners = {}
+        for region in regions.values():
+            for node in region["nodeIds"]:
+                for other in owners.get(node, []):
+                    if other not in ancestors[region["id"]] and region["id"] not in ancestors[other]:
+                        raise InvalidGraph("Sibling atlas regions must have disjoint node membership; use edges for shared dependencies.")
+                owners.setdefault(node, []).append(region["id"])
     for warning in data["warnings"]:
         check(warning["relatedIds"], known, warning["id"])
     for item in data["evidence"]:
@@ -319,8 +371,24 @@ def prepare(original, source_root, output_path=None, linked_pages=None):
                                if supported(s) and s["subjectNodeId"] in node_ids]
     data["regions"] = [r for r in data["regions"]
                        if supported(r) and set(r["nodeIds"]) <= node_ids]
+    while True:
+        region_ids = {r["id"] for r in data["regions"]}
+        retained = [r for r in data["regions"] if "parentId" not in r or r["parentId"] in region_ids]
+        if len(retained) == len(data["regions"]):
+            break
+        data["regions"] = retained
+        warn("coverage-limited", "상위 영역의 근거가 없어 하위 영역을 제외했습니다." if ko else
+             "Child regions omitted because their parent is unavailable.")
     data["subjects"] = [s for s in data["subjects"] if s["nodeId"] in node_ids
                         and ("scope" not in s or supported(s))]
+    if "composition" in data:
+        composition = data["composition"]
+        regions = {r["id"]: r for r in data["regions"]}
+        composition["regionIds"] = [rid for rid in composition["regionIds"] if rid in regions]
+        members = {n for rid in composition["regionIds"] for n in regions[rid]["nodeIds"]}
+        remaining_edges = {edge["id"]: edge for edge in data["edges"]}
+        composition["edgeIds"] = [eid for eid in composition["edgeIds"] if eid in remaining_edges
+                                  and {remaining_edges[eid]["from"], remaining_edges[eid]["to"]} <= members]
     if "structureEntries" in data:
         data["structureEntries"] = [s for s in data["structureEntries"] if supported(s)]
         for item in data["structureEntries"]:

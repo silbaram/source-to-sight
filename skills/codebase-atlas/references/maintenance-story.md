@@ -4,23 +4,62 @@ Use this contract when authoring or improving the three-layer journey. The reade
 is new to this project. They need to locate a change, understand what it affects,
 and know which implementation and tests to inspect without first reading code.
 
-## Project map: orient before selecting
+Keep captions about the target project's work and results. Do not add paragraphs
+explaining how to read or operate the generated HTML. Clear control labels,
+interactive styling and location indicators carry navigation. Preserve analysis
+limits and missing-data states. For a documentation tool, its actual generation
+or viewer behavior still belongs in the relevant feature explanation.
 
-Lead with the project's purpose in one sentence and short input/result labels.
-Make the responsibility map the dominant surface. Name the work each component
-does, enclose related responsibilities, and label observed connections with what
-is requested, transferred or used. Explain each group's shared responsibility in
-a short caption. Containment alone never asserts order, data transfer or mandatory
-composition. Keep shared infrastructure and supporting documentation/tests
-recognizable as their actual roles, rather than pretending they are all user-facing
-features. Unconnected means no connection is recorded, not proven independence.
+## Project map: composition, then feature groups
 
-A component with one generated capability opens that exact behavior directly.
-Multiple capabilities require a choice; missing detail exposes reviewed context
-and a precise generation request. Keep the searchable catalog and physical tree
-available on demand. Symbols, paths, verification notes and generation controls
-must not compete with the first picture. Material uncertainty stays discoverable
-before the reader acts; do not conceal synthetic provenance or unsupported claims.
+The grouping unit is a real product capability or task: payment, order lookup,
+account creation, report generation, or another actual feature of this project.
+Each group crosses the components that implement it. Do not group all controllers,
+all services, all databases, or the stages of reading this documentation as the
+main feature list.
+
+At the top, draw the project's actual composition: applications, packages,
+execution environments, storage and external services, with short roles and
+recorded connections. Use reviewed atlas nodes/regions/edges selected through
+`composition.regionIds` and `composition.edgeIds`. A library or skill package has
+its own topology; never invent a web server, database or provider to fit a template.
+
+Below it, list capability groups directly on the same page. Above each group's
+processing boxes, place its actual incoming request/data → produced result as a
+compact full-width header. Then show the components responsible for that feature,
+with a short role on each box and labels on the data/request passing between them.
+For a web payment feature, source evidence might establish controller → service →
+DB write/read; these are roles inside the payment group, not separate feature groups.
+Shared components can appear in several features, but each preview must use that
+feature's exact subject/scope and checked graph. The builder supplies public
+`featureDetails` from the linked behavior documents; do not handwrite another
+unverified graph or infer a trace from a shared owner.
+
+Keep the request/result and a few responsibility boxes visible at reading size.
+In each exact behavior graph, author evidence-backed `regions` with `role: primary`
+as the feature's summary groups. Give each a short responsibility label and one
+sentence about its work; `nodeIds` maps it to the detailed processing nodes. Primary
+groups must be disjoint. Aim for two to four meaningful roles when the code supports
+that division; a small feature may need only one. Do not invent layers or simply
+rename every detailed node. Summaries and full processing are different levels.
+
+The overview uses only recorded edges crossing these groups. Internal checks,
+error branches and scenario controls belong in the behavior detail. Preserve
+parallel relationships and return/dependency connections without making them a
+serial path. A missing reviewed summary shows the request/result and detail link,
+not an automatically copied detailed graph.
+
+Selecting a summary box opens its detailed processing list and highlights the
+members in the behavior page. Selecting a processing node then exposes its data,
+conditions and rule pictures. Returning restores the feature heading. Search,
+package paths, source evidence and the comprehensive structural graph remain
+secondary inspection tools. Important uncertainty and missing data stay visible.
+Feature order is page order, never a claim that all features execute in sequence.
+
+Legacy region interfaces and nested area selection remain readable for retained
+inputs without `composition`. New project authoring uses composition plus visible
+feature groups. For large projects choose a bounded project/package scope and
+keep feature navigation available; do not shrink the entire repository graph.
 
 ## Behavior: follow data and decisions
 
@@ -60,7 +99,7 @@ icons for the rule explanation. Never include source bodies or guessed policies.
 
 ## Review the information as well as the UI
 
-Trace a newcomer journey from an actual component through data flow to one rule
+Trace a newcomer journey from a visible feature group through one processing box to its rule
 picture and back. Verify labels against source, each link against subject/scope,
 and maintenance pointers against actual files/tests. On desktop and a narrow
 screen, check that the picture precedes dense metadata, labels remain readable,

@@ -346,10 +346,10 @@ def render_rules(data, layout, s2s, original=None):
 
     links = []
     for kind, link in data["links"].items():
-        label = {"behavior": t("동작과 협력으로 돌아가기", "Back to how it works"),
-                 "atlas": t("프로젝트 지도", "Project map"), "logic": t("규칙과 이유", "Rules and reasons")}[kind]
+        label = {"behavior": t("← 기능의 처리 과정으로 돌아가기", "← Back to the capability process"),
+                 "atlas": t("← 프로젝트 지도로 돌아가기", "← Back to the project map"), "logic": t("규칙과 이유", "Rules and reasons")}[kind]
         if link["generated"]:
-            links.append(f'<a data-layer="{kind}" href="{escaped(link["url"])}">{label} ↗</a>')
+            links.append(f'<a data-layer="{kind}" href="{escaped(link["url"])}">{label}</a>')
         else:
             links.append(f'<button type="button" class="copy-command" data-command="{escaped(link["command"])}">{label} · {t("생성 명령 복사", "copy generation command")}</button>')
     notices = ''.join('<li>' + escaped(w["message"]) + '</li>' for w in data["warnings"])
@@ -369,7 +369,9 @@ def render_rules(data, layout, s2s, original=None):
     status = {"complete": t("지정 범위 확인", "Scoped analysis"), "partial": t("일부 미확인", "Partial analysis"), "insufficient": t("근거 부족", "Insufficient evidence")}[data["analysis"]["status"]]
     provenance = data["provenance"]["description"] + ('' if data["provenance"]["humanReviewed"] else t(" · 사람 검토 전", " · Pending human review"))
     main = '<section class="primer-intro"><p class="eyebrow">03 / ' + t("규칙과 이유", "RULES & REASONS") + ' <span class="pill">' + status + '</span></p>'
-    main += '<h1>' + escaped(data["summary"]["title"]) + '</h1><p class="primer-purpose">' + escaped(data["summary"]["purpose"]) + '</p><details class="review-details"><summary>' + t("분석 기준과 확인 범위", "Analysis source and review scope") + '</summary><p class="provenance">' + escaped(provenance) + '</p></details><nav class="links" aria-label="' + t("관련 설명", "Related explanations") + '">' + ''.join(links) + '</nav></section>'
+    stages = ([t("프로젝트", "Project"), t("기능", "Capability")] if data["links"].get("atlas", {}).get("generated") else []) + [t("처리 과정", "Process"), t("조건·결과 그림", "Condition & result pictures")]
+    journey = '<ol class="reading-path" aria-label="' + t("설명 탐색 단계", "Explanation reading stages") + '">' + ''.join('<li' + (' aria-current="step"' if i == len(stages) - 1 else '') + '>' + label + '</li>' for i, label in enumerate(stages)) + '</ol>'
+    main += '<h1>' + escaped(data["summary"]["title"]) + '</h1><p class="primer-purpose">' + escaped(data["summary"]["purpose"]) + '</p>' + journey + '<details class="review-details"><summary>' + t("분석 기준과 확인 범위", "Analysis source and review scope") + '</summary><p class="provenance">' + escaped(provenance) + '</p></details><nav class="links" aria-label="' + t("관련 설명", "Related explanations") + '">' + ''.join(links) + '</nav></section>'
     if not authored or len(layout["sections"]) > 1:
         main += '<nav class="primer-contents" aria-label="' + t("설명 목차", "Explanation contents") + '">' + ''.join(contents) + '</nav>'
     main += ''.join(figures)

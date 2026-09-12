@@ -142,9 +142,9 @@ When generation finishes:
 
 1. Open the HTML link from the agent. If it does not open, find `build/source-to-sight/project.html` in your file manager and open it with a browser.
 2. Read the project purpose and inputs/results. **Analysis source and review scope** reports recorded items, not whole-project completeness or test coverage.
-3. Explore the diagram under **How do the parts work together?**. Groups show shared responsibility, not execution order. **Include supporting parts** reveals additional components.
-4. Select a generated capability to open its data flow, then a processing node for rule pictures and maintenance evidence. **Find in the capability catalog** and **Find anything** also locate capabilities.
-5. Use **Explore packages and folders** for paths or **Inspect the structure** for the full diagram. Read the analysis limits; direct connections are not exhaustive change impact, and recorded tests are not passing results.
+3. Under **Project composition**, see the execution environment, packages, storage and connections.
+4. Under **Requests and processing by capability**, read each feature's incoming request, produced result and processing boxes. Select a box to inspect that exact feature step's rules and code locations.
+5. Use **Explore packages and folders** for paths and **Open all components and connections** for the complete structural diagram. Recorded test locations are not passing results.
 
 GitHub's HTML file view is not the rendered interactive page. Download remote files and open them locally. Viewing the result needs no Node.js, Python, or web server; the interactive map needs JavaScript enabled in the browser.
 
@@ -154,8 +154,8 @@ GitHub's HTML file view is not the rendered interactive page. Download remote fi
 
 Where: first the browser, then the same agent chat.
 
-1. Find a capability in the diagram or **Find in the capability catalog**.
-2. Select a generated capability in the diagram or open **Detailed flow** from the catalog.
+1. Find a capability in the visible feature groups or **Find in the capability catalog**.
+2. Open the capability’s full process or **Detailed flow** from the catalog.
 3. If you see **Copy detail request**, click it to copy the request. An ungenerated detail does not mean the capability is absent.
 4. Paste the copied request into the agent, append the following, and send them together:
 

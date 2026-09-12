@@ -251,6 +251,22 @@ def build_site(data, source_root, output, pages=(), data_output=None, code_flow_
     for path, graph in prepared.items():
         if path != output and not graph["links"]["atlas"]["generated"]:
             raise ValueError("The map and requested detail could not establish matching source evidence.")
+    # The overview reuses each exact capability's checked public graph. Shared
+    # owners and neighboring components never become an invented feature trace.
+    if "composition" in atlas:
+        previews = []
+        for subject in prepared[output]["subjects"]:
+            if not subject["link"]["generated"]:
+                continue
+            path = (output.parent / unquote(urlsplit(subject["link"]["url"]).path)).resolve()
+            child = prepared.get(path)
+            if child is None:
+                child = s2s.read_embedded(path)
+            s2s.validate(child, "render")
+            if (child["layer"] == "behavior" and s2s.subject_matches(subject, child["subject"])
+                    and s2s.source_matches(prepared[output], child, source_root)):
+                previews.append(copy.deepcopy(child))
+        prepared[output]["featureDetails"] = previews
     outputs = {}
     for path, graph in prepared.items():
         outputs[path] = (primer.render_rules(graph, layouts[path], s2s, original=graphs[path])[0]

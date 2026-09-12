@@ -42,14 +42,14 @@ async function checkContrast(page, selector) {
         page.on('request',request => {if(/^https?:/.test(request.url()))external.push(request.url());});
         const url = name => pathToFileURL(path.join(root,language,name+'.html')).href;
         // This suite exercises the catalog's existing filters/dialogs. The
-        // diagram-first entry and direct journey have their own browser suite.
+        // The area overview and direct journey have their own browser suite.
         const ready = async () => {
           await page.waitForSelector('html[data-ready="true"]');
           await page.locator('#entry-catalog').evaluateAll(items=>items.forEach(item=>{item.open=true;}));
         };
         const selectedInView = async (focus='card') => {
           const position = await page.locator('.entry-selected').evaluate((card,focus) => {
-            const map=document.querySelector('.atlas-map-node.is-selected');
+            const map=document.querySelector('.atlas-feature-link.is-selected');
             const target=focus==='card'?(map||card):card.querySelector('.entry-select');
             const bounds = target.getBoundingClientRect();
             return {top:bounds.top,bottom:bounds.bottom,height:innerHeight,focused:document.activeElement===target&&(!map||map.dataset.featureId===card.dataset.featureId)};
@@ -67,11 +67,14 @@ async function checkContrast(page, selector) {
         assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('tab'),false);
         const data=await page.locator('#s2s-data').evaluate(el=>JSON.parse(el.textContent));
         assert.equal(await page.locator('#entry-toc,#entry-tabs,#entry-roles-tab,#entry-files-tab').count(),0);
+        assert.equal(await page.locator('.entry-project-io').evaluate(node=>node.open),false);
+        await page.locator('.entry-project-io > summary').click();
         assert(await page.locator('#entry-summary').isVisible());
         assert(!(await page.locator('#entry-context-body').isVisible()),'Do not assume the first capability');
         assert(!(await page.locator('#entry-files').isVisible()),'Full tree is on demand');
         assert(!(await page.locator('#entry-support').isVisible()),'Do not duplicate capability owners as role cards');
         for(const value of [...data.summary.inputs,...data.summary.outputs])assert((await page.locator('#entry-summary').textContent()).includes(value));
+        await page.locator('.entry-project-io > summary').click();
         assert.equal(await page.locator('.entry-capability-group').getAttribute('data-group-id'),'region-main');
         assert((await page.locator('#entry-alerts').textContent()).includes(data.analysis.unresolved[0]),'Important limits stay visible before selection');
         assert.equal(await page.locator('#entry-context').evaluate(el=>el.parentElement===document.body),true,'Dialog must not be inside its inert background');
@@ -202,7 +205,8 @@ async function checkContrast(page, selector) {
         assert.equal(params.has('camera'),false);
         await page.locator('#links a[href*="logic.html"]').click();await ready();
         await page.locator('a[data-layer="atlas"]').click();await ready();
-        assert.equal(new URL(page.url()).hash,state);
+        const restoredParams=new URLSearchParams(state.slice(1));restoredParams.set('area','region-main');
+        assert.equal(new URL(page.url()).hash,'#'+restoredParams.toString());
         assert(await page.locator('#atlas-entry').isVisible());
         assert.equal(await page.locator('#entry-search').inputValue(),'example.py');
         assert.equal(await page.locator('#entry-group').inputValue(),'region-main');

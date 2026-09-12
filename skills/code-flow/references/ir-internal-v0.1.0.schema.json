@@ -307,6 +307,32 @@
       },
       "minItems": 0
     },
+    "composition": {
+      "type": "object",
+      "properties": {
+        "regionIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+          },
+          "uniqueItems": true
+        },
+        "edgeIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "regionIds",
+        "edgeIds"
+      ],
+      "additionalProperties": false
+    },
     "structureEntries": {
       "type": "array",
       "items": {"$ref": "#/$defs/structureEntry"},
@@ -1281,6 +1307,131 @@
         "summary": {
           "type": "string",
           "minLength": 1
+        },
+        "parentId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]{0,95}$"
+        },
+        "role": {
+          "enum": [
+            "primary",
+            "support"
+          ]
+        },
+        "interface": {
+          "type": "object",
+          "properties": {
+            "inputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "activity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "actor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "entryLabel": {
+              "type": "string",
+              "minLength": 1
+            },
+            "example": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "illustrative"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "request",
+                        "record",
+                        "page",
+                        "selection"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "request",
+                        "record",
+                        "page",
+                        "selection"
+                      ]
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "input",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "inputs",
+            "activity",
+            "outputs"
+          ],
+          "additionalProperties": false
         },
         "nodeIds": {
           "type": "array",
