@@ -112,6 +112,19 @@ def render_feature_fixture(atlas, project, behavior, logic, layout, source, fold
             group.pop("role", None)
     s2s, _ = atlas.companion()
     (target / "no-summary.html").write_text(s2s.render(uncondensed), encoding="utf-8")
+    # Presentation-only cases reuse synthetic render data; no source analysis
+    # or real maintainer document is accessed by browser regression checks.
+    paths = deepcopy(result[target / "behavior.html"])
+    error = deepcopy(paths["scenarios"][0])
+    error.update(id="synthetic-error", title="Synthetic invalid input", kind="error")
+    error["steps"] = error["steps"][:1]
+    error["steps"][0].update(id="synthetic-error-step", branch="error",
+                             condition="SYNTHETIC INVALID INPUT")
+    paths["scenarios"].insert(0, error)
+    (target / "path-cases.html").write_text(s2s.render(paths), encoding="utf-8")
+    no_path = deepcopy(paths)
+    no_path["scenarios"] = []
+    (target / "no-path.html").write_text(s2s.render(no_path), encoding="utf-8")
 
 
 def render_structure_fixtures(s2s, project, source, folder):

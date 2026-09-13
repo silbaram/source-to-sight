@@ -4,6 +4,11 @@ The composition/feature overview has dedicated scope and navigation checks.
 `test_feature_overview.py` verifies exact child identity with shared owners,
 render-only evidence sanitization, retained-child reuse, stale preview omission,
 composition pruning and rejection of mismatched or private child data.
+The browser journey also checks default path entry, preserved responsibility
+boundaries and node positions across views, explicit path kinds and conditions,
+error-path reload, on-demand inspectors and the no-scenario fallback.
+Set S2S_CHROMIUM_EXECUTABLE for the feature-overview check when using an
+existing Chromium executable outside Playwright's default cache.
 After rendering the fixtures below, run:
 
 ```sh

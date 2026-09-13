@@ -22,7 +22,7 @@
     context: t('설명을 위한 문맥', 'Context only')
   };
   const scenarioLabels = {
-    typical:t('기본 경로','Typical path'), alternate:t('대안 경로','Alternate path'),
+    typical:t('정상·기본 경로','Typical path'), alternate:t('대안 경로','Alternate path'),
     error:t('오류 경로','Error path'), retry:t('재시도 경로','Retry path'), lifecycle:t('생명주기','Lifecycle')
   };
   const branchLabels = {
@@ -360,21 +360,24 @@
     // must not reach that namespace; keep original IDs for UI and evidence.
     const layoutNodes = new Map(visible.map((n,i) => [n.id,'s2s-node-'+i]));
     const layoutEdges = new Map(edges.map((e,i) => [e.id,'s2s-edge-'+i]));
-    const graph = new dagre.graphlib.Graph({multigraph:true,compound:isAtlas});
+    // The render contract guarantees disjoint primary behavior groups.
+    // Preserve those same reviewed boundaries from the feature summary.
+    const groups=data.regions.filter(r=>(isAtlas||r.role==='primary')&&r.nodeIds.some(id=>visibleIds.has(id)));
+    const grouped=groups.length>0;
+    const graph = new dagre.graphlib.Graph({multigraph:true,compound:grouped});
     // Compound groups reserve half a separation above their members. Keep
     // room for a 44px region control in either layout direction.
-    graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:isAtlas?112:46, edgesep:24, ranksep:isAtlas?112:86, marginx:40, marginy:38});
+    graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:grouped?112:46, edgesep:24, ranksep:grouped?112:86, marginx:40, marginy:38});
     graph.setDefaultEdgeLabel(() => ({}));
     for (const n of visible) {
       const height = (isAtlas?106:132) + Math.max(0, wrap(n.label, 12).length - 1) * 20;
       graph.setNode(layoutNodes.get(n.id), {width:220, height});
     }
-    const groups=isAtlas?data.regions.filter(r=>r.nodeIds.some(id=>visibleIds.has(id))):[];
     const layoutGroups=new Map(groups.map((r,i)=>[r.id,'s2s-region-'+i]));
     for(const region of groups)graph.setNode(layoutGroups.get(region.id),{width:260,height:48});
     for(const region of groups)if(layoutGroups.has(region.parentId))graph.setParent(layoutGroups.get(region.id),layoutGroups.get(region.parentId));
     for(const node of visible) {
-      const owner=regionOwner(node.id);
+      const owner=isAtlas?regionOwner(node.id):groups.find(r=>r.nodeIds.includes(node.id));
       if(owner&&layoutGroups.has(owner.id))graph.setParent(layoutNodes.get(node.id),layoutGroups.get(owner.id));
     }
     for (const e of edges) {
@@ -410,7 +413,7 @@
       const label=element('button',region.label,'map-region-label');label.type='button';
       label.setAttribute('aria-label',region.label+' · '+labels[region.displayStatus]);
       label.append(element('span',labels[region.displayStatus],'map-region-status'));
-      label.addEventListener('click',()=>showItem(region,true));block.append(label);$('region-layer').append(block);
+      label.addEventListener('click',()=>{stop();if(!isAtlas)setView('structure');showItem(region,true);});block.append(label);$('region-layer').append(block);
     }
     const layer = $('node-layer');
     layer.replaceChildren();
@@ -618,6 +621,7 @@
     for(const button of document.querySelectorAll('[data-capability-id]'))button.classList.toggle('active',button.dataset.capabilityId===selected);
     for(const button of $('atlas-regions').children)button.classList.toggle('active',button.dataset.regionId===regionId);
     for(const block of $('region-layer').children)block.classList.toggle('selected',block.dataset.id===selected);
+    updateProcessContext();
     syncLocation();
   }
   function setStep(index, preserveFocus = false) {
@@ -653,7 +657,11 @@
     $('returns').textContent = step.returns ? '↳ '+step.returns : '';
     $('previous').disabled = stepIndex === 0;
     $('next').disabled = stepIndex === scenario.steps.length-1;
-    showItem(edge || nodeMap.get(step.nodeId));
+    const item=edge || nodeMap.get(step.nodeId);
+    // Following a path should not open a drawer over the diagram on every
+    // step. Keep an explicitly opened inspector in sync.
+    if(isAtlas || $('panel').classList.contains('open'))showItem(item);
+    else selected=item.id;
     preparingStep = false;
     if (view === 'flow') {
       revealStep(!restoringLocation,isPlaying() ? startStepClock : null);
@@ -865,20 +873,30 @@
       left:stage.offsetLeft+(box.left+box.right)*targetZoom/2-((area.left+area.right)/2-frame.left),
       top:stage.offsetTop+(box.top+box.bottom)*targetZoom/2-((area.top+area.bottom)/2-frameTop)},smooth,done);
   }
+  function processHeadingBoxes(ids) {
+    if(isAtlas)return [];
+    return [...$('region-layer').children].filter(block=>
+      regionMap.get(block.dataset.id).nodeIds.some(id=>ids.includes(id))).map(block=>{
+        const label=block.querySelector('.map-region-label');
+        return {x:block.offsetLeft+label.offsetLeft,y:block.offsetTop+label.offsetTop,
+          width:label.offsetWidth,height:label.offsetHeight};
+      });
+  }
   function revealConnection(edge,smooth = false,done = null) {
     const nodes = [...document.querySelectorAll('.node')].filter(n => n.dataset.id === edge.from || n.dataset.id === edge.to);
     const group = [...document.querySelectorAll('.edge')].find(n => n.dataset.id === edge.id);
     if (!nodes.length || !group) {done?.();return;}
     const boxes=nodes.map(n=>({x:n.offsetLeft,y:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight}));
-    boxes.push(group.querySelector('.edge-path').getBBox(),group.querySelector('.edge-label-bg').getBBox());
+    boxes.push(group.querySelector('.edge-path').getBBox(),group.querySelector('.edge-label-bg').getBBox(),...processHeadingBoxes([edge.from,edge.to]));
     frameBounds({left:Math.min(...boxes.map(b=>b.x)),right:Math.max(...boxes.map(b=>b.x+b.width)),
       top:Math.min(...boxes.map(b=>b.y)),bottom:Math.max(...boxes.map(b=>b.y+b.height))},smooth,done);
   }
   function revealNode(id,smooth = false,done = null) {
     const target=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id);
     if (!target) {done?.();return;}
-    frameBounds({left:target.offsetLeft,top:target.offsetTop,right:target.offsetLeft+target.offsetWidth,
-      bottom:target.offsetTop+target.offsetHeight},smooth,done);
+    const boxes=[{x:target.offsetLeft,y:target.offsetTop,width:target.offsetWidth,height:target.offsetHeight},...processHeadingBoxes([id])];
+    frameBounds({left:Math.min(...boxes.map(b=>b.x)),top:Math.min(...boxes.map(b=>b.y)),
+      right:Math.max(...boxes.map(b=>b.x+b.width)),bottom:Math.max(...boxes.map(b=>b.y+b.height))},smooth,done);
   }
   function chooseNode(node, inspection=node) {
     stop();
@@ -914,13 +932,20 @@
     $('focus-related').textContent = focused ? t('연결 강조 해제','Clear connection focus') : t('연결된 부분에 집중','Focus on connections');
     $('focus-related').setAttribute('aria-pressed',String(focused));
     $('back').hidden=!history.length;
+    if(!isAtlas) {
+      $('diagram-title').textContent=view==='flow'?t('처리 순서 따라가기','Follow the processing path'):t('처리 구성과 연결','Processing groups and connections');
+      $('diagram-hint').hidden=false;
+      $('diagram-hint').textContent=view==='flow'?
+        t('같은 구성에서 선택한 경로를 한 단계씩 강조합니다. 오류·대안 경로는 경로 선택에서 바꿀 수 있습니다.','Follow the selected path on the same diagram. Choose a path to explore errors or alternatives.'):
+        t('요약의 묶음 안에 세부 처리를 표시합니다. 연결도 자체는 실행 순서를 뜻하지 않습니다.','Detailed processes stay inside their summary groups. Connections alone do not imply execution order.');
+    }
   }
   function setView(value) {
     if (value !== view) focusId = null;
     stop();view=value;
     if(value==='flow'&&regionId){regionId=null;draw();}
     $('player').hidden=view!=='flow'||!data.scenarios.length;
-    if(view==='flow'&&stepIndex<0)setStep(0);
+    if(view==='flow'&&(stepIndex<0||!isAtlas))setStep(Math.max(0,stepIndex));
     updateNavigation();paint();
   }
   function locationHash() {
@@ -1297,6 +1322,60 @@
     }
     return card;
   }
+  function scenarioTitle(scenario) {
+    return scenarioLabels[scenario.kind]+' · '+scenario.title;
+  }
+  function initializeProcessContext() {
+    if(isAtlas)return;
+    const groups=data.regions.filter(group=>group.role==='primary');
+    $('process-context').hidden=false;
+    $('process-groups-label').textContent=t('기능 요약과 같은 처리 묶음','Processing groups from the feature summary');
+    $('process-groups-label').hidden=!groups.length;
+    $('process-groups').setAttribute('aria-label',t('처리 묶음 선택','Choose a processing group'));
+    for(const group of groups) {
+      const button=element('button',group.label);
+      button.type='button';button.dataset.processGroup=group.id;
+      button.title=group.summary;
+      if(group.displayStatus!=='confirmed')button.append(statusBadge(group));
+      button.addEventListener('click',()=>{
+        stop();setView('structure');detail=true;$('mode').value='detail';draw();
+        showItem(group,true);
+      });
+      $('process-groups').append(button);
+    }
+    $('process-path-label').textContent=t('경로 선택','Choose a path');
+    $('process-path-control').hidden=!data.scenarios.length;
+    data.scenarios.forEach((scenario,index)=>{
+      const option=element('option',scenarioTitle(scenario));option.value=index;
+      $('process-path').append(option);
+    });
+    $('process-path').addEventListener('change',()=>{
+      stop();scenarioIndex=Number($('process-path').value);$('scenario').value=String(scenarioIndex);
+      stepIndex=-1;setView('flow');
+    });
+  }
+  function updateProcessContext() {
+    if(isAtlas)return;
+    const step=view==='flow'?currentStep():null;
+    const edge=step?stepConnection():edgeMap.get(selected);
+    const ids=edge?[edge.from,edge.to]:step?[step.nodeId]:selectedNodeId()?[selectedNodeId()]:[];
+    for(const button of $('process-groups').children) {
+      const group=regionMap.get(button.dataset.processGroup);
+      const active=group.id===selected||group.nodeIds.some(id=>ids.includes(id));
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    }
+    for(const block of $('region-layer').children) {
+      const group=regionMap.get(block.dataset.id);
+      block.classList.toggle('path-active',!!step&&group.nodeIds.some(id=>ids.includes(id)));
+    }
+    $('process-path').value=String(scenarioIndex);
+    $('process-current').hidden=!step;
+    const location=edge?nodeMap.get(edge.from).label+' → '+nodeMap.get(edge.to).label:step?nodeMap.get(step.nodeId).label:'';
+    $('process-current').textContent=step?
+      (stepIndex+1)+' / '+data.scenarios[scenarioIndex].steps.length+' · '+location+' — '+step.caption+
+      (step.condition?' · '+t('조건: ','When: ')+step.condition:''):'';
+  }
   function readingPath(current,componentOnly=false) {
     const path=element('ol',undefined,'reading-path');path.setAttribute('aria-label',t('설명 탐색 단계','Explanation reading stages'));
     const stages=[t('영역 선택','Choose area'),t('기능 선택','Choose capability'),t('처리 과정','Process'),t('조건·결과 그림','Condition & result pictures')];
@@ -1337,8 +1416,10 @@
     const link=element('a',undefined,group?'feature-step':'feature-open');
     const update=()=>{
       const url=new URL(subject.link.url,location.href);url.searchParams.set('s2s-atlas',savedAtlasLocation());
-      const state=new URLSearchParams({s2s:'1',subject:child.subject.id,view:'structure',detail:'detail',speed:'1'});
+      const scenario=child.scenarios.find(s=>s.kind==='typical')||child.scenarios[0];
+      const state=new URLSearchParams({s2s:'1',subject:child.subject.id,view:!group&&scenario?'flow':'structure',detail:'detail',speed:'1'});
       if(group){state.set('item',group.id);state.set('panel','1');}
+      else if(scenario){state.set('scenario',scenario.id);state.set('step',scenario.steps[0].id);}
       url.hash=state.toString();
       link.href=url.href;
     };
@@ -1351,7 +1432,7 @@
       for(const node of child.nodes.filter(node=>group.nodeIds.includes(node.id)&&node.displayStatus!=='confirmed')) {
         const status=statusBadge(node);status.title=node.label;link.append(status);
       }
-    } else link.textContent=t('전체 처리 보기 →','View all processing →');
+    } else link.textContent=child.scenarios.length?t('처리 순서 따라가기 →','Follow the processing path →'):t('전체 처리 구성 보기 →','View all processing groups →');
     return link;
   }
   function renderFeatureLane(subject,child) {
@@ -2004,9 +2085,9 @@
     $('search').setAttribute('aria-label',$('search').placeholder);
     $('overview').textContent=data.layer==='atlas'?t('◈ 전체 구성','◈ Overview'):t('◈ 설명 범위의 구성','◈ Scoped overview');
     $('list-title').textContent=t('구성 요소 목록','Components')+' · '+data.nodes.length;
-    $('flows-title').textContent=t('대표 흐름','WALKTHROUGHS');
-    $('structure').textContent=t('구성 보기','Structure');
-    $('workflow').textContent=t('흐름 따라가기','Walkthrough');
+    $('flows-title').textContent=t('처리 경로','PROCESSING PATHS');
+    $('structure').textContent=t('전체 연결 보기','All connections');
+    $('workflow').textContent=t('처리 순서 따라가기','Follow a path');
     $('workflow').hidden=!data.scenarios.length;$('flow-list').hidden=!data.scenarios.length;
     $('view-switch').setAttribute('aria-label',t('설명 관점','Explanation view'));
     $('story-note').textContent=t('설명 순서 · 실제 실행 기록이 아닙니다','Explanation sequence · not a recorded execution');
@@ -2061,8 +2142,10 @@
       if(!$('results').childElementCount)$('results').append(element('p',t('일치하는 구성 요소가 없습니다.','No matching components.')));
     });
     data.scenarios.forEach((scenario,index)=>{
-      const button=element('button',scenario.title);button.type='button';button.dataset.index=index;
+      const button=element('button',scenarioTitle(scenario));button.type='button';button.dataset.index=index;
       button.append(element('small',scenario.steps.length+t('개 설명 단계',' explanation steps')));
+      const first=scenario.steps[0],edge=edgeMap.get(first.edgeId),start=nodeMap.get(edge?.from||first.nodeId);
+      if(start)button.append(element('small',t('시작: ','Starts at: ')+start.label+(first.condition?' · '+first.condition:'')));
       button.addEventListener('click',()=>{scenarioIndex=index;$('scenario').value=String(index);setView('flow');setStep(0);});
       $('flows').append(button);
     });
@@ -2176,7 +2259,7 @@
     $('previous').addEventListener('click',()=>{stop();setStep(stepIndex-1);});
     $('next').addEventListener('click',()=>{stop();setStep(stepIndex+1);});
     $('play').addEventListener('click',togglePlayback);stop();
-    data.scenarios.forEach((s,i)=>{const option=element('option',s.title);option.value=i;$('scenario').append(option);});
+    data.scenarios.forEach((s,i)=>{const option=element('option',scenarioTitle(s));option.value=i;$('scenario').append(option);});
     $('scenario').addEventListener('change',()=>{stop();scenarioIndex=Number($('scenario').value);setStep(0);updateNavigation();});
     for(const region of data.regions) {
       const block=element('div',undefined,'region');
@@ -2250,6 +2333,7 @@
       if(event.key==='Escape'&&$('panel').classList.contains('open'))closePanel();
       else keyboardNavigation(event);
     });
+    initializeProcessContext();
     initializeCanvas();
     initializeAtlas();
     // Do not serialize intermediate initialization states over a supplied link.

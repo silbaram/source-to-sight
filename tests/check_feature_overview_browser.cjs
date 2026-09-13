@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const {chromium}=require(process.argv[3]||'playwright');
 (async()=>{
- const browser=await chromium.launch({headless:true});let checks=0;
+ const browser=await chromium.launch({headless:true,...(process.env.S2S_CHROMIUM_EXECUTABLE?{executablePath:process.env.S2S_CHROMIUM_EXECUTABLE}:{})});let checks=0;
  try{for(const language of ['ko','en'])for(const width of [1440,390])for(const dark of [false,true]){
   const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce'}),page=await context.newPage(),errors=[],network=[];
   page.on('pageerror',error=>errors.push(error.message));page.on('request',r=>{if(/^https?:/.test(r.url()))network.push(r.url())});
@@ -28,9 +28,46 @@ const {chromium}=require(process.argv[3]||'playwright');
   assert((await page.locator('#feature-cap-second .feature-relations').innerText()).includes(language==='ko'?'병렬':'Parallel'));
   assert.equal(await page.locator('#feature-cap-second .feature-connector').count(),0,'Parallel transfers are not serialized by card order');
   await feature.locator('a.feature-open').click();await page.waitForURL(url=>url.pathname.endsWith('/features/behavior.html'));await ready();
+  const typical=child.scenarios.find(s=>s.kind==='typical')||child.scenarios[0];
+  assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('view'),'flow');
+  assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('scenario'),typical.id);
+  assert.equal(await page.locator('#workflow').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('#panel.open').count(),0,'Following a path does not automatically cover the diagram');
+  assert.equal(await page.locator('#process-groups button').count(),2);
+  assert.equal(await page.locator('#region-layer .map-region').count(),2,'Summary groups enclose detailed nodes');
+  const boxes=await page.evaluate(()=>[...document.querySelectorAll('#region-layer .map-region')].map(group=>{
+    const data=JSON.parse(document.getElementById('s2s-data').textContent);
+    const region=data.regions.find(r=>r.id===group.dataset.id),rect=group.getBoundingClientRect();
+    return {label:group.querySelector('button').textContent,contained:region.nodeIds.every(id=>{
+      const node=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id);
+      const box=node.getBoundingClientRect();
+      return box.left>=rect.left&&box.right<=rect.right&&box.top>=rect.top+30&&box.bottom<=rect.bottom;
+    })};
+  }));
+  assert(boxes.every(box=>box.contained),'Group boxes must contain their members with room for headings');
+  assert(await page.locator('#process-current').isVisible());
+  assert(await page.evaluate(()=>{
+    const canvas=document.getElementById('canvas').getBoundingClientRect();
+    return [...document.querySelectorAll('.map-region.path-active .map-region-label')].every(label=>{
+      const box=label.getBoundingClientRect();
+      return box.left>=canvas.left&&box.right<=canvas.right&&box.top>=canvas.top&&box.bottom<=canvas.bottom;
+    });
+  }),'Active responsibility headings stay inside the diagram viewport');
+  assert((await page.locator('#process-current').innerText()).includes(typical.steps[0].caption));
+  if(language==='ko'&&!dark){
+    await page.locator('#process-context').scrollIntoViewIfNeeded();
+    await page.screenshot({path:path.resolve(process.argv[2],'process-context-'+width+'.png')});
+  }
+  const positions=await page.locator('.node').evaluateAll(nodes=>nodes.map(n=>[n.dataset.id,n.style.left,n.style.top]));
+  await page.locator('#structure').click();
+  assert.equal(await page.locator('#process-current').isVisible(),false);
+  assert.deepEqual(await page.locator('.node').evaluateAll(nodes=>nodes.map(n=>[n.dataset.id,n.style.left,n.style.top])),positions,'View switch retains spatial context');
+  await page.locator('#workflow').click();
+  await page.locator('#mode').selectOption('detail');
   assert.equal(await page.locator('#mode').inputValue(),'detail','All-processing action opens every recorded node');
   assert.equal(await page.locator('#mode option:checked').innerText(),language==='ko'?'전체 처리':'All processing');
   assert.equal(await page.locator('.node').count(),child.nodes.length);
+  await page.locator('#structure').click();
   await page.locator('#mode').selectOption('core');
   assert.equal(await page.locator('.node').count(),child.nodes.filter(node=>node.importance==='core').length);
   await page.locator('#mode').selectOption('detail');
@@ -63,6 +100,29 @@ const {chromium}=require(process.argv[3]||'playwright');
   assert.equal(await page.locator('.feature-step').count(),0,'Missing reviewed summaries do not become detailed-node copies');
   assert.equal(await page.locator('.feature-request').count(),2,'Known inputs/results remain available');
   assert.equal(await page.locator('.feature-overview a.feature-open').count(),2,'Checked detail pages remain accessible');
+  await page.goto(pathToFileURL(path.resolve(process.argv[2],language,'features/path-cases.html')).href);await ready();
+  const cases=await page.locator('#s2s-data').evaluate(node=>JSON.parse(node.textContent));
+  const errorIndex=cases.scenarios.findIndex(s=>s.kind==='error');
+  await page.locator('#process-path').selectOption(String(errorIndex));
+  assert.equal(await page.locator('#workflow').getAttribute('aria-pressed'),'true');
+  assert((await page.locator('#process-current').innerText()).includes('SYNTHETIC INVALID INPUT'));
+  assert((await page.locator('#process-current').innerText()).includes(cases.nodes.find(n=>n.id===cases.edges[0].from).label));
+  assert((await page.locator('#process-path option:checked').innerText()).startsWith(language==='ko'?'오류 경로':'Error path'));
+  assert((await page.locator('#flows').textContent()).includes('SYNTHETIC INVALID INPUT'));
+  await page.reload();await ready();
+  assert.equal(await page.locator('#process-path').inputValue(),String(errorIndex),'Selected error path survives reload');
+  await page.locator('#process-groups button').first().click();
+  assert.equal(await page.locator('#structure').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('.region-process').count(),2);
+  await page.locator('#close-panel').click();
+  await page.locator('#workflow').click();
+  assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('edge'),cases.scenarios[errorIndex].steps[0].edgeId,'Returning to the path restores its active connection');
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.goto(pathToFileURL(path.resolve(process.argv[2],language,'features/no-path.html')).href);await ready();
+  assert.equal(await page.locator('#process-path-control').isVisible(),false);
+  assert.equal(await page.locator('#workflow').isVisible(),false);
+  await page.locator('#mode').selectOption('detail');
+  assert.equal(await page.locator('.map-region').count(),2);
   assert.deepEqual(errors,[]);assert.deepEqual(network,[]);await context.close();checks++;
  }}finally{await browser.close()}
  console.log(checks+' summary/detail journeys passed: reviewed responsibilities, hidden internal steps, scoped process lists, parallel relations, node rules, return focus and offline use.');
