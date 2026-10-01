@@ -235,7 +235,7 @@ Show the reviewed scope and anything that could not be verified. Do not modify s
 
 지도 빌더는 `atlas.internal.json`과 `pages.json`을 자동 보관합니다. 요청한 상세가 있으면 `detail-<subject-id>.behavior.internal.json`, `detail-<subject-id>.logic.internal.json`, `detail-<subject-id>.layout.json`도 보관합니다. 규칙 설명을 요청하지 않았다면 logic/layout 파일은 없습니다. `<subject-id>`는 파일명에 사용할 수 있게 변환한 기능의 고유 식별자입니다. 지도만 다시 만들어도 기존 상세의 원본은 유지하며, 브라우저는 이 JSON을 불러오지 않습니다. 지도 없이 쓰는 `code-flow`는 에이전트가 위 요청의 위치에 내부 입력을 작성하며, 지도용 묶음을 자동 생성하지는 않습니다.
 
-파일은 UTF-8로 읽고 씁니다. 공유할 때는 HTML에 표시되거나 포함된 프로젝트명·경로·식별자·설명도 검토하세요. 연결된 HTML의 폴더 구조를 유지해 묶어서 전달하면 받는 사람은 내려받고 압축을 푼 뒤 `project.html`을 열 수 있습니다. **`_internal/` 전체는 공유 묶음과 정적 사이트 게시에서 제외하세요.** 소스 발췌가 포함될 수 있으며, 밑줄로 시작하는 폴더명 자체가 접근을 차단하지는 않습니다.
+파일은 UTF-8로 읽고 씁니다. 공유할 때는 HTML에 표시되거나 포함된 프로젝트명·경로·식별자·설명도 검토하세요. 펼친 상세·검색·도움말·숨김 데이터·render JSON에 코드 본문·발췌·원시 구현 식이 없는지 확인하고, 조건과 동작은 자연어로 설명합니다. 근거는 위치와 검증 상태로 표시하며 기능상 필요한 명령 복사는 유지합니다. 연결된 HTML의 폴더 구조를 유지해 묶어서 전달하면 받는 사람은 내려받고 압축을 푼 뒤 `project.html`을 열 수 있습니다. **`_internal/` 전체는 공유 묶음과 정적 사이트 게시에서 제외하세요.** 소스 발췌가 포함될 수 있으며, 밑줄로 시작하는 폴더명 자체가 접근을 차단하지는 않습니다.
 
 화면만 다시 만들 때는 기존 분석을 재사용할 수 있습니다.
 

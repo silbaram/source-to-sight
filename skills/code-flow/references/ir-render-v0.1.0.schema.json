@@ -971,6 +971,23 @@
       ],
       "additionalProperties": false
     },
+    "operation": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": ["receive", "validate", "decide", "transform", "read", "write", "request", "publish", "wait", "respond", "stop"]
+        },
+        "targetKind": {
+          "enum": ["database", "file", "api", "queue", "cache", "service"]
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["kind"],
+      "additionalProperties": false
+    },
     "node": {
       "type": "object",
       "properties": {
@@ -990,6 +1007,9 @@
         "label": {
           "type": "string",
           "minLength": 1
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
         },
         "roleLabel": {
           "type": "string",
@@ -1104,6 +1124,11 @@
                 {
                   "required": [
                     "verificationNote"
+                  ]
+                },
+                {
+                  "required": [
+                    "operation"
                   ]
                 }
               ]

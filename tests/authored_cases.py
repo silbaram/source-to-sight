@@ -21,6 +21,7 @@ def story_case(language="en"):
                                 "inputs": [t("출고 여부", "Shipment state")], "outputs": ["cancelled", "manual_review"]})
     behavior["regeneration"]["question"] = behavior["subject"]["question"]
     behavior["nodes"][0].update({"label": "check", "roleLabel": t("취소 판단", "Cancellation gate"), "summary": t("출고 여부로 처리 경로를 고릅니다.", "Chooses an outcome from shipment state.")})
+    behavior["nodes"][0]["codeName"] = "CancellationService.check"
     behavior["nodes"][0]["actions"][0]["plainText"] = t("출고 여부를 확인합니다.", "Check whether the order has shipped.")
     behavior["nodes"][1].update({"label": t("요청자", "Caller"), "roleLabel": t("취소 요청", "Request cancellation"), "summary": t("주문의 출고 상태를 전달합니다.", "Supplies the order's shipment state.")})
     behavior["edges"][0]["label"] = t("취소 판단 요청", "Request cancellation decision")

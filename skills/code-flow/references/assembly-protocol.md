@@ -43,6 +43,7 @@ Use the [internal schema](ir-internal-v0.1.0.schema.json) and [renderer contract
 | `analysis` | Actual searched files/areas, unresolved alternatives, next attempts; complete only for the stated scope |
 | `summary` | Purpose, inputs/results, decision-relevant limitations in the output language |
 | `nodes`, `actions` | Role, readable label/summary, optional identifier, importance, evidence and claim-specific review |
+| `nodes[].operation` | Optional reviewed action `kind`, resource `targetKind` and plain-language `target`; distinguish database/file writes, API requests and other work without guessing from identifiers |
 | `edges` | Existing endpoints, semantic type/derivation, evidence of the relationship itself |
 | `scenarios` | Optional; every step has exactly one node or edge reference and independently checked caption. Use `kind`, step `branch`, and optional `condition`/`execution` for the path semantics in [complex behavior](complex-behavior.md) |
 | `stateTransitions` | Owner, before/after, exact trigger condition, explanation and evidence |
@@ -51,6 +52,14 @@ Use the [internal schema](ir-internal-v0.1.0.schema.json) and [renderer contract
 | `links` | Relative URLs for matching subjects/scopes/languages; precise generation request if missing |
 
 For a factual node include `contextOnly:false`, `actions:[]`, `importance:core|detail`, and the shared claim fields (`confidence`, `supportStatus`, `verificationNote`, `evidenceIds`). A context-only actor omits those claim fields. The schema lists the finite node/edge/derivation vocabulary; do not invent a profile-specific variant.
+
+`operation` is independent of structural node `kind` and belongs to the node's
+existing evidence-backed claim. Its only required field is `kind`; add
+`targetKind` and `target` only when they are established. Context-only nodes cannot
+carry it. Follow the action/resource vocabulary in the [explainer guide](explainer-guide.md).
+Older inputs without the field remain valid and keep their generic role display;
+neither rendering nor assembly classifies them from names. Review all three
+fields when reusing or updating a node's evidence.
 
 `confidence` and `supportStatus` remain the author's semantic decisions. Reread the evidence against every claim, including captions. File hash equality does not justify changing uncertain to supported. Set `provenance.description` to what was actually performed and keep `humanReviewed:false` until a human has reviewed this result. Update or remove draft placeholders before presenting a finished explanation.
 
@@ -66,9 +75,17 @@ python3 "$SKILL_ROOT/scripts/s2s.py" inspect "$SOURCE_ROOT/docs/flows/subject-ke
 
 Use the generated subject key or the user's explicit destination. For multiple languages, use separate suffixed paths. `build` checks the current source commit, rereads every evidence range/hash, refreshes working-tree cleanliness, validates/prunes unsupported claims, and removes anchors before rendering. It rejects output collisions with another repository/subject/scope/language and keeps internal/render/HTML files separate. Source edits within the same commit become unverified through the existing evidence check; a different or unverifiable commit requires renewed discovery.
 
-The scripts cannot certify arbitrary prose or independently enforce all target-code secrecy. Inspect the full output, including embedded JSON, for source excerpts and original target prompts. The user's explanation question can remain as regeneration metadata; target-project prompt templates cannot.
+Use plain language for every display field, including conditions, verification notes, examples and regeneration descriptions. Preserve exact decision meaning without copying raw comparisons, assignments, calls or other implementation expressions. Evidence disclosures contain locations and verification status, never source excerpts. Functional CLI/generation-copy controls may retain the command needed for their task.
+
+The scripts cannot certify arbitrary prose or independently enforce all target-code secrecy. Inspect the full output, including render JSON, hidden content, search results, tooltips and expanded disclosures, for source excerpts, raw implementation expressions and original target prompts. The user's explanation question can remain as regeneration metadata; target-project prompt templates cannot. Keep exact verification anchors only in private authoring inputs.
 
 Open the HTML, select nodes/edges and any state/region entries, step through scenarios if present, and check a narrow viewport. Confirm labels fit, connections touch the correct nodes, scope/uncertainty are visible, and generated links reach the same subject. A partially verified page is a valid deliverable when honestly labeled.
+
+For behavior pages, check the initial processing cards without arrows and the
+optional connection view. Verify that operation labels, resource icons and target
+names agree with the source, remain legible on phones, and do not conceal the
+node's uncertainty. Card position must not imply runtime order; authored scenarios
+remain the source for an ordered walkthrough.
 
 Create related pages before refreshing their parent links. For `--explain`, follow the [rule checklist](rule-checklist.md), use `author.py explain` to draft from the internal behavior graph, and locate the actual installed `visual-primer` source-rules instructions. The pair builder preserves the behavior's facts, rereads evidence, validates both destinations, and renders both pages before replacing either file. Its newly prepared pages resolve each other's links without relying on old HTML. Missing sibling skills do not prevent the behavior page. Generated HTML can only navigate or copy a generation request; it cannot launch a model or create a new page offline.
 

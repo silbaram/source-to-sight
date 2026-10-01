@@ -52,6 +52,8 @@
   let cameraMotion = null, cameraFrame = null, preparingStep = false;
   let playbackRate = 1, navigationReady = false, restoringLocation = false;
   const isAtlas=data.layer==='atlas';
+  let showConnections=false;
+  const processBoard=()=>!isAtlas&&view==='structure'&&!showConnections;
   if(isAtlas)view='overview';
   const regionMap=new Map(data.regions.map(r=>[r.id,r]));
   const subjectMap=new Map(data.subjects.map(s=>[s.id,s.scope?s:{...nodeMap.get(s.nodeId),...s}]));
@@ -101,6 +103,17 @@
   }
   function statusBadge(item) {
     return element('span', labels[item.displayStatus], 'pill ' + item.displayStatus);
+  }
+  function edgePresentation(edge) {
+    const family=['registers','depends-on'].includes(edge.type)?'structural':
+      ['passes-data','reads','writes','emits','consumes'].includes(edge.type)?'data':'normal';
+    const names={invokes:t('호출','Call'),dispatches:t('실행 전달','Dispatch'),delegates:t('위임','Delegate'),
+      transitions:t('상태 변경','State change'),'passes-data':t('데이터 전달','Data transfer'),
+      reads:t('읽기','Read'),writes:t('저장','Write'),emits:t('발행','Publish'),consumes:t('수신','Receive'),
+      registers:t('등록','Register'),'depends-on':t('의존','Dependency')};
+    const uncertain=edge.displayStatus!=='confirmed',typeLabel=names[edge.type];
+    const status=uncertain?(edge.displayStatus==='unverified'?t('? 위치 미확인 · ','? Unverified · '):t('? 추정 · ','? Uncertain · ')):'';
+    return {family,uncertain,typeLabel,label:status+typeLabel+' · '+edge.label};
   }
   function list(parent, title, items, seen) {
     const values=seen ? items.filter(value=>!seen.has(value)) : items;
@@ -172,6 +185,13 @@
     const title = element('h2', item.label || item.plainText || item.caption);
     title.id = 'panel-title';
     body.append(title);
+    if(edgeMap.has(item.id))body.append(element('p',edgePresentation(item).typeLabel,'inspection-relation'));
+    if(nodeMap.has(item.id)&&!isAtlas) {
+      const info=operationInfo(item),operation=element('p',undefined,'inspection-operation');
+      operation.append(operationIcon(info.icon),element('strong',info.label));
+      if(info.target)operation.append(element('span',info.target));
+      body.append(operation);
+    }
     const description = edgeMap.has(item.id) ? nodeMap.get(item.from).label + ' → ' + nodeMap.get(item.to).label : item.summary;
     if (description) body.append(element('p', description, 'description'));
     if(nodeMap.has(item.id))renderNodeGuide(body,item);
@@ -181,14 +201,14 @@
       for(const id of item.nodeIds) {
         const node=nodeMap.get(id);
         const button=entryButton('',()=>chooseNode(node),'region-process');button.dataset.nodeId=id;
-        button.append(element('strong',node.label),element('small',node.roleLabel));
+        const info=operationInfo(node);
+        button.append(element('strong',node.label),element('small',info.label+(info.target?' · '+info.target:' · '+node.roleLabel)));
         processes.append(button);
       }
       body.append(processes);
     }
     const reference=element('details',undefined,'node-reference');
     reference.append(element('summary',t('유지보수 · 구현 위치와 근거','Maintenance · implementation and evidence')));
-    if (item.codeName) reference.append(element('p', item.codeName, 'code-name'));
     // Different fields can carry the same sentence. Keep distinct review notes,
     // but do not repeat text already visible in this item's title or summary.
     const normalize = text => (text || '').replace(/\s+/g,' ').trim();
@@ -254,6 +274,7 @@
       if (nodeMap.has(item.id)) revealNode(item.id,!restoringLocation);
       else if (edgeMap.has(item.id)) revealConnection(item,!restoringLocation);
       else if(subjectMap.has(item.id))revealNode(item.nodeId,!restoringLocation);
+      else if(!isAtlas&&regionMap.has(item.id))revealRegion(item.id,!restoringLocation);
       else moveCamera({...readCamera(),pageTop:mapPageTop()},!restoringLocation);
     }
     updateNavigation();positionPanel();paint();
@@ -346,6 +367,90 @@
     for (let i = 0; i < characters.length; i += length) lines.push(characters.slice(i, i + length).join(''));
     return lines.length ? lines : [''];
   }
+  function operationInfo(node) {
+    const operation=node.operation||{kind:'process'};
+    const names={process:t('처리','Process'),receive:t('입력 받기','Receive'),validate:t('검증','Validate'),
+      decide:t('조건 판단','Decision'),transform:t('변환·조립','Transform'),read:t('데이터 읽기','Read data'),
+      write:t('데이터 저장','Write data'),request:t('서비스 요청','Service request'),publish:t('메시지 발행','Publish'),
+      wait:t('대기','Wait'),respond:t('결과 전달','Respond'),stop:t('처리 종료','Stop')};
+    let label=names[operation.kind];
+    if(['read','write'].includes(operation.kind)) {
+      const stores={database:t('DB','Database'),file:t('파일','File'),cache:t('캐시','Cache')};
+      if(stores[operation.targetKind])label=stores[operation.targetKind]+(operation.kind==='read'?t(' 읽기',' read'):t(' 저장',' write'));
+    }
+    if(operation.kind==='request'&&operation.targetKind==='api')label=t('API 요청','API request');
+    const icon=operation.targetKind&&['database','file','api','queue','cache'].includes(operation.targetKind)?operation.targetKind:operation.kind;
+    return {...operation,label,icon};
+  }
+  function operationIcon(kind) {
+    const drawings={
+      database:['M4 6c0-4 16-4 16 0s-16 4-16 0','M4 6v12c0 4 16 4 16 0V6','M4 12c0 4 16 4 16 0'],
+      file:['M6 3h8l4 4v14H6Z','M14 3v5h4','M9 12h6M9 16h6'],
+      api:['M3 12h18M12 3c-6 6-6 12 0 18 6-6 6-12 0-18','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18'],
+      queue:['M3 5h14v4H3ZM5 11h14v4H5ZM7 17h14v4H7Z'],
+      cache:['M4 6h16v13H4Z','M7 3h10M8 10h8M8 14h5'],
+      decide:['M12 2 22 12 12 22 2 12Z','M12 7v6M12 16v1'],
+      validate:['M12 3 20 6v6c0 4-5 8-8 9-3-1-8-5-8-9V6Z','m8 12 3 3 5-6'],
+      transform:['M3 4h7v7H3ZM14 13h7v7h-7Z','M15 4h5v5M4 15v5h5'],
+      receive:['M4 4h16v16H4Z','M4 13h5l2 3h2l2-3h5'],
+      read:['M3 5h8l1 2 1-2h8v15h-8l-1 1-1-1H3Z','M12 7v14'],
+      write:['M4 3h14l3 3v15H4Z','M8 3v6h9V3M8 21v-7h9v7'],
+      request:['M7 4h10v16H7Z','M10 7h4M10 17h4'],
+      publish:['M3 7h18v13H3Z','m3 7 9 7 9-7M7 3h10'],
+      wait:['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18','M12 7v5l4 2'],
+      respond:['M4 5h16v12h-7l-5 4v-4H4Z','M8 9h8M8 13h5'],
+      stop:['m8 3 8 0 5 5v8l-5 5H8l-5-5V8Z','M8 8h8v8H8Z'],
+      process:['M4 4h16v16H4Z','M8 8h8M8 12h8M8 16h5']
+    };
+    const icon=svg('svg',{class:'node-operation-icon',viewBox:'0 0 24 24','aria-hidden':'true',fill:'none',stroke:'currentColor','stroke-width':1.6,'stroke-linecap':'round','stroke-linejoin':'round'});
+    for(const path of drawings[kind]||drawings.process)icon.append(svg('path',{d:path}));
+    return icon;
+  }
+  function renderProcessNode(node) {
+    const info=operationInfo(node),button=element('button',undefined,'node '+node.displayStatus+(isAtlas?'':' semantic-node'));
+    button.type='button';button.dataset.id=node.id;button.dataset.kind=node.kind;
+    button.setAttribute('aria-label',node.label+' — '+(isAtlas?'':info.label+' · ')+labels[node.displayStatus]);
+    if(!isAtlas) {
+      button.dataset.operationKind=info.kind;
+      if(info.targetKind)button.dataset.targetKind=info.targetKind;
+      const heading=element('span',undefined,'node-operation');
+      heading.append(operationIcon(info.icon),element('span',info.label,'node-operation-label'));
+      button.append(heading);
+    }
+    button.append(element('span',node.roleLabel,'node-role'),element('span',node.label,'node-label'));
+    if(!isAtlas) {
+      if(info.target)button.append(element('span',t('대상 · ','Target · ')+info.target,'node-operation-target'));
+      button.append(element('span',node.summary,'node-description'));
+      const rules=data.rules.filter(rule=>rule.nodeIds.includes(node.id));
+      button.append(element('span',rules.length?t('판단 기준 ','Decision rules: ')+rules.length+t('개 · 설명 열기',' · open explanation'):t('처리 설명 열기','Open explanation'),'node-guide-label'));
+    }
+    if(isAtlas||node.displayStatus!=='confirmed')button.append(element('span',labels[node.displayStatus],'node-status '+node.displayStatus));
+    button.addEventListener('click',()=>{stop();showItem(node,true);});
+    return button;
+  }
+  function arrangeProcessBoard(graph,visible,groups,layoutNodes,layoutGroups,nodeWidth) {
+    const columns=$('canvas').clientWidth>=760?2:1,gap=20,padding=20;
+    const width=columns*nodeWidth+(columns-1)*gap+padding*2;
+    const assigned=new Set(groups.flatMap(group=>group.nodeIds));
+    const sections=groups.map(group=>({group,nodes:visible.filter(node=>group.nodeIds.includes(node.id))}));
+    const ungrouped=visible.filter(node=>!assigned.has(node.id));
+    if(ungrouped.length)sections.push({nodes:ungrouped});
+    let top=20;
+    for(const section of sections) {
+      let rowTop=top+(section.group?76:padding);
+      for(let start=0;start<section.nodes.length;start+=columns) {
+        const row=section.nodes.slice(start,start+columns);
+        const height=Math.max(...row.map(node=>graph.node(layoutNodes.get(node.id)).height));
+        row.forEach((node,index)=>Object.assign(graph.node(layoutNodes.get(node.id)),{
+          x:20+padding+index*(nodeWidth+gap)+nodeWidth/2,y:rowTop+height/2,height}));
+        rowTop+=height+gap;
+      }
+      const height=rowTop-top-gap+padding;
+      if(section.group)Object.assign(graph.node(layoutGroups.get(section.group.id)),{x:20+width/2,y:top+height/2,width,height});
+      top+=height+28;
+    }
+    Object.assign(graph.graph(),{width:width+40,height:top});
+  }
   function draw(anchorId) {
     clearTransfer();
     const canvas = $('canvas');
@@ -354,6 +459,14 @@
     const before = anchorId ? anchor() : null;
     const mobile = canvas.clientWidth < 600;
     const visible = visibleNodes();
+    const board=processBoard();
+    canvas.classList.toggle('process-board',board);
+    $('connections').toggleAttribute('hidden',board);
+    const layer=$('node-layer'),nodeWidth=isAtlas?220:288;
+    layer.replaceChildren();
+    const nodeElements=new Map(visible.map(node=>{
+      const button=renderProcessNode(node);button.style.width=nodeWidth+'px';layer.append(button);return [node.id,button];
+    }));
     const visibleIds = new Set(visible.map(n => n.id));
     const edges = data.edges.filter(e => visibleIds.has(e.from) && visibleIds.has(e.to));
     // Graphlib uses object keys internally. Valid IR IDs such as "constructor"
@@ -370,8 +483,8 @@
     graph.setGraph({rankdir:mobile ? 'TB' : 'LR', nodesep:grouped?112:46, edgesep:24, ranksep:grouped?112:86, marginx:40, marginy:38});
     graph.setDefaultEdgeLabel(() => ({}));
     for (const n of visible) {
-      const height = (isAtlas?106:132) + Math.max(0, wrap(n.label, 12).length - 1) * 20;
-      graph.setNode(layoutNodes.get(n.id), {width:220, height});
+      const height = isAtlas?106+Math.max(0,wrap(n.label,12).length-1)*20:nodeElements.get(n.id).offsetHeight;
+      graph.setNode(layoutNodes.get(n.id), {width:nodeWidth, height});
     }
     const layoutGroups=new Map(groups.map((r,i)=>[r.id,'s2s-region-'+i]));
     for(const region of groups)graph.setNode(layoutGroups.get(region.id),{width:260,height:48});
@@ -381,10 +494,12 @@
       if(owner&&layoutGroups.has(owner.id))graph.setParent(layoutNodes.get(node.id),layoutGroups.get(owner.id));
     }
     for (const e of edges) {
-      graph.setEdge(layoutNodes.get(e.from), layoutNodes.get(e.to), {width:Math.min(200, Math.max(80, Array.from(e.label).length * 12)),
-        height:wrap(e.label, 16).length * 14 + 10, labelpos:'c'}, layoutEdges.get(e.id));
+      const label=edgePresentation(e).label;
+      graph.setEdge(layoutNodes.get(e.from), layoutNodes.get(e.to), {width:Math.min(220, Math.max(100, Array.from(label).length * 12)),
+        height:wrap(label, 16).length * 14 + 12, labelpos:'c'}, layoutEdges.get(e.id));
     }
     dagre.layout(graph);
+    if(board)arrangeProcessBoard(graph,visible,groups,layoutNodes,layoutGroups,nodeWidth);
     const layout = graph.graph();
     const width = Math.max(320, layout.width || 0);
     const height = Math.max(260, layout.height || 0);
@@ -397,10 +512,13 @@
     connections.setAttribute('width', width);
     connections.setAttribute('height', height);
     const defs = svg('defs');
-    for (const [name,color] of [['normal','var(--blue)'],['uncertain','var(--amber)'],['structural','var(--violet)'],['data','var(--data)'],['active','var(--accent)']]) {
+    for (const family of ['normal','data','structural'])for(const uncertain of [false,true]) {
+      const name=(uncertain?'uncertain-':'')+family;
+      const color=uncertain?'var(--edge-warning)':{normal:'var(--edge-call)',data:'var(--edge-data)',structural:'var(--edge-dependency)'}[family];
       const marker = svg('marker', {id:'arrow-'+name, markerWidth:10, markerHeight:8, refX:9, refY:4,
         orient:'auto', markerUnits:'userSpaceOnUse', viewBox:'0 0 10 8'});
-      marker.append(svg('path', {d:'M 0 0 L 10 4 L 0 8 Z', fill:color}));
+      marker.append(svg('path', family==='structural'?{d:'M 1 1 L 8 4 L 1 7',fill:'none',stroke:color,'stroke-width':1.8,'stroke-linejoin':'round'}:
+        {d:'M 0 0 L 10 4 L 0 8 Z', fill:color}));
       defs.append(marker);
     }
     connections.append(defs);
@@ -415,15 +533,12 @@
       label.append(element('span',labels[region.displayStatus],'map-region-status'));
       label.addEventListener('click',()=>{stop();if(!isAtlas)setView('structure');showItem(region,true);});block.append(label);$('region-layer').append(block);
     }
-    const layer = $('node-layer');
-    layer.replaceChildren();
-    for (const e of edges) {
+    for (const e of board?[]:edges) {
       const result = graph.edge({v:layoutNodes.get(e.from), w:layoutNodes.get(e.to), name:layoutEdges.get(e.id)});
-      const relation = ['registers','depends-on'].includes(e.type) ? 'structural' :
-        ['passes-data','reads','writes','emits','consumes'].includes(e.type) ? 'data' : 'normal';
-      const color = e.displayStatus !== 'confirmed' ? 'uncertain' : relation;
+      const presentation=edgePresentation(e),relation=presentation.family;
+      const color=(presentation.uncertain?'uncertain-':'')+relation;
       const group = svg('g', {class:'edge '+e.displayStatus+' '+relation, tabindex:0, role:'button',
-        'data-id':e.id, 'aria-label':nodeMap.get(e.from).label+' → '+nodeMap.get(e.to).label+': '+e.label});
+        'data-id':e.id, 'aria-label':nodeMap.get(e.from).label+' → '+nodeMap.get(e.to).label+': '+presentation.label});
       let routed = result.points;
       // Dagre 3.1.1 reserves space for self-edges, but its returned self-edge
       // points do not meet the node boundary. Route within that reserved space.
@@ -442,8 +557,9 @@
       const points = routed.map(p => ({x:p.x+dx, y:p.y+dy}));
       const path = points.map((p,i) => (i ? 'L ' : 'M ')+p.x+' '+p.y).join(' ');
       group.append(svg('path', {class:'edge-hit',d:path}));
+      group.append(svg('path', {class:'edge-halo',d:path,'aria-hidden':'true'}));
       group.append(svg('path', {class:'edge-path',d:path,'marker-end':'url(#arrow-'+color+')', 'data-marker':color}));
-      const lines = wrap(e.label, 16);
+      const lines = wrap(presentation.label, 16);
       group.append(svg('rect', {class:'edge-label-bg',x:result.x+dx-result.width/2-5,
         y:result.y+dy-result.height/2,width:result.width+10,height:result.height}));
       const label = svg('text', {class:'edge-label',x:result.x+dx,y:result.y+dy-(lines.length-1)*7+3});
@@ -460,20 +576,9 @@
     }
     for (const n of visible) {
       const position = graph.node(layoutNodes.get(n.id));
-      const button = element('button', undefined, 'node '+n.displayStatus);
-      button.type = 'button'; button.dataset.id = n.id; button.dataset.kind = n.kind;
+      const button = nodeElements.get(n.id);
       button.style.cssText = 'left:'+(position.x+dx-position.width/2)+'px;top:'+
         (position.y+dy-position.height/2)+'px;width:'+position.width+'px;height:'+position.height+'px';
-      button.setAttribute('aria-label', n.label+' — '+labels[n.displayStatus]);
-      button.append(element('span',n.roleLabel,'node-role'),element('span',n.label,'node-label'));
-      if (isAtlas&&n.codeName) {const code=element('span',n.codeName,'node-code');code.title=n.codeName;button.append(code);}
-      if(!isAtlas) {
-        const rules=data.rules.filter(rule=>rule.nodeIds.includes(n.id));
-        button.append(element('span',rules.length?t('규칙 ','Rules: ')+rules.length+' · '+t('설명 패널 열기','open explanation panel'):t('데이터·코드 위치 패널 열기','Open data and code location panel'),'node-guide-label'));
-      }
-      if(isAtlas||n.displayStatus!=='confirmed')button.append(element('span',labels[n.displayStatus],'node-status '+n.displayStatus));
-      button.addEventListener('click', () => {stop();showItem(n,true);});
-      layer.append(button);
     }
     graphWidth = width; graphHeight = height;
     if (!laidOut) { fit(true); laidOut = true; }
@@ -578,7 +683,13 @@
     }
     frame(performance.now());
   }
+  function selectedProcessRegion() {
+    if(isAtlas||view!=='structure')return null;
+    return regionMap.get(selected)||data.regions.find(group=>
+      group.role==='primary'&&group.nodeIds.includes(selectedNodeId()));
+  }
   function paint() {
+    const selectedRegion=selectedProcessRegion();
     const step = view === 'flow' ? currentStep() : null;
     const edge = stepConnection();
     const activeEdge = edge?.id;
@@ -592,7 +703,7 @@
       node.classList.toggle('dim', !!neighbors && !neighbors.has(node.dataset.id));
       node.classList.toggle('selected',node.dataset.id === (subjectMap.get(selected)?.nodeId||selected));
       node.classList.toggle('active',activeNodes.has(node.dataset.id));
-      node.classList.toggle('group-member',!isAtlas&&!!regionMap.get(selected)?.nodeIds.includes(node.dataset.id));
+      node.classList.toggle('group-member',!!selectedRegion?.nodeIds.includes(node.dataset.id));
       node.classList.toggle('flow-origin',node.dataset.id === edge?.from);
       node.classList.toggle('flow-destination',node.dataset.id === edge?.to);
       node.classList.toggle('explaining',isPlaying() && !cameraMotion && !preparingStep && activeNodes.has(node.dataset.id) && !canAnimateTransfer(edge) && !reducedMotion.matches);
@@ -604,23 +715,29 @@
       const relation = edgeMap.get(node.dataset.id);
       node.classList.toggle('dim', !!neighbors && relation.from !== focusId && relation.to !== focusId);
       node.classList.toggle('active',active || node.dataset.id === selected);
-      const path = node.querySelector('.edge-path');
-      path.setAttribute('marker-end','url(#arrow-'+((active || node.dataset.id === selected) &&
-        relation.displayStatus === 'confirmed' ? 'active' : path.dataset.marker)+')');
+      node.setAttribute('aria-pressed',String(active || node.dataset.id === selected));
+      node.setAttribute('aria-current',active?'step':'false');
     }
     const transfer = $('flow-transfer');
     transfer.hidden = !edge;
     transfer.replaceChildren();
     if (edge) {
+      const presentation=edgePresentation(edge);
+      transfer.dataset.relation=presentation.family;transfer.dataset.unverified=String(presentation.uncertain);
+      labelRelationDirection(transfer,nodeMap.get(edge.from).label,nodeMap.get(edge.to).label);
       transfer.append(element('span',nodeMap.get(edge.from).label,'transfer-from'),
-        element('span','→','transfer-arrow'),element('span',nodeMap.get(edge.to).label,'transfer-to'),
-        element('span','· '+edge.label,'transfer-relation'),statusBadge(edge));
+        overviewRelationArrow(presentation,'transfer-arrow'),element('span',nodeMap.get(edge.to).label,'transfer-to'),
+        element('span','· '+presentation.typeLabel+' · '+edge.label,'transfer-relation'),statusBadge(edge));
     }
     syncTransfer(edge);
     syncPlayback();
     for(const button of document.querySelectorAll('[data-capability-id]'))button.classList.toggle('active',button.dataset.capabilityId===selected);
     for(const button of $('atlas-regions').children)button.classList.toggle('active',button.dataset.regionId===regionId);
-    for(const block of $('region-layer').children)block.classList.toggle('selected',block.dataset.id===selected);
+    for(const block of $('region-layer').children) {
+      const active=block.dataset.id===(isAtlas?selected:selectedRegion?.id);
+      block.classList.toggle('selected',active);
+      block.querySelector('.map-region-label').setAttribute('aria-pressed',String(active));
+    }
     updateProcessContext();
     syncLocation();
   }
@@ -746,7 +863,7 @@
     applyZoom();
     canvas.scrollLeft = cx*zoom+stage.offsetLeft-canvas.clientWidth/2;
     canvas.scrollTop = cy*zoom+stage.offsetTop-canvas.clientHeight/2;
-    if ($('panel').classList.contains('open') && selectedNodeId()) revealNode(selectedNodeId());
+    if ($('panel').classList.contains('open') && selectedNodeId()) revealNode(selectedNodeId(),false,null,true);
     updateMini();
   }
   function fit(initial = false) {
@@ -757,10 +874,14 @@
     applyZoom();
     canvas.scrollLeft=$('stage').offsetLeft+(graphWidth*zoom-canvas.clientWidth)/2;
     canvas.scrollTop=$('stage').offsetTop+(graphHeight*zoom-canvas.clientHeight)/2;
+    if(initial&&processBoard()) {
+      canvas.scrollLeft=$('stage').offsetLeft-12;
+      canvas.scrollTop=$('stage').offsetTop-12;
+    }
     if(initial&&!isAtlas) {
       const first=visibleNodes()[0];
       const target=[...$('node-layer').children].find(node=>node.dataset.id===first?.id);
-      if(target) {
+      if(target&&!processBoard()) {
         if(canvas.clientWidth<600)canvas.scrollTop=$('stage').offsetTop+target.offsetTop*zoom-30;
         else canvas.scrollLeft=$('stage').offsetLeft+target.offsetLeft*zoom-30;
       }
@@ -857,7 +978,7 @@
     else if (frame.bottom>bottom) pageTop+=frame.bottom-bottom;
     return Math.max(0,Math.min(document.documentElement.scrollHeight-innerHeight,pageTop));
   }
-  function frameBounds(box,smooth,done) {
+  function frameBounds(box,smooth,done,preserveZoom=false) {
     const canvas=$('canvas'),frame=canvas.getBoundingClientRect(),stage=$('stage');
     const pageTop=mapPageTop(),area=visibleFrame(pageTop),frameTop=frame.top+scrollY-pageTop;
     const left=frame.left+stage.offsetLeft+box.left*zoom-canvas.scrollLeft;
@@ -868,10 +989,11 @@
       return;
     }
     const ratio=Math.min((area.right-area.left)/width,(area.bottom-area.top)/height,1);
-    const targetZoom=ratio>0 && ratio<1 ? Math.max(.2,zoom*ratio*.94) : zoom;
+    const targetZoom=!preserveZoom && ratio>0 && ratio<1 ? Math.max(processBoard() ? .85 : .2,zoom*ratio*.94) : zoom;
+    const oversized=processBoard()&&((box.bottom-box.top)*targetZoom>area.bottom-area.top||(box.right-box.left)*targetZoom>area.right-area.left);
     moveCamera({zoom:targetZoom,pageTop,
-      left:stage.offsetLeft+(box.left+box.right)*targetZoom/2-((area.left+area.right)/2-frame.left),
-      top:stage.offsetTop+(box.top+box.bottom)*targetZoom/2-((area.top+area.bottom)/2-frameTop)},smooth,done);
+      left:oversized?stage.offsetLeft+box.left*targetZoom-(area.left-frame.left):stage.offsetLeft+(box.left+box.right)*targetZoom/2-((area.left+area.right)/2-frame.left),
+      top:oversized?stage.offsetTop+box.top*targetZoom-(area.top-frameTop):stage.offsetTop+(box.top+box.bottom)*targetZoom/2-((area.top+area.bottom)/2-frameTop)},smooth,done);
   }
   function processHeadingBoxes(ids) {
     if(isAtlas)return [];
@@ -885,18 +1007,32 @@
   function revealConnection(edge,smooth = false,done = null) {
     const nodes = [...document.querySelectorAll('.node')].filter(n => n.dataset.id === edge.from || n.dataset.id === edge.to);
     const group = [...document.querySelectorAll('.edge')].find(n => n.dataset.id === edge.id);
-    if (!nodes.length || !group) {done?.();return;}
+    if (!nodes.length) {done?.();return;}
     const boxes=nodes.map(n=>({x:n.offsetLeft,y:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight}));
-    boxes.push(group.querySelector('.edge-path').getBBox(),group.querySelector('.edge-label-bg').getBBox(),...processHeadingBoxes([edge.from,edge.to]));
+    if(group)boxes.push(group.querySelector('.edge-path').getBBox(),group.querySelector('.edge-label-bg').getBBox());
+    boxes.push(...processHeadingBoxes([edge.from,edge.to]));
     frameBounds({left:Math.min(...boxes.map(b=>b.x)),right:Math.max(...boxes.map(b=>b.x+b.width)),
       top:Math.min(...boxes.map(b=>b.y)),bottom:Math.max(...boxes.map(b=>b.y+b.height))},smooth,done);
   }
-  function revealNode(id,smooth = false,done = null) {
+  function revealRegion(id,smooth = false,done = null) {
+    const block=[...$('region-layer').children].find(region=>region.dataset.id===id);
+    if(!block){revealNode(regionMap.get(id)?.nodeIds[0],smooth,done);return;}
+    // Include the complete responsibility and space for its elevation shadow,
+    // rather than centering only its first processing node.
+    const margin=24;
+    frameBounds({left:block.offsetLeft-margin,top:block.offsetTop-margin,
+      right:block.offsetLeft+block.offsetWidth+margin,
+      bottom:block.offsetTop+block.offsetHeight+margin},smooth,done);
+  }
+  function revealNode(id,smooth = false,done = null,preserveZoom = false) {
     const target=[...document.querySelectorAll('.node')].find(n=>n.dataset.id===id);
     if (!target) {done?.();return;}
-    const boxes=[{x:target.offsetLeft,y:target.offsetTop,width:target.offsetWidth,height:target.offsetHeight},...processHeadingBoxes([id])];
+    // Manual zoom keeps the requested scale and centers the inspected node;
+    // include the group heading only during automatic framing.
+    const boxes=[{x:target.offsetLeft,y:target.offsetTop,width:target.offsetWidth,height:target.offsetHeight},
+      ...(preserveZoom?[]:processHeadingBoxes([id]))];
     frameBounds({left:Math.min(...boxes.map(b=>b.x)),top:Math.min(...boxes.map(b=>b.y)),
-      right:Math.max(...boxes.map(b=>b.x+b.width)),bottom:Math.max(...boxes.map(b=>b.y+b.height))},smooth,done);
+      right:Math.max(...boxes.map(b=>b.x+b.width)),bottom:Math.max(...boxes.map(b=>b.y+b.height))},smooth,done,preserveZoom);
   }
   function chooseNode(node, inspection=node) {
     stop();
@@ -933,23 +1069,30 @@
     $('focus-related').setAttribute('aria-pressed',String(focused));
     $('back').hidden=!history.length;
     if(!isAtlas) {
-      $('diagram-title').textContent=view==='flow'?t('처리 순서 따라가기','Follow the processing path'):t('처리 구성과 연결','Processing groups and connections');
+      $('show-connections').hidden=view!=='structure';
+      $('show-connections').textContent=showConnections?t('연결 닫기','Hide connections'):t('연결 보기','Show connections');
+      $('show-connections').setAttribute('aria-pressed',String(showConnections));
+      $('diagram-title').textContent=view==='flow'?t('처리 순서 따라가기','Follow the processing path'):processBoard()?t('무엇을 처리하나요?','What happens here?'):t('처리 간 연결','Connections between operations');
       $('diagram-hint').hidden=false;
       $('diagram-hint').textContent=view==='flow'?
         t('같은 구성에서 선택한 경로를 한 단계씩 강조합니다. 오류·대안 경로는 경로 선택에서 바꿀 수 있습니다.','Follow the selected path on the same diagram. Choose a path to explore errors or alternatives.'):
-        t('요약의 묶음 안에 세부 처리를 표시합니다. 연결도 자체는 실행 순서를 뜻하지 않습니다.','Detailed processes stay inside their summary groups. Connections alone do not imply execution order.');
+        processBoard()?t('처리 종류·대상·설명을 묶음별로 읽어 보세요. 실행 순서는 경로를 선택해 확인합니다.','Read each group’s operations, targets and explanations. Choose a path to follow the recorded execution order.'):
+        t('선은 기록된 관계를 나타냅니다. 실행 순서는 선택한 경로에서 확인하세요.','Lines show recorded relationships. Follow a selected path for execution order.');
     }
   }
   function setView(value) {
+    const previousBoard=processBoard();
     if (value !== view) focusId = null;
     stop();view=value;
     if(value==='flow'&&regionId){regionId=null;draw();}
+    else if(previousBoard!==processBoard()){draw();if(view==='structure')fit(true);}
     $('player').hidden=view!=='flow'||!data.scenarios.length;
     if(view==='flow'&&(stepIndex<0||!isAtlas))setStep(Math.max(0,stepIndex));
-    updateNavigation();paint();
+    renderLegend();updateNavigation();paint();
   }
   function locationHash() {
     const params=new URLSearchParams({s2s:'1',subject:data.subject.id,view,detail:detail?'detail':'core',speed:String(playbackRate)});
+    if(!isAtlas&&view==='structure'&&showConnections)params.set('connections','1');
     if(isAtlas&&view==='overview') {
       if(entryQuery)params.set('q',entryQuery);
       if(entryGroup)params.set('group',entryGroup);
@@ -991,15 +1134,16 @@
   function readLocation(hash) {
     const params=new URLSearchParams(hash.slice(1));
     const entryKeys=['tab','q','group','available','feature','area'];
-    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera','layout',...entryKeys]);
+    const allowed=new Set(['s2s','subject','view','detail','speed','scenario','step','node','edge','item','panel','focus','region','camera','layout','connections',...entryKeys]);
     if([...params.keys()].some(key=>!allowed.has(key)||params.getAll(key).length!==1)||
       params.get('s2s')!=='1'||params.get('subject')!==data.subject.id||
       !(isAtlas?['overview','structure','flow']:['structure','flow']).includes(params.get('view'))||
       (params.has('detail')&&!['core','detail'].includes(params.get('detail')))||
       (params.has('speed')&&!['1','1.5','2'].includes(params.get('speed')))||
-      (params.has('panel')&&params.get('panel')!=='1'))throw new Error('Invalid location');
+      (params.has('panel')&&params.get('panel')!=='1')||
+      (params.has('connections')&&(isAtlas||params.get('view')!=='structure'||params.get('connections')!=='1')))throw new Error('Invalid location');
     const result={view:params.get('view'),detail:params.get('detail')==='detail',rate:Number(params.get('speed')||1),scenario:0,step:-1,
-      item:null,panel:params.has('panel'),focus:params.get('focus'),region:params.get('region'),camera:null,layout:null};
+      item:null,panel:params.has('panel'),focus:params.get('focus'),region:params.get('region'),camera:null,layout:null,connections:params.has('connections')};
     if(result.view==='overview') {
       if(['scenario','step','node','edge','item','panel','focus','region','camera','layout'].some(k=>params.has(k))||
         (params.has('tab')&&!['roles','files'].includes(params.get('tab')))||
@@ -1049,6 +1193,7 @@
     stop();history.length=0;closePanel(false);
     selected=null;focusId=null;stepIndex=-1;stepElapsed=0;playbackState='idle';
     view=restored.view;detail=restored.detail;scenarioIndex=restored.scenario;playbackRate=restored.rate;regionId=restored.region||null;
+    showConnections=!!restored.connections;
     if(isAtlas) {
       if(view==='overview') {
         entryTab=restored.tab||'roles';entryQuery=restored.query||'';entryGroup=restored.group||'';
@@ -1078,11 +1223,11 @@
       if(nodeMap.has(selected))revealNode(selected);
       else if(edgeMap.has(selected))revealConnection(edgeMap.get(selected));
       else if(subjectMap.has(selected))revealNode(subjectMap.get(selected).nodeId);
-      else if(!isAtlas&&regionMap.has(selected))revealNode(regionMap.get(selected).nodeIds[0]);
+      else if(!isAtlas&&regionMap.has(selected))revealRegion(selected);
       else if(view==='flow')revealStep(false);
-      else fit();
+      else fit(processBoard());
       $('player').hidden=view!=='flow'||!data.scenarios.length;
-      updateNavigation();paint();
+      renderLegend();updateNavigation();paint();
       // Coordinates belong to the layout they were captured in. After a resize
       // (or for an older link without dimensions), keep the selection framed above.
       if(restored.camera&&restored.layout?.every((n,i)=>n===cameraLayout()[i])) {
@@ -1109,7 +1254,7 @@
     return data.nodes.filter(n=>visible.has(n.id));
   }
   function rememberView() {
-    history.push({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,regionId,left:$('canvas').scrollLeft,top:$('canvas').scrollTop});
+    history.push({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,regionId,showConnections,left:$('canvas').scrollLeft,top:$('canvas').scrollTop});
   }
   function enterRegion(id) {
     stop();rememberView();closePanel(false);regionId=id;focusId=null;selected=null;view='structure';
@@ -1260,6 +1405,17 @@
     }
     box.append(list);return box;
   }
+  function labelRelationDirection(container,from,to) {
+    container.setAttribute('role','group');
+    container.setAttribute('aria-label',t('출발: ','From: ')+from+t(' · 도착: ',' · To: ')+to);
+  }
+  function overviewRelationArrow(presentation,className='',direction='right') {
+    const arrow=svg('svg',{class:'overview-relation-arrow '+className,viewBox:'0 0 36 20',width:36,height:20,'aria-hidden':'true'});
+    const shaft=direction==='incoming'?'M 7 1 V 10 H 28':'M 2 10 H 28';
+    arrow.append(svg('path',{class:'overview-arrow-shaft',d:shaft}),
+      svg('path',{class:'overview-arrow-tip',d:presentation.family==='structural'?'M 25 5 L 32 10 L 25 15':'M 25 5 L 32 10 L 25 15 Z'}));
+    return arrow;
+  }
   function renderAreaConnections(group,includeIncoming=false) {
     const section=element('div',undefined,'atlas-area-connections');
     const related=element('details',undefined,'atlas-area-related');
@@ -1275,22 +1431,21 @@
       if(!connections.has(key))connections.set(key,{peer,node:nodeMap.get(otherId),outgoing:from,edges:[]});
       connections.get(key).edges.push(edge);
     }
-    const names={
-      'passes-data':t('데이터 전달','Data transfer'),'depends-on':t('공통 도구 사용','Shared dependency'),
-      registers:t('등록','Registration'),invokes:t('호출','Call'),delegates:t('위임','Delegation'),
-      dispatches:t('전달','Dispatch'),reads:t('읽기','Read'),writes:t('쓰기','Write'),
-      emits:t('이벤트 발행','Event emission'),consumes:t('이벤트 수신','Event consumption'),transitions:t('상태 변경','State change')
-    };
     for(const connection of connections.values()) {
       const {peer,node,outgoing,edges}=connection,edge=edges[0];
       const structural=['depends-on','registers'].includes(edge.type),testing=edge.derivation==='test-example';
+      const uncertain=edges.find(edge=>edge.displayStatus!=='confirmed');
+      const presentation=edgePresentation(uncertain||edge);
       const row=element('div',undefined,'atlas-area-transfer'+(structural||testing?' dependency':''));
       row.dataset.edgeIds=JSON.stringify(edges.map(edge=>edge.id));
-      const arrow=element('span',outgoing?(structural?'⇢':'↓'):'↳','atlas-area-transfer-arrow');arrow.setAttribute('aria-hidden','true');row.append(arrow);
+      row.dataset.relation=presentation.family;row.dataset.unverified=String(presentation.uncertain);
+      const peerLabel=peer?.label||node.label;
+      labelRelationDirection(row,outgoing?group.label:peerLabel,outgoing?peerLabel:group.label);
+      const arrow=overviewRelationArrow(presentation,'atlas-area-transfer-arrow'+(outgoing&&!structural?' outgoing':''),outgoing?'right':'incoming');row.append(arrow);
       const description=element('div',undefined,'atlas-area-transfer-description');
-      description.append(element('small',structural||testing?(testing?t('검사에서 사용','Used by tests'):names[edge.type]):outgoing?t('다음에 전달하는 내용','WHAT IS PASSED ON'):t('이곳에서 받는 내용','WHAT IS RECEIVED')));
+      description.append(element('small',presentation.typeLabel+' · '+(testing?t('검사에서 사용','Used by tests'):outgoing?t('나가는 연결','OUTGOING'):t('들어오는 연결','INCOMING'))));
       description.append(element('span',[...new Set(edges.map(edge=>edge.label))].join(' · ')));
-      const uncertain=edges.find(edge=>edge.displayStatus!=='confirmed');if(uncertain)description.append(statusBadge(uncertain));
+      if(uncertain)description.append(statusBadge(uncertain));
       row.append(description,peer?areaButton(peer,true):entryButton(node.label+t(' · 연결 보기',' · view connections'),()=>openEntryDiagram(()=>showItem(node,true)),'atlas-area-destination'));
       if(structural||testing) {
         related.append(row);
@@ -1350,7 +1505,8 @@
       $('process-path').append(option);
     });
     $('process-path').addEventListener('change',()=>{
-      stop();scenarioIndex=Number($('process-path').value);$('scenario').value=String(scenarioIndex);
+      const next=Number($('process-path').value);
+      stop();scenarioIndex=next;$('scenario').value=String(scenarioIndex);
       stepIndex=-1;setView('flow');
     });
   }
@@ -1407,7 +1563,9 @@
     const connections=element('div',undefined,'composition-connections');
     for(const id of data.composition.edgeIds) {
       const edge=edgeMap.get(id),row=element('div',undefined,'composition-connection');row.dataset.edgeId=id;
-      row.append(element('strong',nodeMap.get(edge.from).label),element('span','→'),element('strong',nodeMap.get(edge.to).label),element('small',edge.label));
+      const presentation=edgePresentation(edge);row.dataset.relation=presentation.family;row.dataset.unverified=String(presentation.uncertain);
+      labelRelationDirection(row,nodeMap.get(edge.from).label,nodeMap.get(edge.to).label);
+      row.append(element('strong',nodeMap.get(edge.from).label),overviewRelationArrow(presentation),element('strong',nodeMap.get(edge.to).label),element('small',presentation.label));
       if(edge.displayStatus!=='confirmed')row.append(statusBadge(edge));connections.append(row);
     }
     section.append(connections);return section;
@@ -1416,10 +1574,8 @@
     const link=element('a',undefined,group?'feature-step':'feature-open');
     const update=()=>{
       const url=new URL(subject.link.url,location.href);url.searchParams.set('s2s-atlas',savedAtlasLocation());
-      const scenario=child.scenarios.find(s=>s.kind==='typical')||child.scenarios[0];
-      const state=new URLSearchParams({s2s:'1',subject:child.subject.id,view:!group&&scenario?'flow':'structure',detail:'detail',speed:'1'});
+      const state=new URLSearchParams({s2s:'1',subject:child.subject.id,view:'structure',detail:'detail',speed:'1'});
       if(group){state.set('item',group.id);state.set('panel','1');}
-      else if(scenario){state.set('scenario',scenario.id);state.set('step',scenario.steps[0].id);}
       url.hash=state.toString();
       link.href=url.href;
     };
@@ -1432,7 +1588,7 @@
       for(const node of child.nodes.filter(node=>group.nodeIds.includes(node.id)&&node.displayStatus!=='confirmed')) {
         const status=statusBadge(node);status.title=node.label;link.append(status);
       }
-    } else link.textContent=child.scenarios.length?t('처리 순서 따라가기 →','Follow the processing path →'):t('전체 처리 구성 보기 →','View all processing groups →');
+    } else link.textContent=t('처리 상세 보기 →','Processing details →');
     return link;
   }
   function renderFeatureLane(subject,child) {
@@ -1453,7 +1609,9 @@
       const edge=incoming.length===1?incoming[0]:null,step=edge&&steps.get(edge.id);
       if(lane&&edge&&step&&!nonSequential(step)) {
         const connector=element('div',undefined,'feature-connector'+(['depends-on','registers'].includes(edge.type)?' dependency':''));connector.dataset.edgeId=edge.id;
-        connector.append(element('span',edge.label),element('b',['depends-on','registers'].includes(edge.type)?'⇢':'→'));
+        const presentation=edgePresentation(edge);connector.dataset.relation=presentation.family;connector.dataset.unverified=String(presentation.uncertain);
+        labelRelationDirection(connector,owners.get(edge.from).label,owners.get(edge.to).label);
+        connector.append(element('span',presentation.label),overviewRelationArrow(presentation));
         if(edge.displayStatus!=='confirmed')connector.append(statusBadge(edge));
         if(step.displayStatus!=='confirmed')connector.append(statusBadge(step));
         lane.append(connector);used.add(edge.id);
@@ -1463,7 +1621,9 @@
     const relations=element('div',undefined,'feature-relations');
     for(const edge of edges.filter(edge=>!used.has(edge.id))) {
       const row=element('div',undefined,'composition-connection');row.dataset.edgeId=edge.id;
-      row.append(element('strong',owners.get(edge.from).label),element('span',['depends-on','registers'].includes(edge.type)?'⇢':'→'),element('strong',owners.get(edge.to).label),element('small',edge.label));
+      const presentation=edgePresentation(edge);row.dataset.relation=presentation.family;row.dataset.unverified=String(presentation.uncertain);
+      labelRelationDirection(row,owners.get(edge.from).label,owners.get(edge.to).label);
+      row.append(element('strong',owners.get(edge.from).label),overviewRelationArrow(presentation),element('strong',owners.get(edge.to).label),element('small',presentation.label));
       const step=steps.get(edge.id);
       if(step&&nonSequential(step))row.append(element('small',executionLabels[step.execution]));
       if(edge.displayStatus!=='confirmed')row.append(statusBadge(edge));
@@ -1494,8 +1654,12 @@
     article.append(purpose);
     const canvas=element('div',undefined,'feature-process');
     canvas.append(renderFeatureLane(subject,child));article.append(canvas);
-    const footer=element('div',undefined,'feature-overview-footer');
-    footer.append(featureDetailLink(subject,child));article.append(footer);
+    // Group cards are the detail entry points. Keep a single fallback only
+    // when no reviewed group exists, so the detail page remains reachable.
+    if(!child.regions.some(group=>group.role==='primary')) {
+      const footer=element('div',undefined,'feature-overview-footer');
+      footer.append(featureDetailLink(subject,child));article.append(footer);
+    }
     return article;
   }
   function renderFeatureProject(stage) {
@@ -2086,7 +2250,7 @@
     $('overview').textContent=data.layer==='atlas'?t('◈ 전체 구성','◈ Overview'):t('◈ 설명 범위의 구성','◈ Scoped overview');
     $('list-title').textContent=t('구성 요소 목록','Components')+' · '+data.nodes.length;
     $('flows-title').textContent=t('처리 경로','PROCESSING PATHS');
-    $('structure').textContent=t('전체 연결 보기','All connections');
+    $('structure').textContent=isAtlas?t('전체 연결 보기','All connections'):t('처리 내용 보기','Operations');
     $('workflow').textContent=t('처리 순서 따라가기','Follow a path');
     $('workflow').hidden=!data.scenarios.length;$('flow-list').hidden=!data.scenarios.length;
     $('view-switch').setAttribute('aria-label',t('설명 관점','Explanation view'));
@@ -2118,6 +2282,8 @@
     $('back').textContent=t('← 돌아가기','← Back');
     $('zoom-out').setAttribute('aria-label',t('축소','Zoom out'));
     $('zoom-in').setAttribute('aria-label',t('확대','Zoom in'));
+    $('zoom-level').setAttribute('aria-label',t('100% 실제 크기로 보기','View at 100% actual size'));
+    $('zoom-level').title=t('클릭하면 100% 실제 크기로 표시','Click to view at 100% actual size');
     $('fit').textContent=t('전체','Fit');
     $('fit').setAttribute('aria-label',t('지도를 화면에 맞추기','Fit map to view'));
     $('canvas').setAttribute('aria-label',t('관계도. Enter로 구성 요소 탐색, 방향키로 이동, +와 -로 확대 축소, 0으로 전체 보기',
@@ -2133,7 +2299,7 @@
       const query=$('search').value.trim().toLocaleLowerCase();
       $('results').replaceChildren();$('results').hidden=!query;
       if(!query)return;
-      const matches=data.nodes.filter(n=>[n.label,n.codeName,n.roleLabel].some(v=>v?.toLocaleLowerCase().includes(query)));
+      const matches=data.nodes.filter(n=>[n.label,n.codeName,n.roleLabel,n.operation?.target,operationInfo(n).label].some(v=>v?.toLocaleLowerCase().includes(query)));
       for(const node of matches){const button=element('button',node.label);button.type='button';button.addEventListener('click',()=>chooseNode(node));$('results').append(button);}
       if(isAtlas) {
         for(const subject of data.subjects.filter(s=>[s.label,s.summary,s.question,...(s.targets||[]).map(t=>t.symbol)].some(v=>v?.toLocaleLowerCase().includes(query))))$('results').append(capabilityButton(subject));
@@ -2150,8 +2316,16 @@
       $('flows').append(button);
     });
     $('structure').addEventListener('click',()=>setView('structure'));
+    $('show-connections').addEventListener('click',()=>{
+      stop();showConnections=!showConnections;draw();renderLegend();updateNavigation();
+      if(selectedNodeId())revealNode(selectedNodeId());
+      else if(edgeMap.has(selected))revealConnection(edgeMap.get(selected));
+      else if(regionMap.has(selected))revealRegion(selected);
+      else fit(true);
+      syncLocation();
+    });
     $('workflow').addEventListener('click',()=>setView('flow'));
-    $('overview').addEventListener('click',()=>{history.length=0;focusId=null;selected=null;closePanel();regionId=null;draw();setView('structure');fit();});
+    $('overview').addEventListener('click',()=>{history.length=0;focusId=null;selected=null;closePanel();regionId=null;showConnections=false;draw();setView('structure');fit(processBoard());});
     $('focus-related').addEventListener('click',()=>{
       if(!nodeMap.has(selected))return;
       if(focusId===selected){focusId=null;updateNavigation();paint();return;}
@@ -2161,7 +2335,7 @@
     });
     $('back').addEventListener('click',()=>{
       const saved=history.pop();if(!saved)return;stop();closePanel();
-      ({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,regionId}=saved);
+      ({focusId,selected,zoom,detail,view,scenarioIndex,stepIndex,regionId,showConnections}=saved);
       $('mode').value=detail?'detail':'core';$('scenario').value=String(scenarioIndex);draw();
       if(stepIndex>=0){const selection=selected;setStep(stepIndex,true);selected=selection;}
       setView(view);$('canvas').scrollLeft=saved.left;$('canvas').scrollTop=saved.top;
@@ -2169,6 +2343,7 @@
       updateMini();paint();
     });
     $('zoom-in').addEventListener('click',()=>setZoom(zoom*1.2));
+    $('zoom-level').addEventListener('click',()=>setZoom(1));
     $('zoom-out').addEventListener('click',()=>setZoom(zoom/1.2));
     $('fit').addEventListener('click',()=>fit());
     $('canvas').addEventListener('scroll',updateMini,{passive:true});
@@ -2200,7 +2375,135 @@
     });
     updateNavigation();
   }
-  function initialize() {
+  function renderLegend() {
+    const legend=$('legend');
+    legend.replaceChildren();
+    legend.setAttribute('aria-label',t('그래프 표시 안내','Graph legend'));
+    const addGroup=(key,title,hint,entries,note)=>{
+      const group=element('section',undefined,'legend-group');
+      group.dataset.legendGroup=key;
+      const heading=element('h3',title,'legend-heading');heading.id='legend-'+key+'-title';
+      group.setAttribute('aria-labelledby',heading.id);
+      const header=element('div',undefined,'legend-heading-row');
+      header.append(heading,element('span',hint,'legend-hint'));group.append(header);
+      const items=element('ul',undefined,'legend-items');
+      for(const [kind,label] of entries) {
+        const item=element('li',undefined,'legend-item');
+        let sample;
+        if(key==='operations')sample=operationIcon(kind);
+        else if(key==='nodes')sample=element('span',undefined,'legend-node '+kind);
+        else {
+          sample=svg('svg',{class:'legend-arrow '+kind,viewBox:'0 0 36 16',width:36,height:16});
+          sample.append(svg('path',{class:'legend-arrow-shaft',d:'M 1 8 H 28'}),
+            svg('path',{class:'legend-arrow-tip',d:kind==='structural'?'M 26 4 L 33 8 L 26 12':'M 26 4 L 34 8 L 26 12 Z'}));
+        }
+        sample.setAttribute('aria-hidden','true');
+        item.append(sample,element('span',label));items.append(item);
+      }
+      group.append(items,element('p',note,'legend-note'));legend.append(group);
+    };
+    if(!isAtlas) {
+      const operations=new Map(data.nodes.map(node=>{const info=operationInfo(node);return [info.label,info];}));
+      addGroup('operations',t('처리 종류','Operations'),t('아이콘과 이름으로 구분','Icons and names'),
+        [...operations.values()].map(info=>[info.icon,info.label]),
+        t('대상과 설명은 카드에 표시합니다. 카드 위치는 실행 순서가 아닙니다.','Targets and explanations appear on each card. Card positions do not imply execution order.'));
+    }
+    const kinds=new Set(data.nodes.map(node=>node.kind));
+    const nodeEntries=[['normal',t('구성 요소','Component')],['selected',t('선택한 노드','Selected node')]];
+    if(kinds.has('boundary'))nodeEntries.push(['boundary',t('처리 경계·종료','Processing boundary / end')]);
+    if(kinds.has('state'))nodeEntries.push(['state',t('상태','State')]);
+    if(kinds.has('actor'))nodeEntries.push(['actor',t('참여자','Actor')]);
+    if(kinds.has('artifact'))nodeEntries.push(['artifact',t('파일·데이터','File / data')]);
+    addGroup('nodes',t('노드','Nodes'),t('상자와 왼쪽 세로선','Boxes and left bars'),nodeEntries,
+      kinds.has('boundary')?t('노란 세로선은 경계·종료를 뜻하며, 오류 발생 표시는 아닙니다.',
+        'A yellow bar marks a boundary or end, not a live error.'):
+        t('보라색 테두리는 현재 선택한 노드입니다.','A purple outline marks the selected node.'));
+    if(!processBoard())addGroup('arrows',t('화살표','Arrows'),t('연결선의 색과 모양','Connection colors and styles'),[
+      ['normal',t('호출·제어','Calls / control')],
+      ['data',t('데이터 전달','Data transfer')],
+      ['structural',t('등록·의존','Registration / dependency')],
+      ['uncertain',t('추정·미확인 연결','Uncertain / unverified')],
+      ['active',t('선택·설명: 같은 색, 굵은 선','Selected / explained: same color, thicker line')]
+    ],t('회색 파선·열린 화살촉은 의존 관계입니다. 노란 점선은 추정·미확인을 뜻합니다. 선택 시 관계색은 유지합니다.',
+      'Gray dashed lines with open arrowheads mark dependencies. Yellow dotted lines mark uncertain or unverified connections. Selection keeps the relationship color.'));
+  }
+
+  function initializeCanvasResize() {
+    const canvas=$('canvas'),handle=$('canvas-resize');
+    const minimum=320,maximum=1600,storageKey='s2s-canvas-height';
+    let drag=null;
+    handle.setAttribute('aria-label',t('흐름도 높이','Diagram height'));
+    handle.title=t('위아래로 드래그하거나 방향키로 높이 조절','Drag vertically or use arrow keys to resize');
+    const sync=()=>{
+      const height=Math.round(canvas.getBoundingClientRect().height);
+      if(height) {
+        handle.setAttribute('aria-valuenow',String(height));
+        handle.setAttribute('aria-valuetext',height+t('픽셀',' pixels'));
+      }
+    };
+    const persist=()=>{
+      try {
+        localStorage.setItem(storageKey,String(canvas.clientHeight));
+      } catch { /* File storage may be unavailable; resizing still works. */ }
+    };
+    const center=()=>({
+      x:(canvas.scrollLeft+canvas.clientWidth/2-$('stage').offsetLeft)/zoom,
+      y:(canvas.scrollTop+canvas.clientHeight/2-$('stage').offsetTop)/zoom
+    });
+    const setHeight=(value,anchor=center())=>{
+      const stage=$('stage'),cx=anchor.x,cy=anchor.y;
+      canvas.style.height=Math.max(minimum,Math.min(maximum,Math.round(value)))+'px';
+      if(graphWidth&&canvas.clientWidth) {
+        // Preserve the graph point at the viewport center without relaying nodes.
+        applyZoom();
+        canvas.scrollLeft=cx*zoom+stage.offsetLeft-canvas.clientWidth/2;
+        canvas.scrollTop=cy*zoom+stage.offsetTop-canvas.clientHeight/2;
+        updateMini();
+        positionPanel();
+      }
+      sync();
+    };
+    handle.addEventListener('pointerdown',event=>{
+      if(event.button!==0||drag)return;
+      event.preventDefault();stop();finishCamera();
+      handle.focus({preventScroll:true});
+      drag={id:event.pointerId,y:event.pageY,height:canvas.clientHeight,center:center()};
+      handle.setPointerCapture(event.pointerId);handle.classList.add('resizing');
+    });
+    handle.addEventListener('pointermove',event=>{
+      if(drag?.id===event.pointerId)setHeight(drag.height+event.pageY-drag.y,drag.center);
+    });
+    const endDrag=event=>{
+      if(drag?.id!==event.pointerId)return;
+      drag=null;handle.classList.remove('resizing');
+      if(handle.hasPointerCapture(event.pointerId))handle.releasePointerCapture(event.pointerId);
+      persist();
+    };
+    handle.addEventListener('pointerup',endDrag);
+    handle.addEventListener('pointercancel',endDrag);
+    handle.addEventListener('lostpointercapture',endDrag);
+    handle.addEventListener('keydown',event=>{
+      if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key)||event.altKey||event.ctrlKey||event.metaKey)return;
+      event.preventDefault();event.stopPropagation();stop();finishCamera();
+      const step=event.shiftKey?100:40;
+      setHeight(event.key==='Home'?minimum:event.key==='End'?maximum:canvas.clientHeight+(event.key==='ArrowDown'?step:-step));
+      persist();
+    });
+    try {
+      const saved=Number(localStorage.getItem(storageKey));
+      if(Number.isFinite(saved)&&saved>=minimum&&saved<=maximum)setHeight(saved);
+    } catch { /* Use the responsive default when file storage is unavailable. */ }
+    new ResizeObserver(sync).observe(canvas);
+    sync();
+  }
+
+  async function initialize() {
+    // Card heights depend on actual text metrics. Load the offline font before
+    // measuring so switching between cards and connections cannot move rows.
+    if(document.fonts) {
+      try {await document.fonts.load('12px S2S');await document.fonts.ready;}
+      catch { /* Keep the fallback font usable when bundled font loading fails. */ }
+    }
     if(isAtlas)document.body.classList.add('atlas-page');
     else document.body.classList.add('behavior-page');
     document.querySelector('.skip').textContent=t('그림으로 바로 이동','Skip to diagram');
@@ -2247,9 +2550,7 @@
     const modes=isAtlas?[['core',t('주요 구성','Main components')],['detail',t('전체 구성','All components')]]:
       [['core',t('주요 처리','Main processing')],['detail',t('전체 처리','All processing')]];
     for(const [value,label] of modes) {const option=element('option',label);option.value=value;$('mode').append(option);}
-    for(const [label,cls] of [[t('확인한 연결','Checked connection'),''],[t('추정·미확인','Uncertain / unverified'),'dashed'],[t('등록·의존 관계','Registration / dependency'),'relation']]) {
-      const item=element('span',undefined,'legend-item');item.append(element('span',undefined,'legend-line '+cls),document.createTextNode(label));$('legend').append(item);
-    }
+    renderLegend();
     $('mode').addEventListener('change',changeMode);
     $('close-panel').setAttribute('aria-label',t('설명 닫기','Close explanation'));
     $('close-panel').addEventListener('click',closePanel);
@@ -2311,10 +2612,16 @@
     addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
       if(data.analysis.status!=='insufficient'&&view!=='overview') {
         finishCamera();
+        const frame=$('canvas').getBoundingClientRect();
+        const readingNode=processBoard()?(selectedNodeId()||[...$('node-layer').children].find(node=>{
+          const box=node.getBoundingClientRect();return box.right>frame.left&&box.left<frame.right&&box.bottom>frame.top&&box.top<frame.bottom;
+        })?.dataset.id||visibleNodes()[0]?.id):null;
         draw();
         positionPanel();
         if(isPlaying())revealStep(false);
+        else if(!isAtlas&&regionMap.has(selected))revealRegion(selected);
         else if($('panel').classList.contains('open') && selectedNodeId())revealNode(selectedNodeId());
+        else if(processBoard()&&readingNode)revealNode(readingNode,false,null,true);
         positionPanel();
       }
     },120);});
@@ -2335,6 +2642,7 @@
     });
     initializeProcessContext();
     initializeCanvas();
+    initializeCanvasResize();
     initializeAtlas();
     // Do not serialize intermediate initialization states over a supplied link.
     navigationReady=true;

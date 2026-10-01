@@ -93,8 +93,11 @@ second header, navigation system, evidence database or output metadata block.
   controls, perceivable state changes, and reset/pause where relevant. Honor
   `prefers-reduced-motion` in JavaScript or SVG animation too; the shell disables
   scene CSS animation/transitions under that preference.
-- New UI code is allowed; copied target code, source prompts and verification
-  anchors are forbidden in every field, including comments and hidden content.
+- New UI code is allowed to render pictures and interactions. Displayed labels,
+  conditions, examples and simulation states use plain language, never source
+  excerpts or raw implementation expressions. Copied target code, source prompts
+  and verification anchors are forbidden in every field, including comments and
+  hidden content. Evidence disclosures show locations and verification status.
 
 The builder checks fragment boundaries, duplicate/reserved IDs, local references,
 obvious copied anchors and asset embedding. A Content Security Policy blocks

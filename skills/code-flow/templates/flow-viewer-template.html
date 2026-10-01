@@ -65,17 +65,19 @@
         <section id="flow-list" class="rail-section"><h2 id="flows-title" class="rail-label"></h2><div id="flows"></div></section>
       </nav>
       <div class="diagram-column">
-        <div class="diagram-toolbar">
-          <div class="crumb"><button id="back" type="button" hidden></button><span id="crumb"></span></div>
-          <div id="view-switch" class="view-switch"><button id="structure" type="button" aria-pressed="true"></button><button id="workflow" type="button" aria-pressed="false"></button></div>
+        <div class="diagram-header">
+          <div class="diagram-toolbar">
+            <div class="crumb"><button id="back" type="button" hidden></button><span id="crumb"></span></div>
+            <div class="diagram-view-controls"><button id="show-connections" type="button" aria-pressed="false" hidden></button><div id="view-switch" class="view-switch"><button id="structure" type="button" aria-pressed="true"></button><button id="workflow" type="button" aria-pressed="false"></button></div></div>
+          </div>
+          <div class="map-title"><h2 id="diagram-title"></h2><p id="diagram-hint"></p></div>
+          <section id="process-context" class="process-context" hidden>
+            <p id="process-groups-label" class="process-groups-label"></p>
+            <nav id="process-groups" class="process-groups"></nav>
+            <label id="process-path-control" class="process-path-control"><span id="process-path-label"></span><select id="process-path"></select></label>
+            <p id="process-current" class="process-current" aria-live="polite" hidden></p>
+          </section>
         </div>
-        <div class="map-title"><h2 id="diagram-title"></h2><p id="diagram-hint"></p></div>
-        <section id="process-context" class="process-context" hidden>
-          <p id="process-groups-label" class="process-groups-label"></p>
-          <nav id="process-groups" class="process-groups"></nav>
-          <label id="process-path-control" class="process-path-control"><span id="process-path-label"></span><select id="process-path"></select></label>
-          <p id="process-current" class="process-current" aria-live="polite" hidden></p>
-        </section>
         <div class="canvas-wrap">
           <div id="canvas" class="canvas" role="region" tabindex="0">
             <div id="graph-space"><div id="stage" class="stage"><div id="region-layer"></div><svg id="connections" aria-label="Relationships"></svg><div id="node-layer"></div></div></div>
@@ -87,9 +89,12 @@
             <button id="focus-related" class="focus-related" type="button" hidden></button>
           </aside>
         </div>
+        <div class="canvas-resize-controls">
+          <div id="canvas-resize" class="canvas-resize" role="separator" tabindex="0" aria-orientation="horizontal" aria-controls="canvas" aria-valuemin="320" aria-valuemax="1600" aria-valuenow="530"></div>
+        </div>
         <div class="canvas-footer">
           <div id="legend" class="legend"></div>
-          <div class="canvas-controls"><label class="mode-label"><span id="mode-label"></span><select id="mode"></select></label><div class="zoom"><button id="zoom-out" type="button">−</button><output id="zoom-level">100%</output><button id="zoom-in" type="button">+</button><button id="fit" type="button"></button></div></div>
+          <div class="canvas-controls"><label class="mode-label"><span id="mode-label"></span><select id="mode"></select></label><div class="zoom"><button id="zoom-out" type="button">−</button><button id="zoom-level" type="button">100%</button><button id="zoom-in" type="button">+</button><button id="fit" type="button"></button></div></div>
           <div class="navigation-tools"><details class="keyboard-help"><summary id="keyboard-help-title"></summary><p id="keyboard-help-text"></p></details><button id="copy-position" type="button"></button></div>
         </div>
         <section id="player" class="player" hidden>

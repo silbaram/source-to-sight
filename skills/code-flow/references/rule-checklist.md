@@ -17,6 +17,8 @@ Read the decision and its caller/configuration together. Follow the applicable q
 
 For each rule record its condition, observable outcome, related nodes, and evidence. Put the implementation reason in optional `rationale`, and material exceptions or exclusions in optional `exceptions`. These fields share the rule's semantic review and evidence. A rationale explains the checked mechanism; do not invent the developer's motivation or a performance/security benefit absent from the source.
 
+Write every displayable condition, outcome, rationale and exception in plain language. An exact condition preserves all decision boundaries and exclusions; it does not copy a raw comparison, assignment, call or other implementation expression. Evidence locations and verification status remain available without exposing code excerpts.
+
 Where applicable, read permission/ownership gates and resource acquisition, cleanup or reuse together. Identify who can perform the operation, which denied condition stops it, and what remains after failure. Do not add an access-control rule or lifecycle phase without evidence that it exists in the selected scope.
 
 Check units, inclusive bounds, defaults, configuration precedence and written-out quantities. Mark any quantitative rule `numeric: true`, including numbers that appear only in its rationale or exceptions. Unverified numerical rules are omitted entirely. Non-numerical uncertainty remains explicit; a visual must not make it appear settled.

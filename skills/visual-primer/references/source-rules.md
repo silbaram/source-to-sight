@@ -17,7 +17,7 @@ Use an **authored layout, version 2**, following [authored-layout.md](authored-l
 
 Each scene binds its HTML/SVG, CSS and optional script to reviewed `ruleIds` and any additional `claimIds` it uses. Those bindings let the builder withhold a scene and all its assets when its source support fails. The builder supplies the shared navigation, evidence disclosure, theme, offline assets, scope and metadata. The host still reviews the meaning of every label, arrow and interactive outcome against the source; schema validation cannot perform that review.
 
-Keep exact conditions, reasons and exceptions in the reviewed rules, with concise accurate labels in the picture. Do not introduce business policy, numerical values, timing, or execution order only in markup or JavaScript. Place detailed reference material after the picture or inside evidence disclosure. Defaulting to a list of condition/result cards does not satisfy a picture-first explanation request.
+Keep exact conditions, reasons and exceptions in the reviewed rules as plain-language explanations, with concise accurate labels in the picture. Preserve every decision boundary without displaying raw comparisons, assignments, calls or source excerpts. Evidence disclosures show locations and verification status. Do not introduce business policy, numerical values, timing, or execution order only in markup or JavaScript. Place detailed explanatory reference material after the picture or inside a disclosure. Defaulting to a list of condition/result cards does not satisfy a picture-first explanation request.
 
 ### Compatibility: compact rule reference
 

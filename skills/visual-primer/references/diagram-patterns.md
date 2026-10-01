@@ -6,7 +6,7 @@ Read this guide while deciding which diagrams the explainer needs. Choose the sm
 
 A diagram earns its space when length, position, direction, grouping, or repeated geometry makes an important relationship faster to understand than prose or a table.
 
-Use tables, code blocks, lists, cards, icons, and `<details>` directly when comparison, reference lookup, or exact wording is the actual lesson.
+Use tables, lists, cards, icons, and `<details>` directly when comparison, reference lookup, or exact wording is the actual lesson. Explain implementation conditions and operations in plain language; do not display code blocks, source excerpts or raw implementation expressions. Functional command-copy controls may retain the command needed for their task.
 
 ## Proportional strip
 

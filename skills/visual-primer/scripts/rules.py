@@ -96,11 +96,23 @@ class SceneHTML(HTMLParser):
                         "em", "embed", "h1", "h2", "h3", "h4", "h5", "h6", "head", "hr", "i", "img", "li",
                         "listing", "menu", "meta", "nobr", "ol", "p", "pre", "ruby", "s", "small", "span",
                         "strong", "strike", "sub", "sup", "table", "tt", "u", "ul", "var"}
+    text_boundaries = {"address", "article", "aside", "blockquote", "br", "button", "dd", "details", "div",
+                       "dl", "dt", "fieldset", "figcaption", "figure", "footer", "h1", "h2", "h3", "h4",
+                       "h5", "h6", "header", "hr", "li", "main", "nav", "ol", "p", "pre", "section",
+                       "summary", "table", "td", "th", "tr", "ul", "text", "title", "desc"}
+    # SVG drawing instructions legitimately contain functions such as
+    # translate(...) and url(...). They are assets, not explanation text.
+    svg_drawing_attributes = {"d", "points", "transform", "gradienttransform", "patterntransform",
+                              "x", "y", "x1", "y1", "x2", "y2", "cx", "cy", "r", "rx", "ry", "dx", "dy",
+                              "width", "height", "viewbox", "refx", "refy", "markerwidth", "markerheight",
+                              "fill", "stroke", "color", "stop-color", "flood-color", "lighting-color",
+                              "filter", "clip-path", "mask", "marker-start", "marker-mid", "marker-end"}
 
     def __init__(self, identifier):
         super().__init__(convert_charrefs=True)
         self.prefix = "scene-" + identifier + "-"
         self.ids, self.references, self.stack, self.text = set(), [], [], []
+        self.content = []
 
     def element_namespace(self, tag, attrs):
         namespace = "html"
@@ -135,6 +147,8 @@ class SceneHTML(HTMLParser):
         if tag in self.forbidden:
             raise ValueError(f"Authored scenes cannot contain <{tag}>; use the fragment/css/script fields.")
         namespace = self.element_namespace(tag, dict(attrs))
+        if tag in self.text_boundaries:
+            self.content.append("\n")
         seen = set()
         for key, value in attrs:
             if key in seen:
@@ -159,7 +173,8 @@ class SceneHTML(HTMLParser):
                 if not reference.startswith("#"):
                     raise ValueError("SVG paint resources must reference this scene's inline definitions.")
                 self.references.append(reference[1:])
-            self.text.append(value)
+            if namespace != "svg" or key not in self.svg_drawing_attributes:
+                self.text.append(value)
         if namespace != "html" or tag not in self.void:
             self.stack.append((tag, namespace, dict(attrs)))
         return namespace
@@ -174,9 +189,12 @@ class SceneHTML(HTMLParser):
     def handle_endtag(self, tag):
         if not self.stack or self.stack.pop()[0] != tag:
             raise ValueError("Scene HTML must have balanced, explicitly closed elements.")
+        if tag in self.text_boundaries:
+            self.content.append("\n")
 
     def handle_data(self, data):
         self.text.append(data)
+        self.content.append(data)
 
     def handle_comment(self, data):
         self.text.append(data)
@@ -206,9 +224,11 @@ def validate_scene(section, graph, s2s):
     if any(url[1:] not in parser.ids for url in css_urls):
         raise ValueError("Scene CSS references an unknown inline definition.")
     anchors = [e.get("anchorText", "") for e in graph["evidence"]]
-    # Newly authored UI code is allowed; copied target code is not. Text/attributes
-    # are decoded before checking so HTML entities cannot conceal an anchor.
-    s2s.ensure_no_source_bodies([section["title"], *parser.text], anchors)
+    # Newly authored UI code is allowed; copied target code is not. Check decoded
+    # text attributes/comments as well as the rendered text across inline tags,
+    # so syntax highlighting cannot bypass the plain-explanation contract. The
+    # raw asset check below still rejects anchors in SVG drawing attributes.
+    s2s.ensure_no_source_bodies([section["title"], *parser.text, "".join(parser.content)], anchors)
     for value in (section["html"], css, script):
         if any(len(a.strip()) >= 12 and a in html.unescape(value) for a in anchors):
             raise ValueError("An evidence anchor was copied into an authored scene asset.")

@@ -489,11 +489,51 @@ def subject_matches(expected, actual):
 
 
 def ensure_no_source_bodies(data, anchors=()):
-    code_line = re.compile(r"(^|\n)\s*(def\s+\w+\s*\(|(?:export\s+default\s+)?function\s+\w+\s*\(|class\s+\w+\s*[:{])")
-    for value in strings(data):
-        if "```" in value or code_line.search(value):
-            raise InvalidGraph("Source-like code blocks must be rewritten as plain explanations.")
-        if any(len(anchor.strip()) >= 12 and anchor in value for anchor in anchors):
+    # This is an authoring guard, not a parser for every source language. Check
+    # short expressions as well as blocks: conditions, tooltips and search data
+    # must use the same plain-language contract as the main explanation.
+    identifier = r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*"
+    argument = (identifier + r"|[-+]?\d+(?:\.\d+)?|\"[^\"\n]*\"|'[^'\n]*'")
+    arguments = r"\s*(?:" + argument + r")(?:\s*,\s*(?:" + argument + r"))*\s*"
+    not_filename = r"(?!\.(?:py|js|jsx|ts|tsx|json|md|html|css|ya?ml|toml)\b)"
+    code = re.compile(
+        r"\b(?:async\s+)?(?:def|function)\s+\w+\s*\("
+        r"|\bclass\s+\w+\s*(?:\([^\n]*\))?\s*[:{]"
+        r"|\b(?:const|let|var)\s+\w+\s*="
+        r"|(?:^|[\n`])\s*(?:from\s+[\w.]+\s+import\s|import\s+[\w.{*])"
+        r"|\b(?:if|while|for|switch|catch)\s*\([^\n]*\)"
+        r"|\b(?:if|elif|while|for)\s+[^\n:]+:\s*(?:$|\n|return\b|yield\b|raise\b|pass\b|break\b|continue\b)"
+        r"|\b(?:return|yield|raise|throw)\s+(?:True\b|False\b|None\b|null\b|true\b|false\b|[\d\"'\[{])"
+        r"|\b" + identifier + r"\s*(?:===?|!==?|<=|>=|&&|\|\||=>)\s*\S"
+        r"|\b" + identifier + r"\s*(?:=(?!=)|\+=|-=|\*=|/=)\s*\S"
+        r"|\b" + identifier + r"\[[\w\"'][^\]\n]*\]" + not_filename +
+        r"|\b" + identifier + r"\(" + arguments + r"\)" + not_filename
+    )
+
+    def fields(value, key=None):
+        if isinstance(value, str):
+            yield key, value
+        elif isinstance(value, dict):
+            for name, child in value.items():
+                yield from fields(child, name)
+        elif isinstance(value, list):
+            for child in value:
+                yield from fields(child, key)
+
+    for key, value in fields(data):
+        decoded = html.unescape(value)
+        # Generated requests carry routing metadata, and URLs carry query
+        # parameters. Neither is an implementation assignment or a code sample.
+        prose = re.sub(r"https?://[^\s<>]+", "", decoded)
+        # Repository locations may include route brackets or parentheses. Keep
+        # checking their captured anchors without treating a filename as code.
+        if key in ("file", "path", "url"):
+            prose = ""
+        if prose.startswith(("$code-flow ", "$codebase-atlas ", "$visual-primer ")):
+            prose = re.sub(r" \| (?:subject|language|targets|scope|locations|atlas)=", "\n", prose)
+        if "```" in decoded or code.search(prose):
+            raise InvalidGraph("Source-like code blocks or expressions must be rewritten as plain explanations.")
+        if any(len(anchor.strip()) >= 12 and anchor in decoded for anchor in anchors):
             raise InvalidGraph("An evidence anchor was copied into an output text field.")
 
 

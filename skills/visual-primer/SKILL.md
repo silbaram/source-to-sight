@@ -24,9 +24,9 @@ Keep these four decisions stable; let everything else adapt to the topic:
 
 The page should feel simple through organization while retaining decision-relevant facts and comfortably readable type.
 
-Never include source-code bodies, snippets, original prompts, or extracted source lines in the output HTML, including hidden elements and embedded data. Use plain descriptions and diagrams. Real identifiers may accompany those descriptions; file paths and line ranges may identify evidence locations.
+Never include source-code bodies, snippets, raw implementation expressions, original prompts, or extracted source lines in output HTML or render JSON, including hidden elements and embedded data. Apply this to diagrams, simulations, labels, examples, tooltips and every disclosure. Describe conditions, calls and changes in plain language while preserving their exact meaning. Evidence shows file/line locations and verification status, never excerpts or separate code-name labels. Retain necessary identifiers in search/navigation metadata. Functional CLI/generation-copy controls and newly authored presentation scripts remain allowed without target source excerpts.
 
-Use the user's language unless they request specific languages. Produce separate files for multiple requested languages; preserve real identifiers in their original language.
+Use the user's language unless they request specific languages. Produce separate files for multiple requested languages; preserve real identifiers in their original language in search/navigation metadata.
 
 ## Ground the explanation
 

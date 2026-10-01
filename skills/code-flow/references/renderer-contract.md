@@ -23,6 +23,7 @@ python3 "$SKILL_ROOT/scripts/s2s.py" inspect "$SOURCE_ROOT/build/behavior.html"
 
 - [Internal schema](ir-internal-v0.1.0.schema.json): evidence has a one-line `anchorText`, a captured SHA-256 `contentHash` (or null on first capture), and the source location.
 - [Render schema](ir-render-v0.1.0.schema.json): no anchors or source-body fields; claims additionally have a computed `displayStatus`.
+- Every public text field uses plain-language explanations, evidence locations and verification status. Raw implementation expressions and excerpts are forbidden in captions, conditions, examples, identifiers used as code snippets, verification notes, search content and metadata as well as visible code blocks. Preserve real identifiers in search/navigation metadata; display file/line references without separate code-name labels. Keep exact anchors in private internal inputs only. Functional CLI/generation-copy controls and authored presentation scripts are allowed without target source excerpts.
 - `contentHash` preserves the source revision used for the review. Each reread sets `observedContentHash` to the current file's SHA-256, or null if the file could not be read. A failed comparison does not replace the reviewed hash. The new field is optional when reading older 0.1.0 pages.
 - Keep shared fields consistent across both schemas while preserving each contract's evidence and display differences.
 - The bundled validator supports the keywords currently used by these Draft 2020-12 schemas through a checked Draft 7-compatible subset. Unsupported schema extensions are rejected until their compatibility is reviewed. Validation does not insert defaults or mutate input data. Graph errors retain their previous path ordering; layout errors now use that same deterministic ordering. Diagnostic wording can differ.
@@ -31,6 +32,19 @@ python3 "$SKILL_ROOT/scripts/s2s.py" inspect "$SOURCE_ROOT/build/behavior.html"
 - Profiles are discovery metadata. The renderer only branches on graph semantics, analysis state, layer, viewport size, and language.
 
 IDs are globally unique within a document. Edges, steps, state transitions, rules, regions, warnings, and supplemental sources must reference existing objects. A step references exactly one node or edge. Context-only actors have no verification claims.
+
+Optional `nodes[].operation` records a reviewed business action independently of
+structural `node.kind`. It has required `kind` (`receive`, `validate`, `decide`,
+`transform`, `read`, `write`, `request`, `publish`, `wait`, `respond`, `stop`) and
+optional `targetKind` (`database`, `file`, `api`, `queue`, `cache`, `service`) and
+plain-language `target`. No other properties are accepted. The operation belongs
+to the node's own evidence, semantic review, pruning and computed display status;
+it cannot assert stronger certainty than its owner. Context-only nodes cannot
+carry it. Render preparation preserves it, and all its text passes through the
+same source-exposure checks as other display fields. Inputs without an operation
+remain valid; the renderer never infers one from code names, labels or filenames.
+An API resource does not by itself claim a third-party provider or network
+deployment. Use a reviewed target label to explain an established boundary.
 
 The contract supports Korean and English viewer controls. Labels and explanations come from the IR. Other languages are not yet validated as complete localized viewer experiences.
 
@@ -43,7 +57,7 @@ The author must re-read the relevant code and supply an honest semantic review u
 - Inferred or semantically uncertain claims remain visibly uncertain.
 - Unsupported claims are omitted. A broken scenario is omitted as a whole rather than silently skipping a step.
 - Numerical rules require confirmed evidence. A digit check covers `plainText`, `condition`, `outcome`, optional `rationale` and `exceptions`, and also catches an incorrectly unset `numeric` flag. The author must still identify written-out quantities, units, and configuration overrides. Reasons and exceptions share the rule's evidence and review status; they are not independent unchecked captions.
-- A copied anchor or a recognizable fenced/declaration-style code block in output text is rejected. This is an additional guard, not a universal classifier of code versus prose.
+- Automatic code-exposure checks are an additional guard, not a universal classifier of code versus prose. The author must inspect the full HTML and render JSON, including hidden data and all expandable UI states, for excerpts, raw implementation expressions and original source prompts.
 
 Synthetic examples are prominently identified and are not counted as source-tracing evaluations. `humanReviewed` must only be true after an actual human review.
 
@@ -65,7 +79,7 @@ The source-backed rules page uses `data-viewer="primer"`, the same output IR, re
 
 The vendored Dagre engine computes geometry; the template draws native SVG connections and accessible HTML node buttons. Layout uses private node and edge IDs so valid IR identifiers such as `constructor` or `toString` cannot collide with Graphlib's object keys. Selection, evidence, search, and walkthroughs retain the original IR identifiers. Self-edge endpoints use a small documented correction for Dagre 3.1.1. Browser tests check every displayed connection's endpoints and intersections with unrelated nodes.
 
-The production template uses the approved canvas UI. Its left rail searches actual node labels, roles, and identifiers; the component list also reaches detail nodes. Structure is the initial view. Walkthrough controls appear only after choosing a scenario or the walkthrough view, and only when the IR supplies ordered scenarios. Unordered and single-node explanations do not acquire invented playback.
+The production template uses the approved canvas UI. Its left rail searches actual node labels, roles, and identifiers; the component list also reaches detail nodes. Structure is the initial view. Behavior structure starts with readable processing cards without arrows, grouped by the recorded responsibility areas. Explicit operation/resource labels and icons distinguish the action; target labels identify the affected data or destination. Missing operations retain generic processing roles. An optional connection view reveals the existing topology. Card position and group membership do not establish execution order or create edges. Walkthrough controls appear only after choosing a scenario or the walkthrough view, and only when the IR supplies ordered scenarios. The walkthrough retains recorded connections. Unordered and single-node explanations do not acquire invented playback.
 
 Dagre uses horizontal layout on wide canvases and vertical layout on narrow canvases. A scaled scroll surface supports native touch scrolling, pointer dragging, keyboard panning, zoom/fit, and a minimap. Initial zoom keeps labels readable; larger graphs can extend beyond the viewport. The scroll surface has stable room around the graph so edge nodes can move clear of a panel. Fit frames the graph bounds rather than this extra scroll space. Arrow checks account for the SVG screen transform.
 
@@ -86,6 +100,8 @@ The walkthrough player displays the scenario `kind`, step `branch`, optional ste
 The desktop inspector belongs to the canvas overlay and fits the available map/viewport height, including page scrolling and window resizing. It leaves with the map when the map scrolls out of view. Mobile uses a sheet capped by the dynamic viewport height. Only the explanation body scrolls; the status/close header and connection-focus button remain reachable. A new selection starts its explanation at the top. Long evidence lists must not cover the map footer or push the inspector controls outside the visible panel.
 
 The header's dark-mode switch updates the entire semantic palette, including graph edges and arrowheads. Its preference is saved under `s2s-atlas-theme` when local storage is available; denied storage does not block rendering or switching. The default is light. Generated files embed these assets; existing HTML must be regenerated to receive template changes. The `data-viewer="canvas"` marker and browser tests guard against accidentally using the old shell.
+
+Relationship arrows use a shared palette in the canvas, project composition, feature summaries, area connections and walkthrough transfers: blue solid lines for calls/control, teal solid lines for data, and slate dashed lines with open arrowheads for registration/dependency. Uncertain or unchecked relationships use amber dotted lines and explicit status text. Labels also name the recorded relationship, such as read, write or call, so color alone does not carry the meaning. Selection, keyboard focus and playback emphasize line weight and the label border without replacing the relationship color or arrowhead. Decorative input/output arrows remain neutral; their position never creates an edge.
 
 The walkthrough player provides 1×, 1.5× and 2× speeds and a direct step selector. The speed applies to a shared explanation clock used by the step timeout, progress and moving marker. Changing it preserves elapsed time during playback, pause or camera movement; it neither restarts the step nor advances it while the camera is framing. Direct selection pauses playback, updates the caption/condition/evidence and exposes required detail nodes. No-scenario pages keep these controls hidden.
 
@@ -173,7 +189,7 @@ links identify the capability's full rule lesson, independently of node selectio
 Return links keep their validated destinations and saved state. The full structure
 diagram is labeled as all components/connections and uses a secondary style.
 
-Behavior nodes keep code identifiers in maintenance disclosures and show their
+Behavior nodes keep file/line locations and verification status in maintenance disclosures and show their
 incoming/outgoing data edges plus linked rules. The rule action carries `s2s-node`
 and the validated viewer location in `s2s-behavior` to the paired lesson. The lesson
 matches rule-to-node bindings, keeps withheld notices visible, supports showing

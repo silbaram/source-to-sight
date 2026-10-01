@@ -4,9 +4,20 @@ The composition/feature overview has dedicated scope and navigation checks.
 `test_feature_overview.py` verifies exact child identity with shared owners,
 render-only evidence sanitization, retained-child reuse, stale preview omission,
 composition pruning and rejection of mismatched or private child data.
-The browser journey also checks default path entry, preserved responsibility
-boundaries and node positions across views, explicit path kinds and conditions,
+The browser journey also checks separate group/card/selected surfaces, a thicker selection boundary,
+3:1 card and selection boundaries, 4.5:1 card text contrast in both themes,
+a distinct control surface and divider with clearance above the graph viewport,
+group-only detail entry, raised selected regions,
+readable group headings and first cards clear of the inspector, whole-region
+framing when connections are shown, retained member selection and reload,
+restored connection-layout positions after returning from the operation board, explicit path kinds and conditions,
 error-path reload, on-demand inspectors and the no-scenario fallback.
+Canvas height checks cover pointer dragging, stable graph center and zoom, keyboard resizing,
+minimum/maximum bounds, saved height after reload, larger keyboard steps, and subsequent inspection/zoom.
+Manual zoom checks keep an inspector open at 100%, 120%, and 100% again in every
+viewport/theme. Legend checks verify localized operation/node groups, optional
+arrow legends when connections are shown, data-transfer arrows, uncertain dotted
+lines, and wrapping within the viewport.
 Set S2S_CHROMIUM_EXECUTABLE for the feature-overview check when using an
 existing Chromium executable outside Playwright's default cache.
 After rendering the fixtures below, run:
@@ -63,6 +74,70 @@ legacy input compatibility, Unicode containment, canonical path and reference
 guards, local code/config evidence, source drift/deletion/external symlinks,
 unsupported claims/owners, input immutability, and render-status integrity.
 Existing installed CLI/storage checks also retain and rebuild these entries.
+
+`test_source_visibility.py` checks that source statements and expressions cannot
+enter public output through evidence identifiers, node metadata, prose, rules,
+warnings or direct rendering. Reviewed locations, implementation identifiers used
+for lookup, natural-language explanations and generation-request metadata remain
+supported. Authored-scene checks also reject expressions split across inline tags,
+SVG text and tooltips while retaining SVG drawing attributes and presentation scripts.
+
+After generating the bilingual demo below, verify the public screens with:
+
+```sh
+node tests/check_source_visibility_browser.cjs build/business-logic-demo /absolute/path/to/playwright
+```
+
+This checks search, map and behavior inspectors, expanded rule evidence, tooltips,
+accessible labels and copied locations on desktop/mobile in both themes, plus
+JavaScript-disabled lessons. Implementation names remain searchable without a
+separate code display, and private source anchors stay out of embedded render data.
+`S2S_CHROMIUM_EXECUTABLE` can select an existing Chromium executable for this check.
+
+## Business operation browser QA
+
+`test_node_operations.py` checks that reviewed operation metadata retains its
+action, target, source locations and node evidence. It covers unsupported-node
+pruning, uncertainty, source drift, code-expression rejection and legacy inputs
+without inferred operation types. `operation_cases.py` supplies an explicitly
+synthetic purchase flow with database reads/writes, an external payment request,
+a decision, queue publishing and a file write; it does not claim production
+payment or messaging guarantees.
+
+Render this independent bilingual fixture into a new directory and use an
+existing Playwright installation:
+
+```sh
+python3 -E -S -B tests/render_operations_demo.py --output build/operations-demo
+node tests/check_node_operations_browser.cjs build/operations-demo /absolute/path/to/playwright
+```
+
+The browser check covers Korean/English, desktop/mobile and both themes. It
+checks distinct operation labels and icons, named targets, readable descriptions,
+nonoverlapping cards, first-card visibility through viewport changes, the default
+board without arrows, optional exact graph
+connections, path conditions, evidence locations, legacy generic presentation,
+visible uncertainty, source-identifier concealment and offline rendering.
+Operation descriptions and target labels are measured against their composited
+backgrounds at 4.5:1 contrast, including a selected card in both themes.
+Screenshots remain in the generated fixture directory.
+
+The same renderer creates `arrows.html`, a synthetic relationship-style fixture
+with deliberately repeated business captions, call/data/dependency relations,
+an inferred connection and a connection with missing source evidence. Run:
+
+```sh
+node tests/check_arrows_browser.cjs build/operations-demo /absolute/path/to/playwright
+```
+
+This checks Korean/English, desktop/mobile and both themes. Relationship names
+and uncertainty remain readable without relying on color. Lines, arrowheads and
+legend samples must agree, and selection, keyboard focus and playback must retain
+their relationship colors and shapes. It measures lines and arrowheads at 3:1
+against canvas and group surfaces, including a selected group, and labels at
+4.5:1. Animated transfer tokens retain their relation color; dependency and
+uncertain connections cannot imply a confirmed transfer. It also checks the
+default board, legend wrapping, viewport fit and offline rendering.
 
 ## Optional picture-lesson browser QA
 

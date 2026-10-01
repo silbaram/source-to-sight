@@ -58,7 +58,7 @@ Every page should pass these core checks:
 - **Topic-fit test:** this topic's natural questions shape the sequence and headings.
 - **Five-second test:** the first screen says what the subject is and why it matters.
 - **Source test:** identifiers, values, limits, and exceptions match the inspected sources; uncertainty is labeled.
-- **No-source-body test:** inspect the entire HTML, including data scripts and hidden content, for source excerpts, original prompts, and verification anchors. Evidence locations are allowed; source bodies are not.
+- **No-source-body test:** inspect the entire HTML and render JSON, including data scripts, hidden content, search, tooltips, expanded disclosures and simulation states, for source excerpts, raw implementation expressions, original prompts and verification anchors. Conditions and operations must be plain-language explanations. Evidence locations and verification status are allowed. Keep identifiers in search/navigation metadata without separate code-name labels. Functional command-copy controls and newly authored presentation scripts may contain the code needed for their task, without target source excerpts.
 - **Responsive test:** essential content remains readable within the body width.
 - **Accessibility test:** semantic structure, focus, contrast, and text alternatives support keyboard and assistive-technology users.
 

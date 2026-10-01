@@ -189,6 +189,9 @@ class AuthoredRulesTests(unittest.TestCase):
 
     def test_source_excerpts_in_text_attributes_comments_and_assets_are_rejected(self):
         for key, value in (("html", '<p>def check(shipped):</p>'),
+                           ("html", '<p><span>def </span><span>check(shipped):</span></p>'),
+                           ("html", '<p>def <em>check</em>(shipped):</p>'),
+                           ("html", '<svg><text>def <tspan>check</tspan>(shipped):</text></svg>'),
                            ("html", '<p title="def check&#40;shipped&#41;:">Example</p>'),
                            ("html", '<!-- def check(shipped): -->'),
                            ("css", '/* def check(shipped): */'),
@@ -198,6 +201,44 @@ class AuthoredRulesTests(unittest.TestCase):
                 layout["sections"][0][key] = value
                 with self.assertRaises(ValueError):
                     rules.validate_layout(layout, self.logic, s2s)
+
+    def test_authored_expressions_cannot_hide_in_inline_markup_or_tooltips(self):
+        for fragment in (
+            '<p><span>state </span><em>==</em><span> "shipped"</span></p>',
+            '<svg><text>items<tspan>["required"]</tspan></text></svg>',
+            '<p title="status &lt;= 3">Reviewed explanation</p>',
+            '<svg><title>check(shipped)</title><text>Reviewed explanation</text></svg>',
+            '<p aria-label="result = cancelled">Reviewed explanation</p>',
+            '<svg><g data-source="check(shipped)"><text>Reviewed explanation</text></g></svg>',
+            '<svg><g transform="def check(shipped):"><text>Reviewed explanation</text></g></svg>',
+        ):
+            with self.subTest(fragment=fragment):
+                layout = deepcopy(self.layout)
+                layout["sections"][0]["html"] = fragment
+                with self.assertRaises(ValueError):
+                    rules.validate_layout(layout, self.logic, s2s)
+
+    def test_authored_text_keeps_block_boundaries_and_presentation_scripts(self):
+        layout = deepcopy(self.layout)
+        layout["sections"][0]["html"] = (
+            '<p>Choose the cancellation result.</p><p>Check the shipment state.</p>'
+            '<svg><title>Shipment</title><text>Before</text><text>After</text></svg>'
+        )
+        layout["sections"][0]["script"] = "root.querySelector('p').dataset.reviewed = 'true';"
+        rules.validate_layout(layout, self.logic, s2s)
+        page, omitted = rules.render_rules(s2s.prepare(self.logic, self.source), layout, s2s, original=self.logic)
+        self.assertFalse(omitted)
+        self.assertIn("root.querySelector('p').dataset.reviewed = 'true';", page)
+
+    def test_svg_drawing_attributes_are_not_mistaken_for_source_expressions(self):
+        layout = deepcopy(self.layout)
+        layout["sections"][0]["html"] = (
+            '<svg><defs><marker id="scene-cancellation-arrow"><path d="M0 0 L10 5"/></marker></defs>'
+            '<g transform="translate(10,20)" fill="rgb(10,20,30)">'
+            '<path d="M0 0 L10 10" marker-end="url(#scene-cancellation-arrow)"/>'
+            '<text>Reviewed outcome</text></g></svg>'
+        )
+        rules.validate_layout(layout, self.logic, s2s)
 
     def test_external_css_and_raw_text_breakouts_are_rejected(self):
         for key, value in (("css", '@import "https://example.org/a.css";'),
