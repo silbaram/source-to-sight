@@ -66,12 +66,15 @@ async function checkContrast(page, selector) {
         assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('view'),'overview');
         assert.equal(new URLSearchParams(new URL(page.url()).hash.slice(1)).has('tab'),false);
         const data=await page.locator('#s2s-data').evaluate(el=>JSON.parse(el.textContent));
-        assert.equal(await page.locator('#entry-toc,#entry-tabs,#entry-roles-tab,#entry-files-tab').count(),0);
+        assert.equal(await page.locator('#entry-tabs,#entry-roles-tab,#entry-files-tab').count(),0);
+        assert(await page.locator('#entry-toc').isVisible());
+        assert(await page.locator('.coverage-label').isVisible(),'Review counts are outside collapsed provenance');
+        assert(await page.locator('#entry-gaps-body').isVisible(),'Full limitations are visible before selection');
         assert.equal(await page.locator('.entry-project-io').evaluate(node=>node.open),false);
         await page.locator('.entry-project-io > summary').click();
         assert(await page.locator('#entry-summary').isVisible());
         assert(!(await page.locator('#entry-context-body').isVisible()),'Do not assume the first capability');
-        assert(!(await page.locator('#entry-files').isVisible()),'Full tree is on demand');
+        assert(await page.locator('#entry-files').isVisible(),'Recorded folder roots are visible; nested entries remain on demand');
         assert(!(await page.locator('#entry-support').isVisible()),'Do not duplicate capability owners as role cards');
         for(const value of [...data.summary.inputs,...data.summary.outputs])assert((await page.locator('#entry-summary').textContent()).includes(value));
         await page.locator('.entry-project-io > summary').click();
@@ -96,10 +99,10 @@ async function checkContrast(page, selector) {
         assert((await page.locator('#entry-context-owner').textContent()).includes(data.nodes[0].summary));
         assert((await page.locator('#entry-context-paths').textContent()).includes('example.py'));
         assert((await page.locator('#entry-context-checks').textContent()).includes(language==='ko'?'기록되지 않았습니다':'No linked tests'));
-        assert.deepEqual(await page.locator('.entry-flow-step').evaluateAll(items=>items.map(item=>item.dataset.stepId)),data.scenarios[0].steps.map(step=>step.id));
-        assert.deepEqual(await page.locator('.entry-flow-caption').allTextContents(),data.scenarios[0].steps.map(step=>step.caption));
-        assert((await page.locator('.entry-flow-case > summary').textContent()).includes(data.scenarios[0].title));
-        assert.equal(await page.locator('.entry-caution').count(),data.rules.length);
+        assert.deepEqual(await page.locator('#entry-context .entry-flow-step').evaluateAll(items=>items.map(item=>item.dataset.stepId)),data.scenarios[0].steps.map(step=>step.id));
+        assert.deepEqual(await page.locator('#entry-context .entry-flow-caption').allTextContents(),data.scenarios[0].steps.map(step=>step.caption));
+        assert((await page.locator('#entry-context .entry-flow-case > summary').textContent()).includes(data.scenarios[0].title));
+        assert.equal(await page.locator('#entry-context .entry-caution').count(),data.rules.length);
         await page.locator('#entry-context-body').evaluate(el=>{el.scrollTop=el.scrollHeight;});
         assert.equal(await page.locator('#entry-context-close').evaluate(el=>{
           const bounds=el.getBoundingClientRect();return bounds.top>=0&&bounds.bottom<=innerHeight;
@@ -163,8 +166,8 @@ async function checkContrast(page, selector) {
         // Edge-only and node-only steps resolve to the responsible component.
         for(const index of [0,1]) {
           await page.locator('.entry-select').click();
-          await page.locator('#entry-flow-title').click();await page.locator('.entry-flow-case > summary').click();
-          await page.locator('.entry-flow-button').nth(index).click();
+          await page.locator('#entry-flow-title').click();await page.locator('#entry-context .entry-flow-case > summary').click();
+          await page.locator('#entry-context .entry-flow-button').nth(index).click();
           assert(!(await page.locator('#entry-context').isVisible()));
           assert.equal(await page.locator('main').evaluate(el=>el.inert),false);
           assert(await page.locator('#panel.open').isVisible());
@@ -229,7 +232,7 @@ async function checkContrast(page, selector) {
           if(await page.locator('html').getAttribute('data-theme')!==theme)await page.locator('#theme-toggle').click();
           await page.evaluate(()=>scrollTo(0,0));
           await overflow();
-          await checkContrast(page,'.coverage-label,.entry-kicker,.entry-note,.entry-io-label,.entry-io li,.entry-select,.entry-feature-meta>span,.entry-path-link,.entry-card p,.atlas-entry .pill,.entry-primary,.entry-group-count,.entry-group-heading h3');
+          await checkContrast(page,'.coverage-label,#entry-toc button,#entry-toc-title,#entry-gaps-title,.entry-kicker,.entry-note,.entry-io-label,.entry-io li,.entry-select,.entry-feature-meta>span,.entry-path-link,.entry-card p,.atlas-entry .pill,.entry-primary,.entry-group-count,.entry-group-heading h3');
           if([1440,390].includes(width))await page.screenshot({path:path.join(root,language,'entry-'+width+'-'+theme+'.png'),fullPage:true});
           await page.locator('.entry-select').click();
           await checkContrast(page,'#entry-context-title,.entry-flow-caption,.entry-flow-button small,.entry-caution h4,.entry-context-section h3,.entry-location code,.entry-location small,.entry-connection span,.entry-rule-facts dt,.entry-rule-facts dd,.entry-context .pill,.entry-context-disclosure>summary');
@@ -282,7 +285,7 @@ async function checkContrast(page, selector) {
         for(const variant of ['legacy','empty','missing','uncertain','ungrouped']) {
           await page.goto(url('entry-'+variant));await ready();
           if(variant==='legacy') {
-            await page.locator('#entry-files-title').click();
+            await page.locator('#entry-files-section').evaluate(node=>{node.open=true;});
             assert(await page.locator('#entry-files .entry-empty').isVisible());
             assert((await page.locator('.coverage-label').textContent()).endsWith('3 / 3'),'Legacy capability status inherits its owner');
             await page.locator('#entry-diagram').click();
@@ -297,7 +300,7 @@ async function checkContrast(page, selector) {
             assert(copied.includes('subject-main'));
             assert(!new URL(page.url()).pathname.endsWith('/behavior.html'));
           } else if(variant==='uncertain') {
-            await page.locator('#entry-files-title').click();
+            await page.locator('#entry-files-section').evaluate(node=>{node.open=true;});
             assert(await page.locator('[data-structure-id="structure-root"] > summary .uncertain').isVisible());
             assert((await page.locator('.coverage-label').textContent()).endsWith('4 / 5'));
           } else {
@@ -315,21 +318,21 @@ async function checkContrast(page, selector) {
             assert(!(await page.locator('#entry-cautions').isVisible()));
             assert.equal(await page.locator('#entry-gaps-body').textContent(),language==='ko'?'기록된 미확인 항목이 없습니다.':'No unresolved items are recorded.');
           } else if(variant==='uncertain') {
-            await page.locator('#entry-flow-title').click();await page.locator('.entry-flow-case > summary').click();
-            const step=page.locator('.entry-flow-step.uncertain');
+            await page.locator('#entry-flow-title').click();await page.locator('#entry-context .entry-flow-case > summary').click();
+            const step=page.locator('#entry-context .entry-flow-step.uncertain');
             assert.equal(await step.count(),1);
             assert.equal(await step.evaluate(el=>getComputedStyle(el,'::before').borderTopStyle),'dashed');
             assert.equal(await step.evaluate(el=>getComputedStyle(el,'::after').display),'none');
             assert((await step.textContent()).includes(language==='ko'?'병렬 구간':'Parallel'));
             assert((await step.textContent()).includes(language==='ko'?'다른 경로':'Alternative'));
-            assert.equal(await page.locator('.entry-caution > .pill.uncertain').count(),1);
+            assert.equal(await page.locator('#entry-context .entry-caution > .pill.uncertain').count(),1);
             await checkContrast(page,'.entry-flow-step.uncertain .pill,.entry-caution > .pill.uncertain');
           } else {
-            assert.equal(await page.locator('.entry-caution').count(),1,'Unverified numeric rules are pruned before rendering');
-            assert.equal(await page.locator('.entry-caution').getAttribute('data-rule-id'),'rule-documentation');
-            assert((await page.locator('.entry-caution .entry-meta').textContent()).includes(language==='ko'?'모든 코드의 준수를 보장하지 않습니다':'does not guarantee compliance'));
-            await page.locator('.entry-caution .entry-evidence > summary').click();
-            assert((await page.locator('.entry-caution .evidence-item').textContent()).includes('CONTRIBUTING.md'));
+            assert.equal(await page.locator('#entry-context .entry-caution').count(),1,'Unverified numeric rules are pruned before rendering');
+            assert.equal(await page.locator('#entry-context .entry-caution').getAttribute('data-rule-id'),'rule-documentation');
+            assert((await page.locator('#entry-context .entry-caution .entry-meta').textContent()).includes(language==='ko'?'모든 코드의 준수를 보장하지 않습니다':'does not guarantee compliance'));
+            await page.locator('#entry-context .entry-caution .entry-evidence > summary').click();
+            assert((await page.locator('#entry-context .entry-caution .evidence-item').textContent()).includes('CONTRIBUTING.md'));
           }
           await overflow();
         }
@@ -337,15 +340,15 @@ async function checkContrast(page, selector) {
         assert.equal(await page.locator('.entry-capability-group').count(),2);
         assert.equal(await page.locator('.feature-card').count(),2);
         await page.locator('[data-feature-id="subject-main"] .entry-select').click();
-        assert.deepEqual(await page.locator('.entry-caution').evaluateAll(items=>items.map(item=>item.dataset.ruleId)),['rule-main']);
-        assert.equal(await page.locator('.entry-flow-case').count(),1,'Unrelated component flow is excluded');
+        assert.deepEqual(await page.locator('#entry-context .entry-caution').evaluateAll(items=>items.map(item=>item.dataset.ruleId)),['rule-main']);
+        assert.equal(await page.locator('#entry-context .entry-flow-case').count(),1,'Unrelated component flow is excluded');
         assert((await page.locator('#entry-context-checks').textContent()).includes('test_example.py'));
         assert((await page.locator('#entry-context-checks').textContent()).includes(language==='ko'?'실행 결과를 뜻하지 않습니다':'not test execution results'));
         await page.locator('#entry-context-close').click();
         await page.locator('[data-feature-id="subject-review"] .entry-select').click();
         assert.equal(await page.locator('#entry-context-title').textContent(),language==='ko'?'출고 후 결과 살펴보기':'Explore the shipped outcome');
-        assert.deepEqual(await page.locator('.entry-caution').evaluateAll(items=>items.map(item=>item.dataset.ruleId)),['rule-shipped']);
-        assert.deepEqual(await page.locator('.entry-flow-step').evaluateAll(items=>items.map(item=>item.dataset.stepId)),['step-review']);
+        assert.deepEqual(await page.locator('#entry-context .entry-caution').evaluateAll(items=>items.map(item=>item.dataset.ruleId)),['rule-shipped']);
+        assert.deepEqual(await page.locator('#entry-context .entry-flow-step').evaluateAll(items=>items.map(item=>item.dataset.stepId)),['step-review']);
         assert(!(await page.locator('#entry-context-checks').textContent()).includes('test_example.py'));
         // Manual copying stays inside the active dialog when both clipboard
         // methods fail; Escape closes that field before closing the summary.
@@ -437,7 +440,7 @@ async function checkContrast(page, selector) {
         await page.goto(pathToFileURL(path.join(root,'en','entry-locale-'+language+'.html')).href);
         await page.waitForSelector('html[data-ready="true"]',{timeout:5000});
         assert(await page.locator('#atlas-entry').isVisible(),language+' entry initializes');
-        await page.locator('#entry-files-title').click();
+        await page.locator('#entry-files-section').evaluate(node=>{node.open=true;});
         await page.locator('[data-structure-id="structure-root"] > summary').click();
         assert(await page.locator('[data-structure-id="structure-check"] > summary').isVisible());
         // Sorting is presentation-only; never rewrite the recorded language.
@@ -461,7 +464,7 @@ async function checkContrast(page, selector) {
         const label=language+' '+width+' '+variant;
         await page.goto(pathToFileURL(path.join(root,language,'entry-tree-'+variant+'.html')).href);
         await page.waitForSelector('html[data-ready="true"]',{timeout:5000});
-        await page.locator('#entry-files-title').click();
+        await page.locator('#entry-files-section').evaluate(node=>{node.open=true;});
         const parents=await page.locator('.entry-tree-item').evaluateAll(items=>Object.fromEntries(items.map(item=>[
           item.querySelector(':scope > summary > code').textContent,
           item.parentElement.closest('.entry-tree-item')?.querySelector(':scope > summary > code').textContent??null

@@ -33,6 +33,20 @@ It checks summary → member processes → node rules, return focus, missing sum
 without copying full detail graphs, missing detail pages and offline behavior. The older
 area-based journey remains covered as a compatibility view.
 
+`check_entry_navigation_browser.cjs` checks the table of contents against actual
+feature headings rather than a fixed section count. It covers keyboard focus,
+the scroll-position indicator, narrow-screen containment, restored feature
+selection, reopening a deliberately closed folder section, and contents updates
+when entering and leaving an area. Project-level flow/rule sections use only
+the atlas's recorded data; a feature-only fixture keeps its child traces without
+inventing project-wide claims. Empty, uncertain and documented-rule cases retain
+their existing withholding, exception and source-status behavior. Counts and full
+analysis gaps are visible before selection. Run it with the same fixtures:
+
+```sh
+node tests/check_entry_navigation_browser.cjs build/business-logic-demo /absolute/path/to/playwright
+```
+
 Run the maintained regression suite with Python 3.10+ and no installed packages:
 
 ```sh
@@ -194,7 +208,7 @@ installation directly; generated artifacts still stay in its temporary workspace
 
 The separate entry browser check covers Korean/English at 1440, 768, 390 and
 320 pixels: input/output orientation, visibly enclosed groups and filtered counts,
-summary dialogs, recorded-item counts, visible analysis warnings, on-demand tree and
+summary dialogs, visible recorded-item counts and full analysis gaps, folder roots with nested tree details and
 evidence, capability filters, Ctrl/Cmd+K search routes, modal focus trapping/dismissal, missing-detail
 request copying, entry → behavior → rules → entry state, original diagram and
 deprecated `tab=` links, invalid-link fallback, empty and legacy catalogs,

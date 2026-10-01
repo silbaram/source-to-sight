@@ -60,6 +60,7 @@
   const selectedNodeId=()=>nodeMap.has(selected)?selected:subjectMap.get(selected)?.nodeId;
   let regionId=null;
   let entryTab='roles', entryQuery='', entryGroup='', entryAvailability='', entrySelected=null;
+  let entryObserver=null, entryTocTargets=[], entryTocFrame=null;
   let closeEntryPalette=()=>{}, closeEntryContext=()=>{}, openEntryContext=()=>{};
   let entryArea=null;
   const itemMap = new Map([...data.nodes,...data.edges,...data.rules,...data.regions,...data.stateTransitions,...subjectMap.values()].map(item=>[item.id,item]));
@@ -1283,7 +1284,7 @@
     coverage.title=t('이 지도에 기록된 구성 요소·구역·기능·경로의 확인 비율입니다. 프로젝트 전체나 테스트 커버리지가 아닙니다.','Review status of components, regions, capabilities and paths recorded in this map; not repository-wide or test coverage.');
     $('atlas-summary').append(coverage);
     const scope=element('button',t('분석 범위와 한계 ▸','Analysis scope and limits ▸'));scope.type='button';scope.addEventListener('click',()=>{
-      if(view==='overview'&&!$('atlas-entry').hidden){$('entry-gaps').open=true;focusEntry($('entry-gaps-title'));}
+      if(view==='overview'&&!$('atlas-entry').hidden)focusEntry($('entry-gaps-title'));
       else {const section=$('scope-title').parentElement;section.open=true;section.scrollIntoView({behavior:reducedMotion.matches?'instant':'smooth'});}
     });$('atlas-summary').append(scope);
     $('atlas-regions-title').textContent=t('책임 구역','RESPONSIBILITIES');$('atlas-regions-title').hidden=!data.regions.length;
@@ -1303,7 +1304,7 @@
     $('workspace').hidden=home||!usable;
     document.body.classList.toggle('atlas-overview',home);
     if(home&&usable)renderEntryMap();
-    if(!home||!usable){closeEntryContext(false);closeEntryPalette(false);}
+    if(!home||!usable){entryObserver?.disconnect();closeEntryContext(false);closeEntryPalette(false);}
     const skip=document.querySelector('.skip');
     skip.href=home?'#entry-title':'#canvas';
     skip.textContent=home?t('프로젝트 소개로 건너뛰기','Skip to project overview'):t('다이어그램으로 건너뛰기','Skip to diagram');
@@ -1461,7 +1462,9 @@
     const heading=element('div',undefined,'atlas-area-heading');
     const title=element('div');
     if(group.interface?.example)title.append(element('span',group.label,'atlas-area-name'));
-    title.append(element('h3',group.interface?.example?group.interface.activity:group.label),element('p',group.summary));
+    const name=element('h3',group.interface?.example?group.interface.activity:group.label);
+    name.id='entry-area-heading-'+group.id;name.tabIndex=-1;name.dataset.entryToc='';
+    title.append(name,element('p',group.summary));
     if(group.interface?.actor)title.append(element('p',t('담당 · ','WHO · ')+group.interface.actor,'atlas-area-actor'));
     heading.append(title);
     if(group.displayStatus!=='confirmed')heading.append(statusBadge(group));
@@ -1636,6 +1639,7 @@
   function renderFeatureOverview(subject,child,index) {
     const article=element('article',undefined,'feature-overview');article.id='feature-'+subject.id;article.dataset.subjectId=subject.id;
     const heading=element('h3',String(index+1).padStart(2,'0')+' / '+subject.label,'feature-heading');heading.tabIndex=-1;heading.dataset.featureId=subject.id;
+    heading.id='entry-feature-heading-'+subject.id;heading.dataset.entryToc='';
     article.append(heading);
     if(subjectMap.get(subject.id).displayStatus!=='confirmed')article.append(statusBadge(subjectMap.get(subject.id)));
     if(!child) {
@@ -1667,12 +1671,15 @@
     $('entry-area-breadcrumb').replaceChildren();$('entry-reading-path').replaceChildren();
     $('entry-title').textContent=t('프로젝트 구성','Project composition');
     stage.append(renderComposition());
-    const header=element('div',undefined,'feature-section-heading');header.append(element('h2',t('주요 기능','Main capabilities')));stage.append(header);
+    const header=element('div',undefined,'feature-section-heading');
+    const title=element('h2',t('주요 기능','Main capabilities'));title.id='entry-capabilities-title';title.tabIndex=-1;title.dataset.entryToc='';
+    header.append(title);stage.append(header);
     const jumps=element('nav',undefined,'feature-jumps');jumps.setAttribute('aria-label',t('기능으로 바로 이동','Jump to a capability'));
     for(const subject of data.subjects){const jump=element('a',subject.label);jump.href='#'+new URLSearchParams({s2s:'1',subject:data.subject.id,view:'overview',feature:subject.id}).toString();jumps.append(jump);}stage.append(jumps);
     const details=new Map((data.featureDetails||[]).map(child=>[child.subject.id,child]));
     data.subjects.forEach((subject,index)=>stage.append(renderFeatureOverview(subject,details.get(subject.id),index)));
     updateEntrySelection();
+    renderToc();
   }
   function renderEntryMap() {
     if(!isAtlas||data.analysis.status==='insufficient')return;
@@ -1722,6 +1729,7 @@
     }
     if(!children.length&&!nodes.length&&!current)stage.append(element('p',t('기록된 영역과 구성이 없습니다.','No areas or components are recorded.'),'entry-note'));
     updateEntrySelection();
+    renderToc();
   }
   function entryNodeControl(node) {
     const capabilities=data.subjects.filter(subject=>subject.nodeId===node.id);
@@ -1778,7 +1786,7 @@
     const alerts=$('entry-alerts');alerts.replaceChildren();alerts.hidden=!limits.length;
     if(limits.length) {
       alerts.append(element('span',t('분석 범위','ANALYSIS SCOPE'),'entry-alert-label'),element('p',limits[0]),
-        entryButton(t('분석 범위 보기','Review scope'),()=>{$('entry-gaps').open=true;focusEntry($('entry-gaps-title'));}));
+        entryButton(t('분석 범위 보기','Review scope'),()=>focusEntry($('entry-gaps-title'))));
     }
   }
   function renderEntryFilters() {
@@ -1979,13 +1987,14 @@
     }
     scope.append(element('p',t('상세 문서 미생성은 기능이 없다는 뜻이 아닙니다. 기록된 범위 밖은 별도 분석이 필요합니다.','A missing detail page does not mean the capability is absent. Anything outside the recorded scope needs further analysis.'),'entry-note'));
   }
-  function renderEntryFlow(ownerId) {
+  function renderEntryFlow(ownerId,host=$('entry-flow'),stepsHost=$('entry-flow-steps')) {
     // Owner overlap establishes related context, not an exact capability trace.
-    const scenarios=data.scenarios.filter(scenario=>scenario.steps.some(step=>step.nodeId===ownerId||
+    const scenarios=ownerId===undefined?data.scenarios.slice(0,1):data.scenarios.filter(scenario=>scenario.steps.some(step=>step.nodeId===ownerId||
       [edgeMap.get(step.edgeId)?.from,edgeMap.get(step.edgeId)?.to].includes(ownerId)));
-    $('entry-flow').hidden=!scenarios.length;$('entry-flow-steps').replaceChildren();
+    host.hidden=!scenarios.length;stepsHost.replaceChildren();
     for(const scenario of scenarios) {
       const section=element('details',undefined,'entry-flow-case');
+      section.open=ownerId===undefined;
       section.append(element('summary',scenario.title));
       const steps=element('ol',undefined,'entry-flow-steps');
       for(const step of scenario.steps) {
@@ -2000,12 +2009,12 @@
         if(node)body.append(element('small',node.label+' ↗','entry-flow-owner'));
         body.append(statusBadge(step));item.append(body);steps.append(item);
       }
-      section.append(steps);$('entry-flow-steps').append(section);
+      section.append(steps);stepsHost.append(section);
     }
   }
-  function renderCautions(ownerId) {
-    const rules=data.rules.filter(rule=>rule.nodeIds.includes(ownerId));
-    $('entry-cautions').hidden=!rules.length;$('entry-cautions-list').replaceChildren();
+  function renderCautions(ownerId,host=$('entry-cautions'),listHost=$('entry-cautions-list')) {
+    const rules=ownerId===undefined?data.rules:data.rules.filter(rule=>rule.nodeIds.includes(ownerId));
+    host.hidden=!rules.length;listHost.replaceChildren();
     for(const rule of rules) {
       const card=element('article',undefined,'entry-caution');card.dataset.ruleId=rule.id;
       card.append(statusBadge(rule),element('h4',rule.plainText));
@@ -2014,11 +2023,17 @@
       if(rule.evidenceIds.some(id=>evidenceMap.get(id)?.kind==='documentation'))card.append(element('p',
         t('문서에 명시된 규약입니다. 모든 코드의 준수를 보장하지 않습니다.','A documented convention; this does not guarantee compliance throughout the code.'),'entry-meta'));
       const details=element('details',undefined,'entry-evidence');
-      details.append(element('summary',t('조건·이유·예외·근거','Conditions, reasons, exceptions and evidence')),facts);
+      details.append(element('summary',t('조건·이유·예외·근거','Conditions, reasons, exceptions and evidence')));
+      if(ownerId===undefined)card.append(facts);else details.append(facts);
+      if(ownerId===undefined&&rule.nodeIds.length) {
+        const owners=element('div',undefined,'entry-caution-owners');owners.append(element('span',t('관련 구성','Related components')));
+        for(const id of rule.nodeIds)owners.append(entryButton(nodeMap.get(id).label,()=>openEntryDiagram(()=>chooseNode(nodeMap.get(id)))));
+        card.append(owners);
+      }
       if(rule.rationale)details.append(element('p',rule.rationale));
-      list(details,t('예외','Exceptions'),rule.exceptions||[]);
+      list(ownerId===undefined?card:details,t('예외','Exceptions'),rule.exceptions||[]);
       details.append(element('p',rule.verificationNote));evidenceSection(details,rule.evidenceIds);
-      card.append(details);$('entry-cautions-list').append(card);
+      card.append(details);listHost.append(card);
     }
   }
   function renderGaps() {
@@ -2031,6 +2046,51 @@
       if(group.childElementCount)body.append(group);
     }
     if(!body.childElementCount)body.append(element('p',t('기록된 미확인 항목이 없습니다.','No unresolved items are recorded.')));
+  }
+  function updateEntryToc() {
+    if(view!=='overview'||$('atlas-entry').hidden)return;
+    const visible=entryTocTargets.filter(({target})=>target.getClientRects().length);
+    const threshold=Math.min(160,innerHeight*.2);
+    const current=scrollY>0&&scrollY+innerHeight>=document.documentElement.scrollHeight-2?visible.at(-1):
+      [...visible].reverse().find(({target})=>target.getBoundingClientRect().top<=threshold)||visible[0];
+    for(const item of entryTocTargets) {
+      const active=item===current;item.button.parentElement.classList.toggle('current',active);
+      if(active)item.button.setAttribute('aria-current','location');else item.button.removeAttribute('aria-current');
+    }
+  }
+  function scheduleEntryToc() {
+    if(entryTocFrame!==null)return;
+    entryTocFrame=requestAnimationFrame(()=>{entryTocFrame=null;updateEntryToc();});
+  }
+  function renderToc() {
+    entryObserver?.disconnect();
+    const list=$('entry-toc-list');list.replaceChildren();entryTocTargets=[];
+    const headings=[...(!entryArea?[$('title')]:[]),...$('atlas-entry').querySelectorAll('[data-entry-toc]')];
+    for(const target of headings) {
+      if(target.closest('[hidden]')||!target.textContent.trim())continue;
+      // A collapsed disclosure contributes its summary, never its hidden body.
+      let available=true;
+      for(let parent=target.parentElement;parent;parent=parent.parentElement) {
+        if(parent.tagName==='DETAILS'&&!parent.open&&!parent.querySelector(':scope > summary')?.contains(target)){available=false;break;}
+      }
+      if(!available)continue;
+      const item=element('li');
+      item.classList.toggle('entry-toc-feature',!!target.dataset.featureId);
+      const button=entryButton(target.textContent.trim(),()=>{
+        closeEntryContext(false);closeEntryPalette(false);
+        for(let parent=target.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
+        if(target.dataset.featureId){entrySelected=target.dataset.featureId;updateEntrySelection();syncLocation();}
+        if(!target.matches('summary')&&!target.hasAttribute('tabindex'))target.tabIndex=-1;
+        focusEntry(target);scheduleEntryToc();
+      });
+      button.dataset.tocTarget=target.id;item.append(button);list.append(item);entryTocTargets.push({target,button});
+    }
+    $('entry-toc').hidden=!entryTocTargets.length;
+    if(typeof IntersectionObserver==='function') {
+      entryObserver=new IntersectionObserver(scheduleEntryToc,{rootMargin:'-15% 0px -65% 0px'});
+      for(const {target} of entryTocTargets)entryObserver.observe(target);
+    }
+    scheduleEntryToc();
   }
   function renderPalette() {
     const overlay=$('entry-palette'),input=$('entry-palette-input'),results=$('entry-palette-results');
@@ -2103,6 +2163,7 @@
   function initializeEntry() {
     const texts={
       'entry-route':t('프로젝트 둘러보기','EXPLORE THE PROJECT'),
+      'entry-toc-title':t('이 문서의 내용','On this page'),
       'entry-title':t('프로젝트는 어떤 영역으로 구성되어 있나요?','What areas make up the project?'),
       'entry-summary-title':t('프로젝트 전체의 입력과 결과','Project inputs and results'),
       'entry-diagram':t('전체 구성·연결 관계도 열기','Open all components and connections'),
@@ -2112,7 +2173,7 @@
       'entry-palette-close':t('닫기','Close'),
       'entry-structure-title':t('함께 살펴볼 구성','Other components'),
       'entry-structure-note':t('별도 기능 카드가 연결되지 않은 구성입니다.','Components without separate capability cards.'),
-      'entry-files-title':t('패키지·폴더 펼쳐 보기','Explore packages and folders'),
+      'entry-files-title':t('패키지·폴더 구조','Packages and folders'),
       'entry-files-note':t('기록된 실제 경로입니다. 들여쓰기는 포함 관계이며 호출·의존 관계가 아닙니다.','Recorded paths. Indentation means containment, not calls or dependencies.'),
       'entry-search-label':t('기능 필터','Filter capabilities'),
       'entry-group-label':t('담당 구역','Responsibility'),
@@ -2124,6 +2185,9 @@
       'entry-flow-note':t('같은 담당 구성을 포함하는 설명입니다. 이 기능만의 흐름을 보장하지 않습니다. 번호는 설명 순서이며 실제 실행 기록이 아닙니다.','These explanations share the owner component, not necessarily this exact capability scope. Numbers indicate explanation order, not an execution trace.'),
       'entry-cautions-title':t('담당 구성에서 지킬 규칙','COMPONENT CAUTIONS'),
       'entry-cautions-note':t('담당 구성에 연결된 규칙입니다.','Rules linked to the owner component.'),
+      'entry-recorded-flow-title':t('기록된 처리 흐름','Recorded processing flow'),
+      'entry-recorded-flow-note':t('번호는 기록된 설명 순서이며 실제 실행 기록이 아닙니다. 병렬·순서 미정 구간은 따로 표시합니다.','Numbers follow the recorded explanation, not an observed execution. Parallel and unordered segments are identified separately.'),
+      'entry-recorded-cautions-title':t('기록된 판단 기준과 주의사항','Recorded rules and cautions'),
       'entry-gaps-title':t('분석 범위와 아직 모르는 것','Analysis scope and open questions'),
       'entry-gaps-note':t('기록된 항목의 확인 비율은 전체 프로젝트의 분석률이 아닙니다. 목록이 비어 있어도 전체 검증을 뜻하지 않습니다.','The recorded-item review ratio is not whole-project coverage. An empty list does not establish exhaustive validation.'),
       'entry-home':t('← 프로젝트 입구','← Project overview')
@@ -2132,6 +2196,10 @@
     $('entry-search').placeholder=t('기능 이름이나 코드 경로','Capability name or code path');
     initializeEntryContext();
     renderEntrySummary();renderGaps();renderPalette();
+    renderEntryFlow(undefined,$('entry-recorded-flow'),$('entry-recorded-flow-steps'));
+    renderCautions(undefined,$('entry-recorded-cautions'),$('entry-recorded-cautions-list'));
+    window.addEventListener('scroll',scheduleEntryToc,{passive:true});
+    window.addEventListener('resize',scheduleEntryToc);
     $('entry-home').hidden=false;
     $('entry-home').addEventListener('click',()=>{
       stop();closePanel(false);history.length=0;view='overview';selected=null;focusId=null;regionId=null;
@@ -2187,6 +2255,7 @@
       (containers.get(parent?.id)||tree).append(details);containers.set(entry.id,body);
     }
     renderEntryFilters();
+    renderToc();
   }
   function keyboardNavigation(event) {
     if(isAtlas&&view==='overview')return;

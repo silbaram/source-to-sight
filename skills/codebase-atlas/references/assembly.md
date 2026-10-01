@@ -74,6 +74,27 @@ Keep the full component diagram, searchable catalog, package tree and evidence
 inspection available. Follow [maintenance-story.md](maintenance-story.md) for the
 information a first-time maintainer needs.
 
+The table of contents follows the actual project headings, visible responsibility
+areas and feature explanations. Do not require seven sections or create content
+to fill a fixed outline. It updates after area navigation; its buttons scroll to
+and focus the corresponding heading without replacing the existing URL contract.
+On wide screens it stays beside the document; narrow screens use a horizontally
+scrolling row within the page width. Selection and restored detail links remain
+available independently of the table of contents.
+
+The recorded-item confirmation count is visible outside folded provenance.
+Recorded folder roots start expanded; their nested contents and evidence can
+still be opened on demand. Full unresolved questions, limitations, exclusions
+and next checks appear in the body without requiring expansion.
+
+If the atlas itself records scenarios, show its first recorded scenario intact
+in an optional body section, preserving conditions, ordering boundaries and
+uncertainty. If it records rules, show their conditions, outcomes, exceptions and
+related components in another optional section; reasons and evidence remain
+available on demand. Omit these sections and their navigation items when no such
+data is recorded. Never promote a child feature's trace or rules to project-wide
+claims or stitch independent capabilities into a fabricated execution sequence.
+
 Selecting a capability from the catalog opens a wide summary dialog (full-screen on small phones), with no permanent side pane. It shows the capability's own status, owner, a representative path, direct relationships and rule summaries. Other paths, source evidence, related flows, rule conditions/reasons/exceptions, tests and scope open on demand; these are not removed from the data. The fixed actions reach the existing precise detail page or diagram. Connections are not an exhaustive change-impact analysis. No feature or dialog opens automatically. Dismissal preserves selection, filters and page scroll, returning focus to the invoking card. Choosing a capability from search or a tree item's capability action opens its dialog; restored detail links highlight/focus the card without reopening it. Dialog state is local, not a new URL field. Close the dialog before opening search, a tree path or the diagram; clipboard fallback must remain usable inside it.
 
 Scenarios are related when a step references the owner node or an edge touching that owner. Render each matching scenario intact; never splice matching steps into a new sequence. **A shared owner does not establish an exact capability trace.** Label these as component-related flows and use the existing scoped detail page for precise behavior. Numbers mean explanation order, not runtime tracing. Preserve conditions, non-normal branches and `execution: parallel|unordered`. No matching scenarios means no contextual flow section; the full diagram still offers all recorded scenarios. Do not turn a capability list or folder order into an execution scenario.
@@ -82,7 +103,7 @@ Cautions select existing `rules` through owner `nodeIds`, retaining each rule's 
 
 Project conventions in `CLAUDE.md`, `CONTRIBUTING.md` or similar documents may support evidence `kind: documentation`. This establishes **what the document says**, not **that all code follows it**. Phrase these as stated conventions and verify implementation separately before claiming compliance. The entry displays that distinction. Test evidence appears only when `kind: test` locations are explicitly attached to the capability or its owner. Recorded test locations are not passing test results. Missing mappings mean “not recorded,” not “no tests.”
 
-Keep decision-critical unresolved items and high-severity warnings concise. The entry surfaces the first high-severity warning, unresolved item or limitation before the cards, with a visible control to expand all analysis gaps. Record full unresolved questions in `analysis.unresolved`, limitations in `summary.limitations`, exclusions in `subject.scope.excludes`, and follow-up checks in `analysis.nextAttempts`. The compact top review label counts confirmed non-context nodes, regions, capabilities and structure entries among **recorded render items**; legacy capabilities inherit their owner's status. It is neither whole-repository completeness nor test coverage. Pruned items are outside its denominator, so record missing scope explicitly.
+Keep decision-critical unresolved items and high-severity warnings concise. The entry surfaces the first high-severity warning, unresolved item or limitation before the cards, with a visible control to reach the full analysis gaps already displayed in the body. Record full unresolved questions in `analysis.unresolved`, limitations in `summary.limitations`, exclusions in `subject.scope.excludes`, and follow-up checks in `analysis.nextAttempts`. The compact top review label counts confirmed non-context nodes, regions, capabilities and structure entries among **recorded render items**; legacy capabilities inherit their owner's status. It is neither whole-repository completeness nor test coverage. Pruned items are outside its denominator, so record missing scope explicitly.
 
 The optional atlas-only `structureEntries` array records reviewed physical landmarks:
 

@@ -112,6 +112,9 @@ def render_feature_fixture(atlas, project, behavior, logic, layout, source, fold
             group.pop("role", None)
     s2s, _ = atlas.companion()
     (target / "no-summary.html").write_text(s2s.render(uncondensed), encoding="utf-8")
+    feature_only = deepcopy(result[target / "project.html"])
+    feature_only["scenarios"], feature_only["rules"] = [], []
+    (target / "no-project-context.html").write_text(s2s.render(feature_only), encoding="utf-8")
     # Presentation-only cases reuse synthetic render data; no source analysis
     # or real maintainer document is accessed by browser regression checks.
     paths = deepcopy(result[target / "behavior.html"])

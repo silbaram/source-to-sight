@@ -61,6 +61,13 @@ inputs without `composition`. New project authoring uses composition plus visibl
 feature groups. For large projects choose a bounded project/package scope and
 keep feature navigation available; do not shrink the entire repository graph.
 
+Use a table of contents drawn from the explanation's actual headings and feature
+groups, with keyboard focus and a current-position indicator. There is no fixed
+section count. Keep the recorded-item review count and full analysis limitations
+visible. Show a project-level flow or caution section only from the atlas's own
+reviewed scenarios or rules; never borrow a child feature's scope to fill the
+outline. Folder roots are visible, with nested details and evidence on demand.
+
 ## Behavior: follow data and decisions
 
 Stay within the selected capability's target and scope. Start with the input and

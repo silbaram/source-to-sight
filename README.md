@@ -35,6 +35,12 @@ Every page presents explanations, diagrams, evidence locations and verification 
 
 Atlas builds automatically retain reusable analysis, evidence and picture-layout JSON below the HTML directory in `_internal/<map filename without extension>/`. Without an output-location request, use `docs/atlas/<project-key>.html` and `docs/atlas/_internal/<project-key>/`. These JSON files are regeneration inputs and may contain source excerpts: exclude them from sharing and web publishing. See the [quickstart's retention and refresh instructions](docs/quickstart.en.md#keep-share-and-regenerate-your-files).
 
+Project entries have a table of contents based on the actual headings and
+features, with keyboard navigation and a current-position indicator. Recorded
+review counts, folder roots and analysis limitations are visible. Project-level
+flow and rule sections appear only when the atlas records them; there is no fixed
+section count.
+
 ## Repository layout
 
 ```text

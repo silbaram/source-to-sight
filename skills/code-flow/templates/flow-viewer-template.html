@@ -20,19 +20,23 @@
       <div class="eyebrow"><span id="layer-label"></span><span id="status-badge" class="pill"></span></div>
       <h1 id="title"></h1>
       <p id="purpose" class="purpose"></p>
-      <details class="review-details"><summary id="review-details-title"></summary><p id="provenance" class="provenance"></p><div id="atlas-summary" class="atlas-summary" hidden></div></details>
+      <div id="atlas-summary" class="atlas-summary" hidden></div>
+      <details class="review-details"><summary id="review-details-title"></summary><p id="provenance" class="provenance"></p></details>
       <details class="summary-details"><summary id="summary-details-title"></summary><div id="io" class="io"></div></details>
       <nav id="links" class="links" aria-label="Related explanations"></nav>
     </section>
     <section id="insufficient" class="empty" hidden></section>
     <section id="atlas-entry" class="atlas-entry" aria-labelledby="entry-title" hidden>
+      <div class="entry-layout">
+      <nav id="entry-toc" class="entry-toc" aria-labelledby="entry-toc-title" hidden><p id="entry-toc-title"></p><ol id="entry-toc-list"></ol></nav>
+      <div class="entry-doc">
       <div id="entry-purpose" class="entry-overview">
         <details class="entry-project-io"><summary id="entry-summary-title"></summary><div id="entry-summary" class="entry-summary" role="group"></div></details>
         <div id="entry-alerts" class="entry-alerts" hidden></div>
       </div>
       <section id="entry-features-section" aria-labelledby="entry-title">
         <div class="entry-heading">
-          <div><p id="entry-route" class="entry-kicker"></p><h2 id="entry-title" tabindex="-1"></h2></div>
+          <div><p id="entry-route" class="entry-kicker"></p><h2 id="entry-title" tabindex="-1" data-entry-toc></h2></div>
           <div class="entry-tools"><button id="entry-palette-open" type="button" class="entry-palette-open" aria-haspopup="dialog" aria-controls="entry-palette"></button><button id="entry-diagram" type="button" class="entry-secondary"></button></div>
         </div>
         <div class="atlas-area-shell">
@@ -40,7 +44,7 @@
           <div id="entry-reading-path"></div>
           <div id="entry-map" class="atlas-areas" role="region" aria-labelledby="entry-title"><div id="entry-map-stage"></div></div>
         </div>
-        <details id="entry-catalog" class="entry-reference"><summary id="entry-catalog-title"></summary>
+        <details id="entry-catalog" class="entry-reference"><summary id="entry-catalog-title" data-entry-toc></summary>
         <div class="entry-filters"><label><span id="entry-search-label"></span><input id="entry-search" type="search" maxlength="240" autocomplete="off"></label><label><span id="entry-group-label"></span><select id="entry-group"></select></label><label><span id="entry-availability-label"></span><select id="entry-availability"></select></label><button id="entry-reset" type="button"></button><p id="entry-count" class="entry-note" role="status"></p></div>
         <div class="entry-workbench">
           <div id="entry-structure" class="entry-map">
@@ -50,8 +54,12 @@
         </div>
         </details>
       </section>
-      <details id="entry-files-section" class="entry-reference"><summary id="entry-files-title"></summary><p id="entry-files-note" class="entry-note"></p><div id="entry-files"></div></details>
-      <details id="entry-gaps" class="entry-reference"><summary id="entry-gaps-title"></summary><p id="entry-gaps-note" class="entry-note"></p><div id="entry-gaps-body" class="entry-gaps-body"></div></details>
+      <section id="entry-recorded-flow" class="entry-reference" aria-labelledby="entry-recorded-flow-title" hidden><h2 id="entry-recorded-flow-title" tabindex="-1" data-entry-toc></h2><p id="entry-recorded-flow-note" class="entry-note"></p><div id="entry-recorded-flow-steps"></div></section>
+      <section id="entry-recorded-cautions" class="entry-reference" aria-labelledby="entry-recorded-cautions-title" hidden><h2 id="entry-recorded-cautions-title" tabindex="-1" data-entry-toc></h2><div id="entry-recorded-cautions-list"></div></section>
+      <details id="entry-files-section" class="entry-reference" open><summary id="entry-files-title" data-entry-toc></summary><p id="entry-files-note" class="entry-note"></p><div id="entry-files"></div></details>
+      <section id="entry-gaps" class="entry-reference" aria-labelledby="entry-gaps-title"><h2 id="entry-gaps-title" tabindex="-1" data-entry-toc></h2><p id="entry-gaps-note" class="entry-note"></p><div id="entry-gaps-body" class="entry-gaps-body"></div></section>
+      </div>
+      </div>
     </section>
     <section id="workspace" class="workspace">
       <nav id="rail" class="rail">

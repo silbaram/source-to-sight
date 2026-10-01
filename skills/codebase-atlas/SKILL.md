@@ -31,6 +31,13 @@ Generate only the detail pages the user requests. The atlas can contain ungenera
 
 ## Verify and deliver
 
+The project entry has a table of contents drawn from its actual headings and
+features, without a fixed section count. It keeps the recorded-item review count,
+folder roots and full analysis limitations visible. Only the atlas's own recorded
+scenarios and rules can supply optional body sections; child traces retain their
+exact feature scope. See [assembly.md](references/assembly.md) for navigation and
+display contracts.
+
 Open the result on a wide and a narrow screen when a browser is available. Check the composition overview, each feature’s request/result header, concise responsibility boxes and boundary transfers, preservation of parallel relationships, and responsibility → detailed process → rule-picture navigation, visible analysis limits, and maintenance details showing the correct owner/paths/flows/rules/tests without unrelated data leaking across selections. Check dialog dismissal, keyboard focus, original scroll/filter preservation, clipboard fallback and transitions to search/diagram without stacked modals. Check tree expansion, generated detail links, ungenerated commands, old structure/`tab=` links and return-state focus. Check both themes and reduced motion. Report visual verification not performed; successful browser checks do not establish human comprehension.
 
 The HTML must work offline with no target code bodies, snippets, raw implementation expressions, source prompts or verification anchors in visible or hidden data, including render JSON. Apply this to feature summaries, examples, rules, search, tooltips and every disclosure. Use plain-language explanations, evidence locations and verification status; keep identifiers in search/navigation metadata, without separate code-name labels. Functional CLI/generation-copy controls and newly authored presentation scripts remain allowed without target source excerpts. Default output is `docs/atlas/<project-key>.html` in the target repository; a user path or repository output policy takes precedence. Each atlas build retains the unpruned atlas, explicitly supplied behavior/logic graphs, original layouts and a reusable `pages.json` under `_internal/<html-stem>/` next to the HTML. Use `--internal-dir` for an explicit override. These private JSON files can contain source anchors: exclude the entire internal directory from sharing and static-site publishing, even though it is below the HTML directory. Use the user's language; current controls are Korean and English. Other languages require disclosing that UI limit.

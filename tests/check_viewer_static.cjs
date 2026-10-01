@@ -25,7 +25,7 @@ function check(script, template) {
   assert.equal(expression.callee.type,'ArrowFunctionExpression');
   assert.equal(expression.callee.body.type,'BlockStatement');
   const body=expression.callee.body.body;
-  const required=['renderEntryFlow','renderCautions','renderGaps','renderEntrySummary','renderPalette','renderEntryContext','initializeEntry','initialize'];
+  const required=['renderEntryFlow','renderCautions','renderGaps','renderEntrySummary','renderPalette','renderToc','renderEntryContext','initializeEntry','initialize'];
   for(const name of required) {
     const declarations=[];
     walk(ast,node=>{if(node.type==='FunctionDeclaration'&&node.id.name===name)declarations.push(node);});
@@ -37,12 +37,12 @@ function check(script, template) {
   assert.equal(last.expression.type,'CallExpression');
   assert.equal(last.expression.callee.name,'initialize','Initialization must be a direct final IIFE statement');
   const initializer=body.find(node=>node.type==='FunctionDeclaration'&&node.id.name==='initializeEntry');
-  const ordered=required.slice(0,5);
+  const ordered=required.slice(0,6);
   assert(ordered.every(name=>body.indexOf(body.find(node=>node.type==='FunctionDeclaration'&&node.id.name===name))<body.indexOf(initializer)),
     'Entry renderers precede initializeEntry');
   const calls=[];
   walk(initializer.body,node=>{if(node.type==='CallExpression'&&node.callee.type==='Identifier'&&ordered.includes(node.callee.name))calls.push(node.callee.name);});
-  assert.deepEqual(calls,['renderEntrySummary','renderGaps','renderPalette'],'Initial entry renders overview only; flows and cautions belong to the selected context');
+  assert.deepEqual(calls,['renderEntrySummary','renderGaps','renderPalette','renderEntryFlow','renderCautions','renderToc'],'Recorded flows/cautions precede the final content-based table of contents');
 
   const ids=[...template.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
   assert.equal(ids.length,new Set(ids).size,'Static HTML IDs must be unique');
